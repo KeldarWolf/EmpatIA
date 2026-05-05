@@ -6,6 +6,39 @@ import ChatBox from "./ChatBox";
 import InputBox from "./InputBox";
 import frases from "./frases";
 
+// 🌐 ENDPOINTS (LOCAL + ONLINE)
+const API_URLS = [
+  "http://localhost:3001",
+  "https://empatia-backend.onrender.com"
+];
+
+// 🤖 IA con fallback automático
+const askAI = async (message) => {
+  for (const url of API_URLS) {
+    try {
+      const res = await fetch(`${url}/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message }),
+      });
+
+      if (!res.ok) continue;
+
+      const data = await res.json();
+
+      if (data?.reply) {
+        return data.reply;
+      }
+    } catch (error) {
+      console.warn("Error conexión:", url);
+    }
+  }
+
+  return "No pude conectar con la IA 😢";
+};
+
 export default function User() {
   const navigate = useNavigate();
 
@@ -16,7 +49,6 @@ export default function User() {
 
   const [step, setStep] = useState(null);
   const [options, setOptions] = useState([]);
-  const [pendingActivity, setPendingActivity] = useState(null);
 
   useEffect(() => {
     setMessages([
@@ -31,7 +63,6 @@ export default function User() {
     return () => clearInterval(interval);
   }, []);
 
-  // 🧠 opciones base
   const getOptions = () => [
     "Caminar",
     "Meditar",
@@ -49,7 +80,6 @@ export default function User() {
     "No sé cuál",
   ];
 
-  // 🧠 pasos
   const getSteps = (act) => {
     const map = {
       Caminar: "Camina 10 min sin distracciones.",
@@ -63,29 +93,20 @@ export default function User() {
     return map[act] || "Hazlo a tu ritmo 🤍";
   };
 
-  // 🤍 FLUJO GUIADO cuando no sabe qué elegir
   const startGuidedFlow = () => {
     setStep("guided");
 
     setMessages((prev) => [
       ...prev,
+      { role: "ai", text: "Está bien 🤍 te ayudo a elegir" },
       {
         role: "ai",
-        text: "Está bien 🤍 te ayudo a elegir",
-      },
-      {
-        role: "ai",
-        text: "Primero dime esto: ¿cómo te quieres sentir?",
-        options: [
-          "Más tranquilo/a",
-          "Con más energía",
-          "Despejar la mente",
-        ],
+        text: "¿Cómo te quieres sentir?",
+        options: ["Más tranquilo/a", "Con más energía", "Despejar la mente"],
       },
     ]);
   };
 
-  // 🤍 segundo paso del flujo guiado
   const handleGuidedChoice = (opt) => {
     setMessages((prev) => [...prev, { role: "user", text: opt }]);
 
@@ -104,24 +125,21 @@ export default function User() {
     }
 
     setStep("select_activity");
-
     setOptions(suggestions);
 
     setMessages((prev) => [
       ...prev,
       {
         role: "ai",
-        text: "Perfecto 🤍 mira estas opciones que pueden ayudarte:",
+        text: "Estas opciones pueden ayudarte:",
         options: suggestions,
       },
     ]);
   };
 
-  // 🔘 clicks opciones
   const handleOptionClick = (opt) => {
     setMessages((prev) => [...prev, { role: "user", text: opt }]);
 
-    // cambiar opciones
     if (opt === "Cambiar opciones") {
       const newOpts = options.includes("Caminar")
         ? getOptionsAlt()
@@ -131,28 +149,24 @@ export default function User() {
 
       setMessages((prev) => [
         ...prev,
-        { role: "ai", text: "Aquí tienes otras opciones 👇", options: newOpts },
+        { role: "ai", text: "Otras opciones 👇", options: newOpts },
       ]);
       return;
     }
 
-    // ❗ NO SÉ CUÁL → ahora pregunta, NO resuelve
     if (opt === "No sé cuál") {
       startGuidedFlow();
       return;
     }
 
-    // flujo guiado emocional
     if (step === "guided") {
       handleGuidedChoice(opt);
       return;
     }
 
-    // crear actividad
     if (step === "select_activity") {
       const nueva = {
         texto: opt,
-        tipo: "Actividad",
         pasos: getSteps(opt),
         fecha: new Date().toISOString(),
       };
@@ -163,72 +177,39 @@ export default function User() {
       setMessages((prev) => [
         ...prev,
         { role: "ai", text: `✅ Actividad creada: ${opt}` },
-        { role: "ai", text: "👉 Redirigiendo en 3 segundos..." },
       ]);
 
-      setStep(null);
-
-      setTimeout(() => navigate("/actividades"), 3000);
-      return;
-    }
-
-    // inicio relajación
-    if (opt === "Relajación") {
-      setStep("select_activity");
-
-      const base = getOptions();
-
-      setOptions(base);
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text: "¿Qué tipo de relajación te gustaría hacer?",
-          options: base,
-        },
-      ]);
+      setTimeout(() => navigate("/actividades"), 2000);
     }
   };
 
-  // 💬 mensaje libre
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    const text = input.toLowerCase();
+    const userText = input;
 
-    setMessages((prev) => [...prev, { role: "user", text: input }]);
+    setMessages((prev) => [...prev, { role: "user", text: userText }]);
     setInput("");
     setLoading(true);
 
-    const wantsActivity =
-      text.includes("actividad") ||
-      text.includes("actividades") ||
-      text.includes("hacer algo");
-
-    if (wantsActivity) {
-      setStep("select_activity");
-
+    if (userText.toLowerCase().includes("actividad")) {
       const base = getOptions();
-
       setOptions(base);
 
       setMessages((prev) => [
         ...prev,
-        {
-          role: "ai",
-          text: "¿Qué te gustaría hacer?",
-          options: base,
-        },
+        { role: "ai", text: "¿Qué te gustaría hacer?", options: base },
       ]);
 
       setLoading(false);
       return;
     }
 
+    const reply = await askAI(userText);
+
     setMessages((prev) => [
       ...prev,
-      { role: "ai", text: "Entiendo 🤍 cuéntame un poco más" },
+      { role: "ai", text: reply },
     ]);
 
     setLoading(false);
@@ -259,10 +240,7 @@ export default function User() {
       <div className="right-panel">
         <button onClick={() => navigate("/rutina")}>🧘 Rutina</button>
         <button onClick={() => navigate("/actividades")}>🎯 Actividades</button>
-
-  <button onClick={() => navigate("/estadisticas")}>
-    📊 Estadísticas de progreso
-  </button>
+        <button onClick={() => navigate("/estadisticas")}>📊 Estadísticas</button>
         <button onClick={() => navigate("/diario")}>📓 Diario</button>
       </div>
 
