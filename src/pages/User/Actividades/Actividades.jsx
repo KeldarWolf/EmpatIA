@@ -1,0 +1,392 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+
+export default function Actividades() {
+  const navigate = useNavigate();
+
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [savedActivities, setSavedActivities] = useState([]);
+  const [selected, setSelected] = useState(null);
+
+  // ===============================
+  // 🤖 CONEXIÓN IA
+  // ===============================
+  const askAI = async (message) => {
+    try {
+      const res = await fetch("http://localhost:3001/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
+      });
+
+      const data = await res.json();
+      return data.reply;
+    } catch {
+      return "Error de conexión 😢";
+    }
+  };
+
+  // ===============================
+  // 🔄 CARGAR
+  // ===============================
+  useEffect(() => {
+    const data = JSON.parse(localStorage.getItem("actividades") || "[]");
+
+    const normalized = data.map((a) => ({
+      ...a,
+      gusto: a.gusto ?? 5,
+      pasos:
+        a.pasos ?? "Respira profundo y realiza la actividad a tu ritmo.",
+      enRutina: a.enRutina ?? false,
+    }));
+
+    setSavedActivities(normalized);
+
+    setMessages([
+      { role: "ai", text: "Aquí puedes ver tus actividades 🤍" },
+      { role: "ai", text: "Haz click en una para ver cómo hacerlo" },
+    ]);
+  }, []);
+
+  // ===============================
+  // 💬 CHAT
+  // ===============================
+  const sendMessage = async () => {
+    if (!input.trim()) return;
+
+    const userText = input;
+
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", text: userText },
+    ]);
+
+    setInput("");
+
+    const reply = await askAI(userText);
+
+    setMessages((prev) => [
+      ...prev,
+      { role: "ai", text: reply },
+    ]);
+  };
+
+  // ===============================
+  // 🎯 CLICK ACTIVIDAD (FIX AQUÍ)
+  // ===============================
+  const openActivity = async (activity) => {
+    // 🔥 SI ES LA MISMA ACTIVIDAD → NO HACER NADA
+    if (selected && selected.texto === activity.texto) return;
+
+    setSelected(activity);
+
+    setMessages([
+      { role: "ai", text: `🧠 Actividad: ${activity.texto}` },
+      { role: "ai", text: "Estoy preparando cómo ayudarte..." },
+    ]);
+
+    const reply = await askAI(
+      `Explícame paso a paso cómo hacer esta actividad: ${activity.texto}`
+    );
+
+    setMessages((prev) => [
+      ...prev,
+      { role: "ai", text: "👉 Cómo hacerlo:" },
+      { role: "ai", text: reply },
+    ]);
+  };
+
+  // ===============================
+  // ⭐ GUSTO
+  // ===============================
+  const changeGusto = (index, value) => {
+    const updated = [...savedActivities];
+    updated[index].gusto = value;
+
+    setSavedActivities(updated);
+    localStorage.setItem("actividades", JSON.stringify(updated));
+  };
+
+  // ===============================
+  // 🗑 ELIMINAR
+  // ===============================
+  const deleteActivity = (index) => {
+    const confirmDelete = window.confirm(
+      "⚠️ Las actividades son parte de tu progreso.\n¿Seguro que quieres eliminarla?"
+    );
+
+    if (!confirmDelete) return;
+
+    const updated = savedActivities.filter((_, i) => i !== index);
+
+    setSavedActivities(updated);
+    localStorage.setItem("actividades", JSON.stringify(updated));
+  };
+
+  // ===============================
+  // ➕ RUTINA
+  // ===============================
+  const addToRoutine = (index) => {
+    const updated = [...savedActivities];
+    updated[index].enRutina = true;
+
+    setSavedActivities(updated);
+    localStorage.setItem("actividades", JSON.stringify(updated));
+  };
+
+  // ===============================
+  // UI
+  // ===============================
+  return (
+    <div style={styles.page}>
+
+      {/* HEADER */}
+      <div style={styles.header}>
+        <div>
+          <h1>🎯 Actividades</h1>
+          <p style={{ opacity: 0.7 }}>
+            Haz click en una actividad para ver cómo realizarla
+          </p>
+        </div>
+
+        <button onClick={() => navigate("/user")} style={styles.backBtn}>
+          ⬅ Volver
+        </button>
+      </div>
+
+      <div style={styles.grid}>
+
+        {/* 💬 CHAT */}
+        <div style={styles.left}>
+          <h3>💬 Acompañamiento</h3>
+
+          <div style={styles.chatBox}>
+            {messages.map((m, i) => (
+              <div key={i} style={styles.msg}>
+                {m.role === "ai" ? "🤖 " : "👤 "}
+                {m.text}
+              </div>
+            ))}
+          </div>
+
+          <div style={styles.inputRow}>
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              style={styles.input}
+              placeholder="Escribe..."
+            />
+            <button onClick={sendMessage} style={styles.send}>
+              Enviar
+            </button>
+          </div>
+        </div>
+
+        {/* 📌 ACTIVIDADES */}
+        <div style={styles.center}>
+          <h3>📌 Tus actividades</h3>
+
+          {savedActivities.length === 0 && (
+            <p style={{ opacity: 0.6 }}>No tienes actividades aún</p>
+          )}
+
+          {savedActivities.map((a, i) => (
+            <div
+              key={i}
+              style={styles.card}
+              onClick={() => openActivity(a)}
+            >
+              <h4>{a.texto}</h4>
+
+              <p style={{ fontSize: 12 }}>
+                ⭐ Gusto: {a.gusto}/10
+              </p>
+
+              <div style={styles.barContainer}>
+                {Array.from({ length: 10 }, (_, idx) => {
+                  const val = idx + 1;
+
+                  return (
+                    <div
+                      key={idx}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        changeGusto(i, val);
+                      }}
+                      style={{
+                        ...styles.bar,
+                        background: val <= a.gusto ? "#22c55e" : "#374151",
+                      }}
+                    />
+                  );
+                })}
+              </div>
+
+              {a.enRutina && (
+                <p style={{ color: "#22c55e", fontSize: 12 }}>
+                  ✔ En rutina
+                </p>
+              )}
+
+              <div style={{ display: "flex", gap: 8 }}>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    addToRoutine(i);
+                  }}
+                  style={styles.routineBtn}
+                >
+                  ➕ Rutina
+                </button>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteActivity(i);
+                  }}
+                  style={styles.deleteBtn}
+                >
+                  🗑 Eliminar
+                </button>
+
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* 🧠 INFO */}
+        <div style={styles.right}>
+          <h3>🧠 Ayuda</h3>
+
+          <div style={styles.tip}>
+            Haz click en una actividad y la IA te explicará cómo hacerla
+          </div>
+
+          <div style={styles.tip}>
+            El acompañamiento se adapta a lo que seleccionas
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+/* ================= STYLES ================= */
+
+const styles = {
+  page: {
+    height: "100vh",
+    background: "#0b0f14",
+    color: "white",
+    display: "flex",
+    flexDirection: "column",
+    fontFamily: "Arial",
+  },
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    padding: 20,
+    borderBottom: "1px solid #1f2a37",
+  },
+  backBtn: {
+    padding: "8px 12px",
+    borderRadius: 8,
+    border: "none",
+    background: "#1f2937",
+    color: "white",
+  },
+  grid: {
+    flex: 1,
+    display: "flex",
+    gap: 15,
+    padding: 15,
+  },
+  left: {
+    width: "30%",
+    background: "#0f1620",
+    padding: 15,
+    borderRadius: 12,
+  },
+  center: {
+    flex: 1,
+    background: "#0f1620",
+    padding: 15,
+    borderRadius: 12,
+  },
+  right: {
+    width: "25%",
+    background: "#0f1620",
+    padding: 15,
+    borderRadius: 12,
+  },
+  chatBox: {
+    height: "60%",
+    overflowY: "auto",
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+  },
+  msg: {
+    padding: 8,
+    background: "#111827",
+    borderRadius: 8,
+    fontSize: 13,
+  },
+  inputRow: { display: "flex", gap: 8, marginTop: 10 },
+  input: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 8,
+    background: "#111827",
+    color: "white",
+    border: "none",
+  },
+  send: {
+    padding: 10,
+    background: "#1d9bf0",
+    borderRadius: 8,
+    border: "none",
+    color: "white",
+  },
+  card: {
+    background: "#111827",
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 10,
+    cursor: "pointer",
+  },
+  barContainer: {
+    display: "flex",
+    gap: 3,
+    marginBottom: 8,
+  },
+  bar: {
+    width: 18,
+    height: 8,
+    borderRadius: 3,
+  },
+  routineBtn: {
+    background: "#22c55e",
+    border: "none",
+    padding: "6px 10px",
+    borderRadius: 6,
+    color: "white",
+  },
+  deleteBtn: {
+    background: "#ef4444",
+    border: "none",
+    padding: "6px 10px",
+    borderRadius: 6,
+    color: "white",
+  },
+  tip: {
+    background: "#111827",
+    padding: 10,
+    borderRadius: 10,
+    marginTop: 10,
+    fontSize: 13,
+  },
+};

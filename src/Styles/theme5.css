@@ -1,0 +1,10 @@
+body.theme5 {
+  background: linear-gradient(120deg, #0a0014, #12002b);
+  color: #c084fc;
+}
+
+.card {
+  background: rgba(30, 10, 50, 0.8);
+  border: 1px solid rgba(192, 132, 252, 0.4);
+  border-radius: 18px;
+}

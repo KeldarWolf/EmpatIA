@@ -1,0 +1,12 @@
+body.theme2 {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.theme2 .msg.ai {
+  background: #1e293b;
+}
+
+.theme2 .msg.user {
+  background: #334155;
+}

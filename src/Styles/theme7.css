@@ -1,0 +1,10 @@
+body.theme7 {
+  background: radial-gradient(circle at center, #1a0505, #000);
+  color: #ef4444;
+}
+
+.card {
+  background: rgba(40, 10, 10, 0.85);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 18px;
+}

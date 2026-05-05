@@ -1,0 +1,111 @@
+.app-layout {
+  display: flex;
+  height: 100vh;
+  background: #0b0f14;
+  color: white;
+  font-family: sans-serif;
+}
+
+/* IZQUIERDA */
+.left-panel {
+  width: 20%;
+  padding: 15px;
+  background: #0f1620;
+}
+
+.quote-box {
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 12px;
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+}
+
+/* CENTRO */
+.center-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+}
+
+.chat-box {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.msg {
+  margin: 8px;
+  padding: 10px;
+  border-radius: 12px;
+  max-width: 70%;
+}
+
+.msg.user {
+  background: #1f2937;
+  margin-left: auto;
+}
+
+.msg.ai {
+  background: #0ea5e9;
+  color: black;
+}
+
+/* INPUT */
+.input-box {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+}
+
+.input-box input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+}
+
+/* BOTONES */
+.options {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px;
+}
+
+.options button {
+  padding: 8px 12px;
+  border-radius: 20px;
+  border: none;
+  background: #1f2937;
+  color: white;
+}
+
+.ghost {
+  background: transparent;
+  border: 1px solid #0ea5e9;
+}
+
+/* DERECHA */
+.right-panel {
+  width: 220px;
+  background: #0f1620;
+  padding: 10px;
+  position: relative;
+}
+
+.menu {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.menu button {
+  padding: 10px;
+  border: none;
+  background: #1f2937;
+  color: white;
+  border-radius: 10px;
+}
