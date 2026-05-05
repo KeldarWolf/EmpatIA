@@ -9,22 +9,35 @@ export default function Actividades() {
   const [savedActivities, setSavedActivities] = useState([]);
   const [selected, setSelected] = useState(null);
 
+  // 🌐 ENDPOINTS (LOCAL + ONLINE)
+  const API_URLS = [
+    "http://localhost:3001",
+    "https://empatia-backend.onrender.com"
+  ];
+
   // ===============================
   // 🤖 CONEXIÓN IA
   // ===============================
   const askAI = async (message) => {
-    try {
-      const res = await fetch("http://localhost:3001/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
-      });
+    for (const url of API_URLS) {
+      try {
+        const res = await fetch(`${url}/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message }),
+        });
 
-      const data = await res.json();
-      return data.reply;
-    } catch {
-      return "Error de conexión 😢";
+        if (!res.ok) continue;
+
+        const data = await res.json();
+        if (data?.reply) return data.reply;
+
+      } catch {
+        console.warn("Error conexión:", url);
+      }
     }
+
+    return "Error de conexión 😢";
   };
 
   // ===============================
@@ -36,8 +49,7 @@ export default function Actividades() {
     const normalized = data.map((a) => ({
       ...a,
       gusto: a.gusto ?? 5,
-      pasos:
-        a.pasos ?? "Respira profundo y realiza la actividad a tu ritmo.",
+      pasos: a.pasos ?? "Respira profundo y realiza la actividad a tu ritmo.",
       enRutina: a.enRutina ?? false,
     }));
 
@@ -57,26 +69,18 @@ export default function Actividades() {
 
     const userText = input;
 
-    setMessages((prev) => [
-      ...prev,
-      { role: "user", text: userText },
-    ]);
-
+    setMessages((prev) => [...prev, { role: "user", text: userText }]);
     setInput("");
 
     const reply = await askAI(userText);
 
-    setMessages((prev) => [
-      ...prev,
-      { role: "ai", text: reply },
-    ]);
+    setMessages((prev) => [...prev, { role: "ai", text: reply }]);
   };
 
   // ===============================
-  // 🎯 CLICK ACTIVIDAD (FIX AQUÍ)
+  // 🎯 CLICK ACTIVIDAD
   // ===============================
   const openActivity = async (activity) => {
-    // 🔥 SI ES LA MISMA ACTIVIDAD → NO HACER NADA
     if (selected && selected.texto === activity.texto) return;
 
     setSelected(activity);
@@ -141,7 +145,6 @@ export default function Actividades() {
   return (
     <div style={styles.page}>
 
-      {/* HEADER */}
       <div style={styles.header}>
         <div>
           <h1>🎯 Actividades</h1>
@@ -157,7 +160,7 @@ export default function Actividades() {
 
       <div style={styles.grid}>
 
-        {/* 💬 CHAT */}
+        {/* CHAT */}
         <div style={styles.left}>
           <h3>💬 Acompañamiento</h3>
 
@@ -183,7 +186,7 @@ export default function Actividades() {
           </div>
         </div>
 
-        {/* 📌 ACTIVIDADES */}
+        {/* ACTIVIDADES */}
         <div style={styles.center}>
           <h3>📌 Tus actividades</h3>
 
@@ -192,16 +195,10 @@ export default function Actividades() {
           )}
 
           {savedActivities.map((a, i) => (
-            <div
-              key={i}
-              style={styles.card}
-              onClick={() => openActivity(a)}
-            >
-              <h4>{a.texto}</h4>
+            <div key={i} style={styles.card} onClick={() => openActivity(a)}>
 
-              <p style={{ fontSize: 12 }}>
-                ⭐ Gusto: {a.gusto}/10
-              </p>
+              <h4>{a.texto}</h4>
+              <p style={{ fontSize: 12 }}>⭐ Gusto: {a.gusto}/10</p>
 
               <div style={styles.barContainer}>
                 {Array.from({ length: 10 }, (_, idx) => {
@@ -224,9 +221,7 @@ export default function Actividades() {
               </div>
 
               {a.enRutina && (
-                <p style={{ color: "#22c55e", fontSize: 12 }}>
-                  ✔ En rutina
-                </p>
+                <p style={{ color: "#22c55e", fontSize: 12 }}>✔ En rutina</p>
               )}
 
               <div style={{ display: "flex", gap: 8 }}>
@@ -256,7 +251,7 @@ export default function Actividades() {
           ))}
         </div>
 
-        {/* 🧠 INFO */}
+        {/* INFO */}
         <div style={styles.right}>
           <h3>🧠 Ayuda</h3>
 
