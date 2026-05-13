@@ -30,6 +30,8 @@ export default function Register() {
 
     try {
 
+      console.log("Enviando datos...");
+
       const response = await fetch(
         "https://empatia-backend.onrender.com/api/auth/register",
         {
@@ -45,12 +47,16 @@ export default function Register() {
         }
       );
 
+      console.log("STATUS:", response.status);
+
       const data = await response.json();
 
-      console.log(data);
+      console.log("DATA:", data);
 
       if (!response.ok) {
-        alert(data.error || "Error al registrar");
+
+        alert(JSON.stringify(data));
+
         return;
       }
 
@@ -60,9 +66,9 @@ export default function Register() {
 
     } catch (error) {
 
-      console.error(error);
+      console.error("ERROR COMPLETO:", error);
 
-      alert("Error de conexión con el servidor");
+      alert(error.message);
     }
   };
 
