@@ -12,6 +12,12 @@ export default function Register() {
     confirm: "",
   });
 
+  const [loading, setLoading] = useState(false);
+
+  const validateEmail = (email) => {
+    return /\S+@\S+\.\S+/.test(email);
+  };
+
   const handleChange = (e) => {
     setForm({
       ...form,
@@ -20,17 +26,35 @@ export default function Register() {
   };
 
   const handleSubmit = async (e) => {
-
     e.preventDefault();
+
+    // 🔥 VALIDACIONES FRONTEND
+
+    if (!form.name || !form.email || !form.password || !form.confirm) {
+      alert("Completa todos los campos");
+      return;
+    }
+
+    if (!validateEmail(form.email)) {
+      alert("Email no válido");
+      return;
+    }
+
+    if (form.password.length < 6) {
+      alert("La contraseña debe tener al menos 6 caracteres");
+      return;
+    }
 
     if (form.password !== form.confirm) {
       alert("Las contraseñas no coinciden");
       return;
     }
 
+    setLoading(true);
+
     try {
 
-      console.log("Enviando datos...");
+      console.log("📤 Enviando datos al backend...");
 
       const response = await fetch(
         "https://empatia-backend.onrender.com/api/auth/register",
@@ -47,35 +71,33 @@ export default function Register() {
         }
       );
 
-      console.log("STATUS:", response.status);
+      console.log("📡 STATUS:", response.status);
 
       const text = await response.text();
-      console.log("RAW RESPONSE:", text);
+      console.log("📥 RAW RESPONSE:", text);
 
       let data;
-
       try {
         data = JSON.parse(text);
       } catch (err) {
-        console.error("No es JSON válido:", text);
         throw new Error("El backend no está devolviendo JSON válido");
       }
 
-      console.log("DATA:", data);
-
       if (!response.ok) {
-        alert(data.error || text);
+        alert(data.error || "Error al registrar usuario");
         return;
       }
+
+      console.log("✅ USUARIO CREADO:", data);
 
       alert("Usuario registrado correctamente");
       navigate("/");
 
     } catch (error) {
-
-      console.error("ERROR COMPLETO:", error);
-
+      console.error("❌ ERROR:", error);
       alert(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -84,10 +106,7 @@ export default function Register() {
       <div style={styles.card}>
 
         <h1 style={styles.title}>Crear cuenta</h1>
-
-        <p style={styles.subtitle}>
-          Únete a EmpatIA
-        </p>
+        <p style={styles.subtitle}>Únete a EmpatIA</p>
 
         <form onSubmit={handleSubmit} style={styles.form}>
 
@@ -98,7 +117,6 @@ export default function Register() {
             value={form.name}
             onChange={handleChange}
             style={styles.input}
-            required
           />
 
           <input
@@ -108,7 +126,6 @@ export default function Register() {
             value={form.email}
             onChange={handleChange}
             style={styles.input}
-            required
           />
 
           <input
@@ -118,7 +135,6 @@ export default function Register() {
             value={form.password}
             onChange={handleChange}
             style={styles.input}
-            required
           />
 
           <input
@@ -128,11 +144,14 @@ export default function Register() {
             value={form.confirm}
             onChange={handleChange}
             style={styles.input}
-            required
           />
 
-          <button type="submit" style={styles.button}>
-            Registrarse
+          <button
+            type="submit"
+            style={styles.button}
+            disabled={loading}
+          >
+            {loading ? "Registrando..." : "Registrarse"}
           </button>
 
         </form>
