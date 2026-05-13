@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function Register() {
+
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -18,7 +19,8 @@ export default function Register() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
+
     e.preventDefault();
 
     if (form.password !== form.confirm) {
@@ -26,16 +28,56 @@ export default function Register() {
       return;
     }
 
-    console.log("Registrando usuario:", form);
+    try {
+
+      const response = await fetch(
+        "https://empatia-backend.onrender.com/api/auth/register",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            nombre: form.name,
+            email: form.email,
+            password: form.password,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      console.log(data);
+
+      if (!response.ok) {
+        alert(data.error || "Error al registrar");
+        return;
+      }
+
+      alert("Usuario registrado correctamente");
+
+      navigate("/");
+
+    } catch (error) {
+
+      console.error(error);
+
+      alert("Error de conexión con el servidor");
+    }
   };
 
   return (
     <div style={styles.container}>
       <div style={styles.card}>
+
         <h1 style={styles.title}>Crear cuenta</h1>
-        <p style={styles.subtitle}>Únete a EmpatIA</p>
+
+        <p style={styles.subtitle}>
+          Únete a EmpatIA
+        </p>
 
         <form onSubmit={handleSubmit} style={styles.form}>
+
           <input
             type="text"
             name="name"
@@ -43,6 +85,7 @@ export default function Register() {
             value={form.name}
             onChange={handleChange}
             style={styles.input}
+            required
           />
 
           <input
@@ -52,6 +95,7 @@ export default function Register() {
             value={form.email}
             onChange={handleChange}
             style={styles.input}
+            required
           />
 
           <input
@@ -61,6 +105,7 @@ export default function Register() {
             value={form.password}
             onChange={handleChange}
             style={styles.input}
+            required
           />
 
           <input
@@ -70,11 +115,13 @@ export default function Register() {
             value={form.confirm}
             onChange={handleChange}
             style={styles.input}
+            required
           />
 
           <button type="submit" style={styles.button}>
             Registrarse
           </button>
+
         </form>
 
         <p style={styles.loginText}>
@@ -86,12 +133,14 @@ export default function Register() {
             Iniciar sesión
           </span>
         </p>
+
       </div>
     </div>
   );
 }
 
 const styles = {
+
   container: {
     height: "100vh",
     background: "radial-gradient(circle at center, #050505, #000)",
