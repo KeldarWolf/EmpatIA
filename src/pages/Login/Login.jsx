@@ -1,70 +1,91 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { USERS } from "./loginData";
 import { styles } from "./Login.styles";
 import LoginMatrix from "./LoginMatrix";
 
 export default function Login() {
+
   const navigate = useNavigate();
 
   const [user, setUser] = useState({
-    user: "",
+    email: "",
     password: ""
   });
 
-  const handleLogin = () => {
-    if (!user.user || !user.password) {
-      alert("Completa usuario y contraseña");
-      return;
-    }
+  const handleLogin = async () => {
 
-    const foundUser = USERS.find(
-      (u) =>
-        u.user === user.user &&
-        u.password === user.password
-    );
+    try {
 
-    if (!foundUser) {
-      alert("Usuario o contraseña incorrectos");
-      return;
-    }
+      if (!user.email || !user.password) {
+        alert("Completa email y contraseña");
+        return;
+      }
 
-    localStorage.setItem(
-      "profile",
-      JSON.stringify({
-        name: foundUser.user,
-        role: foundUser.role
-      })
-    );
+      const response = await fetch(
+        "https://empatia-backend.onrender.com/api/auth/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(user)
+        }
+      );
 
-    alert("Login exitoso");
+      const data = await response.json();
 
-    if (foundUser.role === "admin") {
-      navigate("/admin");
-    } else {
-      navigate("/user");
+      if (!response.ok) {
+        alert(data.error || "Error login");
+        return;
+      }
+
+      localStorage.setItem(
+        "profile",
+        JSON.stringify(data.user)
+      );
+
+      alert("Login exitoso");
+
+      if (data.user.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/user");
+      }
+
+    } catch (error) {
+
+      console.error(error);
+
+      alert("Error conectando servidor");
     }
   };
 
   return (
     <div style={styles.container}>
+
       <LoginMatrix />
 
       <div style={styles.centerBlock}>
+
         <div style={styles.card}>
-          <h1 style={styles.title}>EmpatIA</h1>
+
+          <h1 style={styles.title}>
+            EmpatIA
+          </h1>
+
           <p style={styles.subtitle}>
             IA emocional en tiempo real
           </p>
 
           <div style={styles.formBox}>
+
             <input
-              placeholder="Usuario"
-              value={user.user}
+              placeholder="Email"
+              value={user.email}
               onChange={(e) =>
                 setUser({
                   ...user,
-                  user: e.target.value
+                  email: e.target.value
                 })
               }
               style={styles.input}
@@ -97,14 +118,20 @@ export default function Login() {
               Registrarse
             </button>
 
-            <div style={styles.divider}>o</div>
+            <div style={styles.divider}>
+              o
+            </div>
 
             <button style={styles.googleBtn}>
               🔵 Iniciar con Google
             </button>
+
           </div>
+
         </div>
+
       </div>
+
     </div>
   );
 }
