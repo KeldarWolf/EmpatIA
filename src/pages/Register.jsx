@@ -49,19 +49,26 @@ export default function Register() {
 
       console.log("STATUS:", response.status);
 
-      const data = await response.json();
+      const text = await response.text();
+      console.log("RAW RESPONSE:", text);
+
+      let data;
+
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        console.error("No es JSON válido:", text);
+        throw new Error("El backend no está devolviendo JSON válido");
+      }
 
       console.log("DATA:", data);
 
       if (!response.ok) {
-
-        alert(JSON.stringify(data));
-
+        alert(data.error || text);
         return;
       }
 
       alert("Usuario registrado correctamente");
-
       navigate("/");
 
     } catch (error) {
