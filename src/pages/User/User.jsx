@@ -17,7 +17,9 @@ const askAI = async (message) => {
     try {
       const res = await fetch(`${url}/chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ message }),
       });
 
@@ -26,7 +28,9 @@ const askAI = async (message) => {
       if (res.ok && data?.reply) {
         return data.reply;
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn("Error conexión:", url);
+    }
   }
 
   return "No pude conectar con la IA 😢";
@@ -35,15 +39,13 @@ const askAI = async (message) => {
 export default function User() {
   const navigate = useNavigate();
 
-  const user = JSON.parse(localStorage.getItem("usuario"));
+  // 🔐 usuario guardado en login
+  const user = JSON.parse(localStorage.getItem("usuario") || "null");
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [frase, setFrase] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const [step, setStep] = useState(null);
-  const [options, setOptions] = useState([]);
 
   // =========================
   // INIT
@@ -56,7 +58,7 @@ export default function User() {
       },
       {
         role: "ai",
-        text: "Cuéntame cómo te sientes",
+        text: "Cuéntame cómo te sientes o qué necesitas",
       },
     ]);
 
@@ -76,39 +78,6 @@ export default function User() {
   };
 
   // =========================
-  // ACTIVIDADES
-  // =========================
-  const getOptions = () => [
-    "Caminar",
-    "Meditar",
-    "Música",
-    "Cambiar opciones",
-    "No sé cuál",
-  ];
-
-  const getOptionsAlt = () => [
-    "Respirar profundo",
-    "Estiramientos",
-    "Ducha relajante",
-    "Escribir lo que siento",
-    "Cambiar opciones",
-    "No sé cuál",
-  ];
-
-  const getSteps = (act) => {
-    const map = {
-      Caminar: "Camina 10 min sin distracciones.",
-      Meditar: "Respira profundo 5 min.",
-      Música: "Escucha música relajante.",
-      "Respirar profundo": "Inhala 4s, exhala 6s.",
-      Estiramientos: "Estira todo el cuerpo.",
-      "Ducha relajante": "Ducha consciente.",
-      "Escribir lo que siento": "Escribe sin filtro.",
-    };
-    return map[act] || "Hazlo a tu ritmo 🤍";
-  };
-
-  // =========================
   // CHAT IA
   // =========================
   const sendMessage = async () => {
@@ -116,13 +85,13 @@ export default function User() {
 
     const text = input;
 
-    setMessages((p) => [...p, { role: "user", text }]);
+    setMessages((prev) => [...prev, { role: "user", text }]);
     setInput("");
     setLoading(true);
 
     const reply = await askAI(text);
 
-    setMessages((p) => [...p, { role: "ai", text: reply }]);
+    setMessages((prev) => [...prev, { role: "ai", text: reply }]);
 
     setLoading(false);
   };
@@ -133,21 +102,33 @@ export default function User() {
   return (
     <div className="app-layout">
 
-      {/* LEFT */}
+      {/* LEFT PANEL */}
       <div className="left-panel">
         <h4>💡 Acompañamiento</h4>
+
         <div className="quote-box">{frase}</div>
 
         <div style={{ marginTop: 20, color: "#00e5ff" }}>
-          👤 {user?.nombre}
+          👤 {user?.nombre || "Usuario"}
         </div>
 
-        <button onClick={logout} style={{ marginTop: 10 }}>
+        <button
+          onClick={logout}
+          style={{
+            marginTop: 10,
+            padding: "8px 12px",
+            background: "#ff3b3b",
+            color: "#fff",
+            border: "none",
+            borderRadius: 8,
+            cursor: "pointer",
+          }}
+        >
           Cerrar sesión
         </button>
       </div>
 
-      {/* CENTER */}
+      {/* CENTER PANEL */}
       <div className="center-panel">
         <ChatBox
           messages={messages}
@@ -162,13 +143,19 @@ export default function User() {
         />
       </div>
 
-      {/* RIGHT */}
+      {/* RIGHT PANEL */}
       <div className="right-panel">
         <button onClick={() => navigate("/rutina")}>🧘 Rutina</button>
         <button onClick={() => navigate("/actividades")}>🎯 Actividades</button>
         <button onClick={() => navigate("/estadisticas")}>📊 Estadísticas</button>
         <button onClick={() => navigate("/diario")}>📓 Diario</button>
-        <button onClick={() => navigate("/admin")}>🛠 Admin</button>
+
+        {/* admin protegido visualmente */}
+        {user?.role === "admin" && (
+          <button onClick={() => navigate("/admin")}>
+            🛠 Admin
+          </button>
+        )}
       </div>
 
     </div>
