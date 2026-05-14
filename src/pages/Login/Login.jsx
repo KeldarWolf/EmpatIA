@@ -46,19 +46,26 @@ export default function Login() {
       }
 
       // 💾 guardar sesión
+      const usuario = data.user;
+
       localStorage.setItem(
         "usuario",
-        JSON.stringify(data.user)
+        JSON.stringify(usuario)
       );
 
-      alert(`Bienvenido ${data.user.nombre}`);
+      alert(`Bienvenido ${usuario.nombre}`);
 
-      // 🚪 redirección por rol
-      if (data.user.role === "admin") {
-        navigate("/admin");
-      } else {
-        navigate("/user");
-      }
+      // 🚪 redirección por rol o Admin1
+      const role = usuario.role?.trim().toLowerCase();
+      const nombre = usuario.nombre?.trim().toLowerCase();
+
+      setTimeout(() => {
+        if (nombre === "admin1" || role === "admin") {
+          navigate("/admin", { replace: true });
+        } else {
+          navigate("/user", { replace: true });
+        }
+      }, 50);
 
     } catch (error) {
       console.error("❌ ERROR LOGIN:", error);
