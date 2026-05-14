@@ -123,55 +123,105 @@ export default function Admin() {
   );
 }
 
+
+
+
+
 const styles = {
-  container: {
+  page: {
     minHeight: "100vh",
-    background: "radial-gradient(circle at center, #050505, #000)",
+    background: "radial-gradient(circle at top, #0b0f14, #05070a)",
     display: "flex",
     justifyContent: "center",
-    alignItems: "center",
     padding: 20,
-    fontFamily: "Arial",
+    fontFamily: "Arial"
   },
 
-  card: {
+  container: {
     width: "100%",
-    maxWidth: 900,
-    background: "rgba(10,10,10,0.95)",
-    borderRadius: 20,
-    padding: 20,
-    border: "1px solid rgba(0,229,255,0.2)",
-    boxShadow: "0 0 40px rgba(0,229,255,0.15)",
+    maxWidth: 950,
+    background: "rgba(15, 22, 32, 0.9)",
+    borderRadius: 18,
+    border: "1px solid rgba(0,229,255,0.15)",
+    boxShadow: "0 0 40px rgba(0,229,255,0.08)",
+    padding: 20
+  },
+
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20
   },
 
   title: {
-    textAlign: "center",
     color: "#00e5ff",
-    fontSize: 26,
-    textShadow: "0 0 10px rgba(0,229,255,0.5)",
+    textShadow: "0 0 10px rgba(0,229,255,0.4)",
+    margin: 0
+  },
+
+  back: {
+    background: "transparent",
+    border: "1px solid #00e5ff",
+    color: "#00e5ff",
+    padding: "8px 12px",
+    borderRadius: 8,
+    cursor: "pointer"
   },
 
   list: {
     display: "flex",
     flexDirection: "column",
-    gap: 12,
-    marginTop: 20,
+    gap: 12
   },
 
-  userCard: {
+  card: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    background: "#111",
     padding: 15,
     borderRadius: 12,
-    border: "1px solid rgba(0,229,255,0.1)",
-    boxShadow: "0 0 10px rgba(0,229,255,0.05)",
+    background: "#0f1620",
+    border: "1px solid rgba(0,229,255,0.1)"
+  },
+
+  name: {
+    color: "#fff",
+    margin: 0
+  },
+
+  text: {
+    color: "#aaa",
+    fontSize: 13,
+    margin: "4px 0"
+  },
+
+  role: {
+    color: "#00e5ff",
+    fontSize: 12
   },
 
   actions: {
     display: "flex",
-    gap: 10,
+    gap: 10
+  },
+
+  editBtn: {
+    background: "#00e5ff",
+    border: "none",
+    padding: "6px 10px",
+    borderRadius: 6,
+    cursor: "pointer",
+    fontWeight: "bold"
+  },
+
+  deleteBtn: {
+    background: "#ff3b3b",
+    border: "none",
+    padding: "6px 10px",
+    borderRadius: 6,
+    color: "#fff",
+    cursor: "pointer"
   },
 
   modal: {
@@ -183,52 +233,57 @@ const styles = {
     background: "rgba(0,0,0,0.7)",
     display: "flex",
     justifyContent: "center",
-    alignItems: "center",
+    alignItems: "center"
   },
 
   modalBox: {
-    width: 350,
-    background: "#111",
+    width: 360,
+    background: "#0f1620",
     padding: 20,
     borderRadius: 12,
-    border: "1px solid #00e5ff",
-    boxShadow: "0 0 30px rgba(0,229,255,0.2)",
+    border: "1px solid rgba(0,229,255,0.3)"
   },
 
-  modalActions: {
-    display: "flex",
-    justifyContent: "space-between",
-    marginTop: 15,
+  modalTitle: {
+    color: "#00e5ff",
+    marginBottom: 10
   },
 
   input: {
     width: "100%",
     marginTop: 10,
     padding: 10,
-    background: "#000",
+    borderRadius: 8,
+    background: "#0b0f14",
+    border: "1px solid rgba(0,229,255,0.3)",
     color: "#fff",
-    border: "1px solid #00e5ff",
-    borderRadius: 6,
-    outline: "none",
+    outline: "none"
   },
 
-  button: {
+  modalActions: {
+    display: "flex",
+    justifyContent: "space-between",
+    marginTop: 15,
+    gap: 10
+  },
+
+  saveBtn: {
+    flex: 1,
     background: "#00e5ff",
     border: "none",
-    padding: "6px 10px",
-    borderRadius: 6,
-    cursor: "pointer",
+    padding: 10,
+    borderRadius: 8,
     fontWeight: "bold",
-    boxShadow: "0 0 10px rgba(0,229,255,0.2)",
+    cursor: "pointer"
   },
 
-  deleteBtn: {
-    background: "#ff3b3b",
-    border: "none",
-    padding: "6px 10px",
-    borderRadius: 6,
-    color: "#fff",
-    cursor: "pointer",
-    fontWeight: "bold",
-  },
+  cancelBtn: {
+    flex: 1,
+    background: "transparent",
+    border: "1px solid #ff3b3b",
+    color: "#ff3b3b",
+    padding: 10,
+    borderRadius: 8,
+    cursor: "pointer"
+  }
 };
