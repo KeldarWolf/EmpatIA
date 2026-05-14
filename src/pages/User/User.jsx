@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./user.css";
 import ChatBox from "./ChatBox";
@@ -10,21 +10,26 @@ const API_URLS = [
   "https://empatia-backend.onrender.com"
 ];
 
-// Instrucción mínima (muy ligera)
-const MINIMAL_PROMPT = "Eres un acompañante emocional cálido y breve. Responde siempre en máximo 1-2 frases cortas y cercanas.";
-
 const ACTIVITY_KEYWORDS = [
-  "aburrido", "aburrida", "no sé", "qué hago", "no se", 
-  "actividad", "actividades", "qué hacer", "hacer algo", 
-  "aburrimiento", "solo", "sola", "no tengo nada"
+  "aburrido", "aburrida", "no sé", "no se", "qué hago", "qué hacer",
+  "actividad", "actividades", "hacer algo", "aburrimiento", "entretenerme"
 ];
 
-const getRandomActivityOffer = () => {
+const FALLBACK_WHEN_AI_DOWN = [
+  "Lo siento, no puedo responder ahora pero puedo ayudarte a crear actividades. ¿Quieres?",
+  "En este momento no puedo conversar, pero sí puedo ayudarte con una actividad. ¿Te parece?",
+  "Estoy con problemas para responder, pero puedo sugerirte actividades. ¿Quieres que te proponga alguna?",
+];
+
+const getRandomActivityFallback = () => {
+  return FALLBACK_WHEN_AI_DOWN[Math.floor(Math.random() * FALLBACK_WHEN_AI_DOWN.length)];
+};
+
+const getActivityOffer = () => {
   const options = [
-    "¿Te gustaría que te proponga una actividad para hacer ahora?",
-    "¿Quieres que te ayude con una actividad rápida?",
-    "Puedo sugerirte una actividad si quieres, ¿te parece?",
-    "¿Te acompaño haciendo una actividad juntos?"
+    "¿Quieres que te sugiera una actividad ahora?",
+    "¿Te ayudo creando una actividad?",
+    "¿Hacemos una actividad juntos?",
   ];
   return options[Math.floor(Math.random() * options.length)];
 };
@@ -40,66 +45,59 @@ export default function User() {
 
   useEffect(() => {
     setMessages([
-      { role: "ai", text: `Hola ${user?.nombre || "🤍"}, estoy aquí contigo.` },
-      { role: "ai", text: "Cuéntame cómo te sientes..." },
+      { role: "ai", text: `Hola ${user?.nombre || ""}, estoy aquí.` },
+      { role: "ai", text: "Cómo te sientes?" },
     ]);
 
     const interval = setInterval(() => {
       setFrase(frases[Math.floor(Math.random() * frases.length)]);
-    }, 8000);
+    }, 10000);
 
     return () => clearInterval(interval);
   }, [user?.nombre]);
 
-  // Detecta si debe ofrecer actividad
   const shouldOfferActivity = (text: string) => {
-    const lowerText = text.toLowerCase();
-    return ACTIVITY_KEYWORDS.some(keyword => lowerText.includes(keyword));
+    const lower = text.toLowerCase();
+    return ACTIVITY_KEYWORDS.some(kw => lower.includes(kw));
   };
 
-  const askAI = useCallback(async (history) => {
-    const conversation = history.map(m => 
-      m.role === "user" ? `Usuario: ${m.text}` : `Asistente: ${m.text}`
-    ).join("\n\n");
-
+  const askAI = async (userMessage: string) => {
     for (const url of API_URLS) {
       try {
         const res = await fetch(`${url}/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: `${MINIMAL_PROMPT}\n\n${conversation}\n\nAsistente:`
-          }),
+          body: JSON.stringify({ message: userMessage }),
         });
 
         if (res.ok) {
           const data = await res.json();
-          if (data?.reply) return data.reply;
+          if (data?.reply && data.reply.length > 3) {
+            return data.reply;
+          }
         }
       } catch (e) {
-        console.warn(`Error con ${url}`);
+        console.warn("API caída:", url);
       }
     }
-    return "Te escucho 🤍";
-  }, []);
+    // ← Aquí es donde se cae la IA
+    return getRandomActivityFallback();
+  };
 
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
 
     const userMessage = input.trim();
-    const newMessages = [...messages, { role: "user", text: userMessage }];
-
-    setMessages(newMessages);
+    setMessages(prev => [...prev, { role: "user", text: userMessage }]);
     setInput("");
     setLoading(true);
 
     let reply;
 
-    // Si detecta palabras clave → ofrecer actividad
     if (shouldOfferActivity(userMessage)) {
-      reply = getRandomActivityOffer();
+      reply = getActivityOffer();
     } else {
-      reply = await askAI(newMessages);
+      reply = await askAI(userMessage);
     }
 
     setMessages(prev => [...prev, { role: "ai", text: reply }]);
