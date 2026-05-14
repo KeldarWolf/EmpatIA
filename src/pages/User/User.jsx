@@ -13,7 +13,144 @@ const API_URLS = [
 
 // =========================
 // IA PROMPT SIMPLE
-// =========================
+// =========================import { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import "./user.css";
+import ChatBox from "./ChatBox";
+import InputBox from "./InputBox";
+import frases from "./frases";
+
+const API_URLS = [
+  "http://localhost:3001",
+  "https://empatia-backend.onrender.com"
+];
+
+const SYSTEM_PROMPT = `...`; // tu prompt actual
+
+// ==================== MENSAJES FALLBACK ====================
+const FALLBACK_MESSAGES = [
+  "Lo siento, ahora no puedo mantener una conversación larga. ¿Te gustaría que te ayude creando una actividad?",
+  "Parece que estoy con limitaciones en este momento. ¿Quieres que te proponga una actividad para que te sientas mejor?",
+  "No puedo conversar mucho ahora, pero estoy aquí. ¿Te ayudo buscando una actividad agradable?",
+  "Lo siento ❤️, en este momento tengo restricciones. ¿Quieres que te sugiera algo para hacer?",
+  "Entiendo que quieres hablar, pero por ahora solo puedo ayudarte con actividades. ¿Te parece bien?"
+];
+
+const getRandomFallback = () => {
+  return FALLBACK_MESSAGES[Math.floor(Math.random() * FALLBACK_MESSAGES.length)];
+};
+
+export default function User() {
+  const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("usuario") || "null");
+
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [frase, setFrase] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setMessages([
+      { role: "ai", text: `Hola ${user?.nombre || "🤍"}, estoy contigo.` },
+      { role: "ai", text: "Cuéntame cómo te sientes hoy..." },
+    ]);
+
+    const interval = setInterval(() => {
+      setFrase(frases[Math.floor(Math.random() * frases.length)]);
+    }, 8000);
+
+    return () => clearInterval(interval);
+  }, [user?.nombre]);
+
+  // ====================== IA ======================
+  const askAI = useCallback(async (history) => {
+    const conversation = history.map(m => 
+      m.role === "user" 
+        ? `Usuario: ${m.text}`
+        : `Asistente: ${m.text}`
+    ).join("\n\n");
+
+    for (const url of API_URLS) {
+      try {
+        const res = await fetch(`${url}/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: `${SYSTEM_PROMPT}\n\n${conversation}\n\nAsistente:`
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.reply) return data.reply;
+        }
+      } catch (e) {
+        console.warn(`Error con ${url}`);
+      }
+    }
+    // Si llega aquí → falló la IA o se consumieron tokens
+    return getRandomFallback();
+  }, []);
+
+  const sendMessage = async () => {
+    if (!input.trim() || loading) return;
+
+    const userMessage = input.trim();
+    setMessages(prev => [...prev, { role: "user", text: userMessage }]);
+    setInput("");
+    setLoading(true);
+
+    try {
+      const reply = await askAI([...messages, { role: "user", text: userMessage }]);
+      setMessages(prev => [...prev, { role: "ai", text: reply }]);
+    } catch (error) {
+      setMessages(prev => [...prev, { 
+        role: "ai", 
+        text: "Lo siento, estoy con limitaciones ahora. ¿Quieres que te ayude con una actividad?" 
+      }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem("usuario");
+    navigate("/");
+  };
+
+  return (
+    <div className="app-layout">
+      <div className="left-panel">
+        <h4>💡 Acompañamiento</h4>
+        <div className="quote-box">{frase}</div>
+        <div style={{ marginTop: 20, color: "#00e5ff" }}>
+          👤 {user?.nombre || "Usuario"}
+        </div>
+        <button onClick={logout} className="logout-btn">
+          Cerrar sesión
+        </button>
+      </div>
+
+      <div className="center-panel">
+        <ChatBox messages={messages} onOptionClick={() => {}} />
+        <InputBox
+          input={input}
+          setInput={setInput}
+          sendMessage={sendMessage}
+          loading={loading}
+        />
+      </div>
+
+      <div className="right-panel">
+        <button onClick={() => navigate("/rutina")}>🧘 Rutina</button>
+        <button onClick={() => navigate("/actividades")}>🎯 Actividades</button>
+        <button onClick={() => navigate("/estadisticas")}>📊 Estadísticas</button>
+        <button onClick={() => navigate("/diario")}>📓 Diario</button>
+        {user?.role === "admin" && <button onClick={() => navigate("/admin")}>🛠 Admin</button>}
+      </div>
+    </div>
+  );
+}
 const SYSTEM_PROMPT = `
 Eres una IA de acompañamiento emocional.
 
