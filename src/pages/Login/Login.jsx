@@ -55,7 +55,7 @@ export default function Login() {
       alert(`Bienvenido ${data.user.nombre}`);
 
       // 🚪 REDIRECCIÓN SEGURA
-      if (role === "Admin") {
+      if (role = "admin") {
         navigate("/admin");
       } else {
         navigate("/user");
