@@ -8,18 +8,6 @@ export default function Admin() {
   const [users, setUsers] = useState([]);
   const [edit, setEdit] = useState(null);
 
-  // 🔐 PROTECCIÓN REAL
-  useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("usuario"));
-
-    const role = (user?.role || "").toLowerCase().trim();
-
-    if (role !== "admin") {
-      alert("Acceso denegado");
-      navigate("/user");
-    }
-  }, []);
-
   // =========================
   // LOAD USERS
   // =========================
@@ -75,6 +63,7 @@ export default function Admin() {
       <div style={styles.card}>
         <h1 style={styles.title}>🛠 Admin Panel</h1>
 
+        {/* ================= LIST ================= */}
         <div style={styles.list}>
           {users.map((u) => (
             <div key={u.id_usuario} style={styles.userCard}>
@@ -94,6 +83,7 @@ export default function Admin() {
           ))}
         </div>
 
+        {/* ================= MODAL ================= */}
         {edit && (
           <div style={styles.modal}>
             <div style={styles.modalBox}>
@@ -121,8 +111,10 @@ export default function Admin() {
                 <option value="admin">admin</option>
               </select>
 
-              <button onClick={saveUser}>Guardar</button>
-              <button onClick={() => setEdit(null)}>Cancelar</button>
+              <div style={styles.modalActions}>
+                <button onClick={saveUser}>Guardar</button>
+                <button onClick={() => setEdit(null)}>Cancelar</button>
+              </div>
             </div>
           </div>
         )}
@@ -130,3 +122,76 @@ export default function Admin() {
     </div>
   );
 }
+
+/* =========================
+   ESTILOS (si ya los tienes, ignóralo)
+========================= */
+const styles = {
+  container: {
+    minHeight: "100vh",
+    background: "radial-gradient(circle, #000, #050505)",
+    display: "flex",
+    justifyContent: "center",
+    padding: 20,
+  },
+
+  card: {
+    width: "100%",
+    maxWidth: 900,
+    background: "#111",
+    padding: 20,
+    borderRadius: 12,
+    color: "#fff",
+  },
+
+  title: {
+    textAlign: "center",
+    color: "#00e5ff",
+  },
+
+  list: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
+    marginTop: 20,
+  },
+
+  userCard: {
+    display: "flex",
+    justifyContent: "space-between",
+    background: "#1a1a1a",
+    padding: 10,
+    borderRadius: 8,
+  },
+
+  actions: {
+    display: "flex",
+    gap: 10,
+  },
+
+  modal: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    background: "rgba(0,0,0,0.6)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  modalBox: {
+    background: "#222",
+    padding: 20,
+    borderRadius: 10,
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
+  },
+
+  modalActions: {
+    display: "flex",
+    justifyContent: "space-between",
+  },
+};
