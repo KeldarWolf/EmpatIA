@@ -18,17 +18,22 @@ import Gustos from "./pages/Gustos";
 import Configuracion from "./pages/Configuracion";
 
 // ======================
-// PROTECCIÓN SIMPLE
+// PROTECCIÓN CORREGIDA
 // ======================
 function PrivateRoute({ children, role }) {
-  const session = JSON.parse(localStorage.getItem("profile"));
+  const session = JSON.parse(localStorage.getItem("usuario"));
 
+  // ❌ no hay sesión
   if (!session) {
-    return <Navigate to="/" />;
+    return <Navigate to="/" replace />;
   }
 
-  if (role && session.role !== role) {
-    return <Navigate to="/" />;
+  // 🔥 normalizar role (CLAVE)
+  const userRole = (session.role || "").toLowerCase().trim();
+
+  // ❌ no tiene permisos
+  if (role && userRole !== role) {
+    return <Navigate to="/user" replace />;
   }
 
   return children;
@@ -45,7 +50,7 @@ export default function App() {
       <Route path="/register" element={<Register />} />
 
       {/* ======================
-          ADMIN
+          ADMIN (PROTEGIDO)
       ====================== */}
       <Route
         path="/admin"
@@ -57,7 +62,7 @@ export default function App() {
       />
 
       {/* ======================
-          USER
+          USER (PROTEGIDO)
       ====================== */}
       <Route
         path="/user"
@@ -69,7 +74,7 @@ export default function App() {
       />
 
       {/* ======================
-          MODULES USER (PROTEGIDOS)
+          MÓDULOS USER
       ====================== */}
       <Route
         path="/rutina"
