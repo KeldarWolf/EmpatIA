@@ -17,18 +17,15 @@ const askAI = async (message, userName) => {
     try {
       const res = await fetch(`${url}/chat`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: `Usuario ${userName || "anónimo"}: ${message}`
-        }),
+        })
       });
 
       if (!res.ok) continue;
 
       const data = await res.json();
-
       if (data?.reply) return data.reply;
 
     } catch (e) {
@@ -41,7 +38,6 @@ const askAI = async (message, userName) => {
 
 export default function User() {
   const navigate = useNavigate();
-
   const user = JSON.parse(localStorage.getItem("usuario") || "null");
 
   const [messages, setMessages] = useState([]);
@@ -49,13 +45,41 @@ export default function User() {
   const [frase, setFrase] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // 👉 control de flujo actividades
+  const [activityStep, setActivityStep] = useState("chat"); 
+  // chat | confirm | select
+
+  const activityTriggers = [
+    "no se que hacer",
+    "no sé que hacer",
+    "estoy aburrido",
+    "estoy aburrida",
+    "no tengo nada que hacer",
+    "quiero actividades",
+    "actividades",
+    "actividad"
+  ];
+
+  const activityOptions = [
+    "Caminar",
+    "Meditar",
+    "Música",
+    "Respirar",
+    "Estiramientos",
+    "Escribir lo que siento",
+    "Ducha relajante",
+    "Ordenar espacio",
+    "Salir a tomar aire",
+    "Ejercicio ligero"
+  ];
+
   // =========================
   // INIT
   // =========================
   useEffect(() => {
     setMessages([
       { role: "ai", text: `Hola ${user?.nombre || "🤍"} estoy contigo` },
-      { role: "ai", text: "Cuéntame cómo te sientes" },
+      { role: "ai", text: "Cuéntame cómo te sientes" }
     ]);
 
     const interval = setInterval(() => {
@@ -66,84 +90,96 @@ export default function User() {
   }, []);
 
   // =========================
-  // ACTIVIDADES
-  // =========================
-  const activityOptions = [
-    "Caminar",
-    "Meditar",
-    "Música",
-    "Respirar",
-    "Estiramientos",
-    "Escribir lo que siento",
-    "Ducha relajante",
-    "Ejercicio ligero",
-    "Salir a tomar aire",
-    "Ordenar espacio",
-  ];
-
-  const activityTriggers = [
-    "no se que hacer",
-    "no sé que hacer",
-    "estoy aburrido",
-    "estoy aburrida",
-    "no tengo nada que hacer",
-    "quiero actividades",
-    "dame actividades",
-  ];
-
-  // =========================
   // CREAR ACTIVIDAD
   // =========================
-  const createActivity = (opt) => {
-    const nueva = {
-      texto: opt,
-      tipo: "Actividad",
-      fecha: new Date().toISOString(),
-    };
+  const createActivities = () => {
+    setActivityStep("select");
 
-    const data = JSON.parse(localStorage.getItem("actividades") || "[]");
-    localStorage.setItem("actividades", JSON.stringify([...data, nueva]));
-
-    setMessages((prev) => [
+    setMessages(prev => [
       ...prev,
-      { role: "ai", text: `✅ Actividad creada: ${opt}` },
-      { role: "ai", text: "👉 Redirigiendo..." },
+      {
+        role: "ai",
+        text: "Perfecto 🤍 elige una actividad:",
+        options: activityOptions
+      }
     ]);
-
-    setTimeout(() => navigate("/actividades"), 1500);
   };
 
   // =========================
-  // CHAT
+  // SEND MESSAGE
   // =========================
   const sendMessage = async () => {
     if (!input.trim()) return;
 
     const text = input;
-    const lower = text
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
+    const lower = text.toLowerCase();
 
-    setMessages((prev) => [...prev, { role: "user", text }]);
+    setMessages(prev => [...prev, { role: "user", text }]);
     setInput("");
     setLoading(true);
 
     // =========================
-    // 🔥 SOLO ACTIVIDADES SI COINCIDE EXACTO
+    // 1. SI YA ESTÁ EN SELECCIÓN
     // =========================
-    const isActivity = activityTriggers.some((phrase) =>
-      lower.includes(phrase)
+    if (activityStep === "select") {
+      const nueva = {
+        texto: text,
+        tipo: "Actividad",
+        fecha: new Date().toISOString()
+      };
+
+      const data = JSON.parse(localStorage.getItem("actividades") || "[]");
+      localStorage.setItem("actividades", JSON.stringify([...data, nueva]));
+
+      setMessages(prev => [
+        ...prev,
+        { role: "ai", text: `✅ Actividad creada: ${text}` },
+        { role: "ai", text: "👉 Redirigiendo..." }
+      ]);
+
+      setActivityStep("chat");
+
+      setTimeout(() => navigate("/actividades"), 1500);
+      setLoading(false);
+      return;
+    }
+
+    // =========================
+    // 2. CONFIRMACIÓN
+    // =========================
+    if (activityStep === "confirm") {
+      const yes = ["si", "sí", "dale", "ok", "claro", "ya", "vale"];
+
+      if (yes.some(w => lower.includes(w))) {
+        createActivities();
+      } else {
+        setMessages(prev => [
+          ...prev,
+          { role: "ai", text: "Está bien 🤍 seguimos conversando" }
+        ]);
+        setActivityStep("chat");
+      }
+
+      setLoading(false);
+      return;
+    }
+
+    // =========================
+    // 3. DETECTAR INTENCIÓN ACTIVIDAD
+    // =========================
+    const wantsActivity = activityTriggers.some(t =>
+      lower.includes(t)
     );
 
-    if (isActivity) {
-      setMessages((prev) => [
+    if (wantsActivity) {
+      setActivityStep("confirm");
+
+      setMessages(prev => [
         ...prev,
         {
           role: "ai",
-          text: "Estoy contigo 🤍 elige una actividad:",
-          options: activityOptions,
-        },
+          text: "Te acompaño 🤍 ¿quieres que hagamos una actividad juntos?"
+        }
       ]);
 
       setLoading(false);
@@ -151,29 +187,16 @@ export default function User() {
     }
 
     // =========================
-    // 🤖 IA NORMAL
+    // 4. IA NORMAL (CONVERSACIÓN)
     // =========================
-    try {
-      const reply = await askAI(text, user?.nombre);
+    const reply = await askAI(text, user?.nombre);
 
-      const shortReply = reply?.split(".")[0];
+    const shortReply = reply?.split(".")[0];
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text: shortReply || "Te escucho 🤍",
-        },
-      ]);
-    } catch (e) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text: "Te escucho 🤍",
-        },
-      ]);
-    }
+    setMessages(prev => [
+      ...prev,
+      { role: "ai", text: shortReply }
+    ]);
 
     setLoading(false);
   };
@@ -182,8 +205,26 @@ export default function User() {
   // CLICK ACTIVIDAD
   // =========================
   const handleOptionClick = (opt) => {
-    setMessages((prev) => [...prev, { role: "user", text: opt }]);
-    createActivity(opt);
+    setMessages(prev => [...prev, { role: "user", text: opt }]);
+
+    const nueva = {
+      texto: opt,
+      tipo: "Actividad",
+      fecha: new Date().toISOString()
+    };
+
+    const data = JSON.parse(localStorage.getItem("actividades") || "[]");
+    localStorage.setItem("actividades", JSON.stringify([...data, nueva]));
+
+    setMessages(prev => [
+      ...prev,
+      { role: "ai", text: `✅ Actividad creada: ${opt}` },
+      { role: "ai", text: "👉 Redirigiendo..." }
+    ]);
+
+    setActivityStep("chat");
+
+    setTimeout(() => navigate("/actividades"), 1500);
   };
 
   // =========================
