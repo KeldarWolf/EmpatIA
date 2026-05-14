@@ -10,12 +10,12 @@ const API_URLS = [
   "https://empatia-backend.onrender.com"
 ];
 
-// Prompt muy corto para ahorrar tokens
-const SYSTEM_PROMPT = "Eres un acompañante emocional cálido. Responde siempre muy breve (1-2 frases máximo).";
+// Prompt mínimo
+const SYSTEM_PROMPT = "Eres un acompañante emocional cálido y breve. Responde máximo 2 frases.";
 
 const activityTriggers = [
-  "no sé qué hacer", "no se que hacer", "estoy aburrido", "estoy aburrida",
-  "actividades", "actividad", "qué hago", "que hago", "aburrimiento"
+  "aburrido", "aburrida", "no sé qué hacer", "no se que hacer", 
+  "qué hago", "que hago", "actividad", "actividades", "aburrimiento"
 ];
 
 const activityOptions = [
@@ -24,10 +24,9 @@ const activityOptions = [
   "Salir a tomar aire", "Ejercicio ligero"
 ];
 
-const fallbackAI = [
-  "Lo siento, no puedo responder ahora pero puedo ayudarte a crear actividades. ¿Quieres?",
-  "Estoy con problemas en este momento. ¿Te ayudo con una actividad?",
-  "No puedo conversar ahora, pero sí puedo sugerirte actividades. ¿Te parece bien?"
+const fallbackMessages = [
+  "Lo siento, no puedo responder ahora pero puedo ayudarte con actividades. ¿Quieres?",
+  "Estoy con problemas en este momento. ¿Te ayudo proponiendo una actividad?",
 ];
 
 export default function User() {
@@ -36,13 +35,14 @@ export default function User() {
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-  const [frase, setFrase] = useState("");
   const [loading, setLoading] = useState(false);
+  const [frase, setFrase] = useState("");
+  const [waitingForYes, setWaitingForYes] = useState(false); // ← Nuevo estado clave
 
-  // ========================= INIT =========================
+  // Init
   useEffect(() => {
     setMessages([
-      { role: "ai", text: `Hola ${user?.nombre || "🤍"}, estoy contigo.` },
+      { role: "ai", text: `Hola ${user?.nombre || "🤍"}, estoy aquí contigo.` },
       { role: "ai", text: "Cuéntame cómo te sientes..." },
     ]);
 
@@ -53,91 +53,97 @@ export default function User() {
     return () => clearInterval(interval);
   }, [user?.nombre]);
 
-  // ========================= ASK AI =========================
-  const askAI = async (message) => {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
+  // Detectar si quiere actividad
+  const shouldTriggerActivity = (text) => {
+    const lower = text.toLowerCase();
+    return activityTriggers.some(word => lower.includes(word));
+  };
 
+  // Detectar respuesta positiva (sí)
+  const isPositiveResponse = (text) => {
+    const lower = text.toLowerCase().trim();
+    return ["si", "sí", "vale", "ok", "quiero", "dale", "claro", "sí por favor"].some(word => 
+      lower === word || lower.includes(word)
+    );
+  };
+
+  const askAI = async (message) => {
     for (const url of API_URLS) {
       try {
         const res = await fetch(`${url}/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          signal: controller.signal,
           body: JSON.stringify({
-            message: `${SYSTEM_PROMPT}\n\nUsuario: ${message}`
+            message: `${SYSTEM_PROMPT}\nUsuario: ${message}`
           }),
         });
 
         if (res.ok) {
           const data = await res.json();
-          if (data?.reply?.trim()) {
-            clearTimeout(timeout);
-            return data.reply;
-          }
+          if (data?.reply) return data.reply;
         }
       } catch (e) {
-        console.warn("IA caída:", url);
+        console.warn("API caída");
       }
     }
-
-    clearTimeout(timeout);
-    return null; // null = IA caída
+    return null;
   };
 
-  // ========================= SEND MESSAGE =========================
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
 
     const text = input.trim();
-    const lower = text.toLowerCase();
-
-    setMessages((prev) => [...prev, { role: "user", text }]);
+    setMessages(prev => [...prev, { role: "user", text }]);
     setInput("");
     setLoading(true);
 
-    // Trigger de actividad
-    const wantsActivity = activityTriggers.some((w) => lower.includes(w));
-
-    if (wantsActivity) {
-      setMessages((prev) => [
+    // Si estamos esperando confirmación de actividad
+    if (waitingForYes && isPositiveResponse(text)) {
+      setMessages(prev => [
         ...prev,
-        {
-          role: "ai",
-          text: "Estoy contigo 🤍 ¿Quieres que te ayude con una actividad?",
-          options: activityOptions
+        { 
+          role: "ai", 
+          text: "¡Genial! Aquí tienes algunas actividades:", 
+          options: activityOptions 
         }
       ]);
+      setWaitingForYes(false);
       setLoading(false);
       return;
     }
 
-    // Llamada normal a IA
+    // Detectar necesidad de actividad
+    if (shouldTriggerActivity(text)) {
+      setMessages(prev => [
+        ...prev,
+        { 
+          role: "ai", 
+          text: "Entiendo... ¿Quieres que te acompañe con una actividad ahora?" 
+        }
+      ]);
+      setWaitingForYes(true);
+      setLoading(false);
+      return;
+    }
+
+    // IA normal
     const reply = await askAI(text);
 
     if (!reply) {
-      // IA caída → mensaje útil
-      setMessages((prev) => [
+      setMessages(prev => [
         ...prev,
-        {
-          role: "ai",
-          text: fallbackAI[Math.floor(Math.random() * fallbackAI.length)],
-          options: activityOptions  // ofrezco botones directamente
-        }
+        { role: "ai", text: fallbackMessages[Math.floor(Math.random() * fallbackMessages.length)] }
       ]);
     } else {
-      setMessages((prev) => [
-        ...prev,
-        { role: "ai", text: reply.split(".")[0] + "." }
-      ]);
+      setMessages(prev => [...prev, { role: "ai", text: reply }]);
     }
 
+    setWaitingForYes(false);
     setLoading(false);
   };
 
-  // ========================= SELECT ACTIVITY =========================
   const handleOptionClick = (opt) => {
-    setMessages((prev) => [...prev, { role: "user", text: opt }]);
+    setMessages(prev => [...prev, { role: "user", text: opt }]);
 
     const nueva = {
       texto: opt,
@@ -148,13 +154,13 @@ export default function User() {
     const data = JSON.parse(localStorage.getItem("actividades") || "[]");
     localStorage.setItem("actividades", JSON.stringify([...data, nueva]));
 
-    setMessages((prev) => [
+    setMessages(prev => [
       ...prev,
-      { role: "ai", text: `✅ Actividad guardada: ${opt}` },
-      { role: "ai", text: "Redirigiendo..." }
+      { role: "ai", text: `✅ Guardado: ${opt}` },
+      { role: "ai", text: "Redirigiendo a tus actividades..." }
     ]);
 
-    setTimeout(() => navigate("/actividades"), 1500);
+    setTimeout(() => navigate("/actividades"), 1400);
   };
 
   const logout = () => {
@@ -164,7 +170,6 @@ export default function User() {
 
   return (
     <div className="app-layout">
-      {/* LEFT PANEL */}
       <div className="left-panel">
         <h4>💡 Acompañamiento</h4>
         <div className="quote-box">{frase}</div>
@@ -176,11 +181,10 @@ export default function User() {
         </button>
       </div>
 
-      {/* CENTER PANEL */}
       <div className="center-panel">
-        <ChatBox
-          messages={messages}
-          onOptionClick={handleOptionClick}
+        <ChatBox 
+          messages={messages} 
+          onOptionClick={handleOptionClick} 
         />
         <InputBox
           input={input}
@@ -190,15 +194,12 @@ export default function User() {
         />
       </div>
 
-      {/* RIGHT PANEL */}
       <div className="right-panel">
         <button onClick={() => navigate("/rutina")}>🧘 Rutina</button>
         <button onClick={() => navigate("/actividades")}>🎯 Actividades</button>
         <button onClick={() => navigate("/estadisticas")}>📊 Estadísticas</button>
         <button onClick={() => navigate("/diario")}>📓 Diario</button>
-        {user?.role === "admin" && (
-          <button onClick={() => navigate("/admin")}>🛠 Admin</button>
-        )}
+        {user?.role === "admin" && <button onClick={() => navigate("/admin")}>🛠 Admin</button>}
       </div>
     </div>
   );
