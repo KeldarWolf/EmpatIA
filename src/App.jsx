@@ -28,12 +28,16 @@ function PrivateRoute({ children, role }) {
     return <Navigate to="/" replace />;
   }
 
-  // 🔥 normalizar role (CLAVE)
   const userRole = (session.role || "").toLowerCase().trim();
 
-  // ❌ no tiene permisos
+  // 🔥 SI NO COINCIDE EL ROL
   if (role && userRole !== role) {
-    return <Navigate to="/user" replace />;
+    return (
+      <Navigate
+        to={userRole === "admin" ? "/admin" : "/user"}
+        replace
+      />
+    );
   }
 
   return children;
@@ -79,7 +83,7 @@ export default function App() {
       <Route
         path="/rutina"
         element={
-          <PrivateRoute role="user">
+          <PrivateRoute>
             <Rutina />
           </PrivateRoute>
         }
@@ -88,7 +92,7 @@ export default function App() {
       <Route
         path="/actividades"
         element={
-          <PrivateRoute role="user">
+          <PrivateRoute>
             <Actividades />
           </PrivateRoute>
         }
@@ -97,7 +101,7 @@ export default function App() {
       <Route
         path="/estadisticas"
         element={
-          <PrivateRoute role="user">
+          <PrivateRoute>
             <Estadisticas />
           </PrivateRoute>
         }
@@ -106,7 +110,7 @@ export default function App() {
       <Route
         path="/motivacion"
         element={
-          <PrivateRoute role="user">
+          <PrivateRoute>
             <Motivacion />
           </PrivateRoute>
         }
@@ -115,7 +119,7 @@ export default function App() {
       <Route
         path="/diario"
         element={
-          <PrivateRoute role="user">
+          <PrivateRoute>
             <Diario />
           </PrivateRoute>
         }
@@ -124,7 +128,7 @@ export default function App() {
       <Route
         path="/gustos"
         element={
-          <PrivateRoute role="user">
+          <PrivateRoute>
             <Gustos />
           </PrivateRoute>
         }
@@ -133,7 +137,7 @@ export default function App() {
       <Route
         path="/configuracion"
         element={
-          <PrivateRoute role="user">
+          <PrivateRoute>
             <Configuracion />
           </PrivateRoute>
         }
