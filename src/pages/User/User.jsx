@@ -1,8 +1,9 @@
 import express from "express";
-import fetch from "node-fetch";
+import cors from "cors";
 
 const app = express();
 
+app.use(cors());
 app.use(express.json());
 
 app.post("/chat", async (req, res) => {
@@ -32,16 +33,18 @@ app.post("/chat", async (req, res) => {
 
     const data = await r.json();
 
-    // 🔌 DEVOLUCIÓN DIRECTA (SIN FILTRO)
-    res.json(data);
+    const reply =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    res.json({ reply });
 
   } catch (error) {
-    console.error("CHAT ERROR:", error);
-    res.status(500).json(error);
+    console.error(error);
+    res.status(500).json({ reply: "Error conexión" });
   }
 });
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log("🚀 Chat listo en puerto", PORT);
+  console.log("Chat IA activo en puerto", PORT);
 });
