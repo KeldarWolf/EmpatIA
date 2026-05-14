@@ -6,55 +6,31 @@ import ChatBox from "./ChatBox";
 import InputBox from "./InputBox";
 import frases from "./frases";
 
-const API_URLS = [
-  "http://localhost:3001",
-  "https://empatia-backend.onrender.com"
-];
-
-// 🤖 IA REAL + fallback
-const askAI = async (message, userName) => {
-  for (const url of API_URLS) {
-    try {
-      const res = await fetch(`${url}/chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: `Usuario ${userName || "anónimo"}: ${message}`
-        }),
-      });
-
-      if (!res.ok) continue;
-
-      const data = await res.json();
-
-      if (data?.reply) {
-        return data.reply;
-      }
-
-    } catch (e) {
-      console.warn("Error conexión:", url);
-    }
-  }
-
-  return "No pude conectar con la IA 😢";
+const isConfused = (text) => {
+  const t = text.toLowerCase();
+  return (
+    t.includes("no se") ||
+    t.includes("no sé") ||
+    t.includes("nose") ||
+    t.includes("que hacer") ||
+    t.includes("qué hacer") ||
+    t.includes("aburrido") ||
+    t.includes("no tengo idea")
+  );
 };
 
 export default function User() {
   const navigate = useNavigate();
 
-  // 🔐 usuario seguro
   const user = JSON.parse(localStorage.getItem("usuario") || "null");
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [frase, setFrase] = useState("");
   const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState(null);
+  const [options, setOptions] = useState([]);
 
-  // =========================
-  // INIT
-  // =========================
   useEffect(() => {
     setMessages([
       {
@@ -63,7 +39,7 @@ export default function User() {
       },
       {
         role: "ai",
-        text: "Cuéntame cómo te sientes o qué necesitas",
+        text: "Cuéntame cómo te sientes o si quieres hacer algo",
       },
     ]);
 
@@ -74,17 +50,20 @@ export default function User() {
     return () => clearInterval(interval);
   }, []);
 
-  // =========================
-  // LOGOUT
-  // =========================
-  const logout = () => {
-    localStorage.removeItem("usuario");
-    navigate("/");
+  const getSteps = (act) => {
+    const map = {
+      Caminar: "Camina 10 minutos sin distracciones.",
+      Meditar: "Respira profundo 5 minutos.",
+      Música: "Escucha música que te calme o motive.",
+      "Respirar profundo": "Inhala 4s, exhala 6s.",
+      Estiramientos: "Estira lentamente todo tu cuerpo.",
+      "Ducha relajante": "Ducha consciente sin prisa.",
+      "Escribir lo que siento": "Escribe todo sin filtro.",
+    };
+
+    return map[act] || "Hazlo a tu ritmo 🤍";
   };
 
-  // =========================
-  // CHAT IA
-  // =========================
   const sendMessage = async () => {
     if (!input.trim()) return;
 
@@ -94,26 +73,78 @@ export default function User() {
     setInput("");
     setLoading(true);
 
-    const reply = await askAI(text, user?.nombre);
+    // 🧠 CASO: usuario perdido
+    if (isConfused(text)) {
+      const opts = [
+        "Caminar",
+        "Respirar profundo",
+        "Escuchar música",
+        "Escribir lo que siento",
+      ];
 
+      setStep("select_activity");
+      setOptions(opts);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: "Está bien 🤍 elige algo simple para empezar:",
+          options: opts,
+        },
+      ]);
+
+      setLoading(false);
+      return;
+    }
+
+    // 🧠 respuesta normal corta y natural
     setMessages((prev) => [
       ...prev,
-      { role: "ai", text: reply }
+      {
+        role: "ai",
+        text: "Te entiendo 🤍 si quieres puedo sugerirte algo para sentirte mejor",
+      },
     ]);
 
     setLoading(false);
   };
 
-  // =========================
-  // UI
-  // =========================
+  const handleOptionClick = (opt) => {
+    setMessages((prev) => [...prev, { role: "user", text: opt }]);
+
+    const nueva = {
+      texto: opt,
+      tipo: "Actividad",
+      pasos: getSteps(opt),
+      fecha: new Date().toISOString(),
+    };
+
+    const data = JSON.parse(localStorage.getItem("actividades") || "[]");
+    localStorage.setItem("actividades", JSON.stringify([...data, nueva]));
+
+    setMessages((prev) => [
+      ...prev,
+      { role: "ai", text: `✅ Actividad creada: ${opt}` },
+      { role: "ai", text: "👉 Te llevo a actividades..." },
+    ]);
+
+    setStep(null);
+
+    setTimeout(() => navigate("/actividades"), 2000);
+  };
+
+  const logout = () => {
+    localStorage.removeItem("usuario");
+    navigate("/");
+  };
+
   return (
     <div className="app-layout">
 
-      {/* LEFT PANEL */}
+      {/* LEFT */}
       <div className="left-panel">
         <h4>💡 Acompañamiento</h4>
-
         <div className="quote-box">{frase}</div>
 
         <div style={{ marginTop: 20, color: "#00e5ff" }}>
@@ -136,11 +167,11 @@ export default function User() {
         </button>
       </div>
 
-      {/* CENTER PANEL */}
+      {/* CENTER */}
       <div className="center-panel">
         <ChatBox
           messages={messages}
-          onOptionClick={() => {}}
+          onOptionClick={handleOptionClick}
         />
 
         <InputBox
@@ -151,7 +182,7 @@ export default function User() {
         />
       </div>
 
-      {/* RIGHT PANEL */}
+      {/* RIGHT */}
       <div className="right-panel">
         <button onClick={() => navigate("/rutina")}>🧘 Rutina</button>
         <button onClick={() => navigate("/actividades")}>🎯 Actividades</button>
