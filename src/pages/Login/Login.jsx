@@ -4,7 +4,6 @@ import { styles } from "./Login.styles";
 import LoginMatrix from "./LoginMatrix";
 
 export default function Login() {
-
   const API = "https://empatia-backend.onrender.com/api/users";
   const navigate = useNavigate();
 
@@ -45,16 +44,18 @@ export default function Login() {
         return;
       }
 
-      // 💾 guardar sesión
-      localStorage.setItem(
-        "usuario",
-        JSON.stringify(data.user)
-      );
+      // 🔥 NORMALIZAR ROLE
+      const role = (data.user?.role || "").toLowerCase().trim();
+
+      console.log("LOGIN OK:", data);
+      console.log("ROLE NORMALIZADO:", role);
+
+      localStorage.setItem("usuario", JSON.stringify(data.user));
 
       alert(`Bienvenido ${data.user.nombre}`);
 
-      // 🚪 redirección por rol
-      if (data.user.role === "admin") {
+      // 🚪 REDIRECCIÓN SEGURA
+      if (role === "admin") {
         navigate("/admin");
       } else {
         navigate("/user");
@@ -75,19 +76,14 @@ export default function Login() {
       <div style={styles.centerBlock}>
         <div style={styles.card}>
           <h1 style={styles.title}>EmpatIA</h1>
-          <p style={styles.subtitle}>
-            IA emocional en tiempo real
-          </p>
+          <p style={styles.subtitle}>IA emocional en tiempo real</p>
 
           <div style={styles.formBox}>
             <input
               placeholder="Nombre de usuario"
               value={form.nombre}
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  nombre: e.target.value
-                })
+                setForm({ ...form, nombre: e.target.value })
               }
               style={styles.input}
             />
@@ -97,10 +93,7 @@ export default function Login() {
               placeholder="Contraseña"
               value={form.password}
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  password: e.target.value
-                })
+                setForm({ ...form, password: e.target.value })
               }
               style={styles.input}
             />
@@ -118,12 +111,6 @@ export default function Login() {
               onClick={() => navigate("/register")}
             >
               Registrarse
-            </button>
-
-            <div style={styles.divider}>o</div>
-
-            <button style={styles.googleBtn}>
-              🔵 Iniciar con Google
             </button>
           </div>
         </div>
