@@ -6,22 +6,74 @@ import ChatBox from "./ChatBox";
 import InputBox from "./InputBox";
 import frases from "./frases";
 
+const API_URLS = [
+  "http://localhost:3001",
+  "https://empatia-backend.onrender.com"
+];
+
+// =========================
+// NORMALIZAR RESPUESTA IA
+// =========================
+const cleanReply = (text) => {
+  if (!text) return "Te escucho 🤍";
+  return text.split(".")[0]; // respuesta corta
+};
+
+// =========================
+// IA CONNECTION
+// =========================
+const askAI = async (message, userName) => {
+  for (const url of API_URLS) {
+    try {
+      const res = await fetch(`${url}/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: `Usuario ${userName || "anónimo"}: ${message}`
+        }),
+      });
+
+      if (!res.ok) continue;
+
+      const data = await res.json();
+
+      if (data?.reply) {
+        return cleanReply(data.reply);
+      }
+
+    } catch (e) {
+      console.warn("Error conexión:", url);
+    }
+  }
+
+  return "Te escucho 🤍";
+};
+
 export default function User() {
   const navigate = useNavigate();
+
+  const user = JSON.parse(localStorage.getItem("usuario") || "null");
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [frase, setFrase] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const [step, setStep] = useState(null);
-  const [options, setOptions] = useState([]);
-  const [pendingActivity, setPendingActivity] = useState(null);
-
+  // =========================
+  // INIT CHAT
+  // =========================
   useEffect(() => {
     setMessages([
-      { role: "ai", text: "Hola 🤍 estoy contigo" },
-      { role: "ai", text: "Cuéntame cómo te sientes o qué quieres hacer" },
+      {
+        role: "ai",
+        text: `Hola ${user?.nombre || "🤍"} estoy contigo`,
+      },
+      {
+        role: "ai",
+        text: "Cuéntame cómo te sientes",
+      },
     ]);
 
     const interval = setInterval(() => {
@@ -31,221 +83,86 @@ export default function User() {
     return () => clearInterval(interval);
   }, []);
 
-  // 🧠 opciones base
-  const getOptions = () => [
-    "Caminar",
-    "Meditar",
-    "Música",
-    "Cambiar opciones",
-    "No sé cuál",
-  ];
-
-  const getOptionsAlt = () => [
-    "Respirar profundo",
-    "Estiramientos",
-    "Ducha relajante",
-    "Escribir lo que siento",
-    "Cambiar opciones",
-    "No sé cuál",
-  ];
-
-  // 🧠 pasos
-  const getSteps = (act) => {
-    const map = {
-      Caminar: "Camina 10 min sin distracciones.",
-      Meditar: "Respira profundo 5 min.",
-      Música: "Escucha música relajante o motivante.",
-      "Respirar profundo": "Inhala 4s, exhala 6s.",
-      Estiramientos: "Estira lentamente todo el cuerpo.",
-      "Ducha relajante": "Ducha consciente sin prisa.",
-      "Escribir lo que siento": "Escribe todo sin filtro.",
-    };
-    return map[act] || "Hazlo a tu ritmo 🤍";
+  // =========================
+  // LOGOUT
+  // =========================
+  const logout = () => {
+    localStorage.removeItem("usuario");
+    navigate("/");
   };
 
-  // 🤍 FLUJO GUIADO cuando no sabe qué elegir
-  const startGuidedFlow = () => {
-    setStep("guided");
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "ai",
-        text: "Está bien 🤍 te ayudo a elegir",
-      },
-      {
-        role: "ai",
-        text: "Primero dime esto: ¿cómo te quieres sentir?",
-        options: [
-          "Más tranquilo/a",
-          "Con más energía",
-          "Despejar la mente",
-        ],
-      },
-    ]);
-  };
-
-  // 🤍 segundo paso del flujo guiado
-  const handleGuidedChoice = (opt) => {
-    setMessages((prev) => [...prev, { role: "user", text: opt }]);
-
-    let suggestions = [];
-
-    if (opt === "Más tranquilo/a") {
-      suggestions = ["Meditar", "Respirar profundo", "Ducha relajante"];
-    }
-
-    if (opt === "Con más energía") {
-      suggestions = ["Caminar", "Estiramientos", "Música"];
-    }
-
-    if (opt === "Despejar la mente") {
-      suggestions = ["Escribir lo que siento", "Caminar", "Música"];
-    }
-
-    setStep("select_activity");
-
-    setOptions(suggestions);
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "ai",
-        text: "Perfecto 🤍 mira estas opciones que pueden ayudarte:",
-        options: suggestions,
-      },
-    ]);
-  };
-
-  // 🔘 clicks opciones
-  const handleOptionClick = (opt) => {
-    setMessages((prev) => [...prev, { role: "user", text: opt }]);
-
-    // cambiar opciones
-    if (opt === "Cambiar opciones") {
-      const newOpts = options.includes("Caminar")
-        ? getOptionsAlt()
-        : getOptions();
-
-      setOptions(newOpts);
-
-      setMessages((prev) => [
-        ...prev,
-        { role: "ai", text: "Aquí tienes otras opciones 👇", options: newOpts },
-      ]);
-      return;
-    }
-
-    // ❗ NO SÉ CUÁL → ahora pregunta, NO resuelve
-    if (opt === "No sé cuál") {
-      startGuidedFlow();
-      return;
-    }
-
-    // flujo guiado emocional
-    if (step === "guided") {
-      handleGuidedChoice(opt);
-      return;
-    }
-
-    // crear actividad
-    if (step === "select_activity") {
-      const nueva = {
-        texto: opt,
-        tipo: "Actividad",
-        pasos: getSteps(opt),
-        fecha: new Date().toISOString(),
-      };
-
-      const data = JSON.parse(localStorage.getItem("actividades") || "[]");
-      localStorage.setItem("actividades", JSON.stringify([...data, nueva]));
-
-      setMessages((prev) => [
-        ...prev,
-        { role: "ai", text: `✅ Actividad creada: ${opt}` },
-        { role: "ai", text: "👉 Redirigiendo en 3 segundos..." },
-      ]);
-
-      setStep(null);
-
-      setTimeout(() => navigate("/actividades"), 3000);
-      return;
-    }
-
-    // inicio relajación
-    if (opt === "Relajación") {
-      setStep("select_activity");
-
-      const base = getOptions();
-
-      setOptions(base);
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text: "¿Qué tipo de relajación te gustaría hacer?",
-          options: base,
-        },
-      ]);
-    }
-  };
-
-  // 💬 mensaje libre
+  // =========================
+  // SEND MESSAGE
+  // =========================
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    const text = input.toLowerCase();
+    const text = input;
 
-    setMessages((prev) => [...prev, { role: "user", text: input }]);
+    setMessages((prev) => [...prev, { role: "user", text }]);
     setInput("");
     setLoading(true);
 
-    const wantsActivity =
-      text.includes("actividad") ||
-      text.includes("actividades") ||
-      text.includes("hacer algo");
-
-    if (wantsActivity) {
-      setStep("select_activity");
-
-      const base = getOptions();
-
-      setOptions(base);
+    try {
+      const reply = await askAI(text, user?.nombre);
 
       setMessages((prev) => [
         ...prev,
         {
           role: "ai",
-          text: "¿Qué te gustaría hacer?",
-          options: base,
+          text: reply,
         },
       ]);
-
-      setLoading(false);
-      return;
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: "Te escucho 🤍",
+        },
+      ]);
     }
-
-    setMessages((prev) => [
-      ...prev,
-      { role: "ai", text: "Entiendo 🤍 cuéntame un poco más" },
-    ]);
 
     setLoading(false);
   };
 
+  // =========================
+  // UI
+  // =========================
   return (
     <div className="app-layout">
 
+      {/* LEFT PANEL */}
       <div className="left-panel">
         <h4>💡 Acompañamiento</h4>
+
         <div className="quote-box">{frase}</div>
+
+        <div style={{ marginTop: 20, color: "#00e5ff" }}>
+          👤 {user?.nombre || "Usuario"}
+        </div>
+
+        <button
+          onClick={logout}
+          style={{
+            marginTop: 10,
+            padding: "8px 12px",
+            background: "#ff3b3b",
+            color: "#fff",
+            border: "none",
+            borderRadius: 8,
+            cursor: "pointer",
+          }}
+        >
+          Cerrar sesión
+        </button>
       </div>
 
+      {/* CENTER PANEL */}
       <div className="center-panel">
         <ChatBox
           messages={messages}
-          onOptionClick={handleOptionClick}
+          onOptionClick={() => {}}
         />
 
         <InputBox
@@ -256,14 +173,18 @@ export default function User() {
         />
       </div>
 
+      {/* RIGHT PANEL */}
       <div className="right-panel">
         <button onClick={() => navigate("/rutina")}>🧘 Rutina</button>
         <button onClick={() => navigate("/actividades")}>🎯 Actividades</button>
-
-  <button onClick={() => navigate("/estadisticas")}>
-    📊 Estadísticas de progreso
-  </button>
+        <button onClick={() => navigate("/estadisticas")}>📊 Estadísticas</button>
         <button onClick={() => navigate("/diario")}>📓 Diario</button>
+
+        {user?.role === "admin" && (
+          <button onClick={() => navigate("/admin")}>
+            🛠 Admin
+          </button>
+        )}
       </div>
 
     </div>
