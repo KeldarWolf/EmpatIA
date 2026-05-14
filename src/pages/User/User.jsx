@@ -6,40 +6,40 @@ import ChatBox from "./ChatBox";
 import InputBox from "./InputBox";
 import frases from "./frases";
 
-const API_URLS = [
-  "http://localhost:3001",
-  "https://empatia-backend.onrender.com"
-];
+const API_URL = "https://empatia-backend.onrender.com/api/chat";
 
-// 🤖 IA fallback
-const askAI = async (message) => {
-  for (const url of API_URLS) {
-    try {
-      const res = await fetch(`${url}/chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ message }),
-      });
+// 🤖 IA REAL (SIN FALLBACK ROTO)
+const askAI = async (message, user) => {
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message,
+        user, // 👈 IMPORTANTE: enviamos usuario a la IA
+      }),
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (res.ok && data?.reply) {
-        return data.reply;
-      }
-    } catch (e) {
-      console.warn("Error conexión:", url);
+    if (res.ok && data?.reply) {
+      return data.reply;
     }
-  }
 
-  return "No pude conectar con la IA 😢";
+    return "No pude entender la respuesta de la IA 😢";
+
+  } catch (error) {
+    console.warn("Error IA:", error);
+    return "No pude conectar con la IA 😢";
+  }
 };
 
 export default function User() {
   const navigate = useNavigate();
 
-  // 🔐 usuario guardado en login
+  // 🔐 usuario real
   const user = JSON.parse(localStorage.getItem("usuario") || "null");
 
   const [messages, setMessages] = useState([]);
@@ -78,7 +78,7 @@ export default function User() {
   };
 
   // =========================
-  // CHAT IA
+  // SEND MESSAGE
   // =========================
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -89,7 +89,7 @@ export default function User() {
     setInput("");
     setLoading(true);
 
-    const reply = await askAI(text);
+    const reply = await askAI(text, user);
 
     setMessages((prev) => [...prev, { role: "ai", text: reply }]);
 
@@ -102,7 +102,7 @@ export default function User() {
   return (
     <div className="app-layout">
 
-      {/* LEFT PANEL */}
+      {/* LEFT */}
       <div className="left-panel">
         <h4>💡 Acompañamiento</h4>
 
@@ -128,7 +128,7 @@ export default function User() {
         </button>
       </div>
 
-      {/* CENTER PANEL */}
+      {/* CENTER */}
       <div className="center-panel">
         <ChatBox
           messages={messages}
@@ -143,14 +143,13 @@ export default function User() {
         />
       </div>
 
-      {/* RIGHT PANEL */}
+      {/* RIGHT */}
       <div className="right-panel">
         <button onClick={() => navigate("/rutina")}>🧘 Rutina</button>
         <button onClick={() => navigate("/actividades")}>🎯 Actividades</button>
         <button onClick={() => navigate("/estadisticas")}>📊 Estadísticas</button>
         <button onClick={() => navigate("/diario")}>📓 Diario</button>
 
-        {/* admin protegido visualmente */}
         {user?.role === "admin" && (
           <button onClick={() => navigate("/admin")}>
             🛠 Admin
