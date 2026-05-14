@@ -6,11 +6,9 @@ import InputBox from "./InputBox";
 import frases from "./frases";
 
 const API_URLS = [
-  "https://empatia-backend.onrender.com",   // ← Prioridad a la nube
+  "https://empatia-backend.onrender.com",   // Prioridad
   "http://localhost:3001"
 ];
-
-const SYSTEM_PROMPT = "Eres un acompañante emocional cálido. Responde breve y natural.";
 
 export default function User() {
   const navigate = useNavigate();
@@ -37,20 +35,27 @@ export default function User() {
   const askAI = async (message) => {
     for (const url of API_URLS) {
       try {
+        console.log(`Intentando: ${url}/chat`);
+
         const res = await fetch(`${url}/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: `${SYSTEM_PROMPT}\nUsuario: ${message}`
+          body: JSON.stringify({ 
+            message: message 
           }),
         });
 
+        console.log(`Status: ${res.status} - ${url}`);
+
         if (res.ok) {
           const data = await res.json();
-          if (data?.reply) return data.reply;
+          console.log("Respuesta recibida:", data);
+          return data?.reply || data?.response || data?.message;
+        } else if (res.status === 404) {
+          console.error("❌ Endpoint /chat no encontrado en el backend");
         }
       } catch (e) {
-        console.warn(`API no disponible: ${url}`);
+        console.warn(`Error conectando a ${url}`);
       }
     }
     return null;
