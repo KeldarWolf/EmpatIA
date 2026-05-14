@@ -12,22 +12,18 @@ const API_URLS = [
 ];
 
 // =========================
-// PROMPT IA
+// IA PROMPT SIMPLE
 // =========================
 const SYSTEM_PROMPT = `
 Eres una IA de acompañamiento emocional.
 
 Reglas:
-- Responde SIEMPRE corto (máximo 1–2 frases).
-- Tono humano, cercano, calmado.
-- Evita respuestas largas o técnicas.
-- Si el usuario está triste o mal:
-  valida emoción y pregunta suavemente si quiere hablar más.
-- Si el usuario dice:
-  "no sé qué hacer", "estoy aburrido", "actividades", "actividad"
-  sugiere acompañarlo a una actividad sin imponer.
-- Mantén conversación natural, no listes demasiado.
-- Nunca seas robótico.
+- Responde SIEMPRE breve (1 o 2 frases máximo).
+- Tono humano, cercano y calmado.
+- Acompaña emocionalmente, valida lo que siente la persona.
+- Haz preguntas suaves para seguir la conversación.
+- NO des listas largas.
+- NO respondas como robot.
 `;
 
 // =========================
@@ -56,7 +52,7 @@ const askAI = async (message, userName) => {
     }
   }
 
-  return "Te escucho 🤍";
+  return "Estoy contigo 🤍";
 };
 
 export default function User() {
@@ -67,6 +63,31 @@ export default function User() {
   const [input, setInput] = useState("");
   const [frase, setFrase] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // =========================
+  // ACTIVIDAD TRIGGERS
+  // =========================
+  const activityTriggers = [
+    "no sé qué hacer",
+    "no se que hacer",
+    "estoy aburrido",
+    "estoy aburrida",
+    "actividades",
+    "actividad"
+  ];
+
+  const activityOptions = [
+    "Caminar",
+    "Meditar",
+    "Música",
+    "Respirar",
+    "Estiramientos",
+    "Escribir lo que siento",
+    "Ducha relajante",
+    "Ordenar espacio",
+    "Salir a tomar aire",
+    "Ejercicio ligero"
+  ];
 
   // =========================
   // INIT
@@ -85,41 +106,83 @@ export default function User() {
   }, []);
 
   // =========================
-  // LOGOUT
-  // =========================
-  const logout = () => {
-    localStorage.removeItem("usuario");
-    navigate("/");
-  };
-
-  // =========================
-  // CHAT IA
+  // SEND MESSAGE
   // =========================
   const sendMessage = async () => {
     if (!input.trim()) return;
 
     const text = input;
+    const lower = text.toLowerCase();
 
     setMessages((prev) => [...prev, { role: "user", text }]);
     setInput("");
     setLoading(true);
 
+    // =========================
+    // 🔥 SOLO ACTIVIDADES SI DETECTA PALABRA CLAVE
+    // =========================
+    const wantsActivity = activityTriggers.some((w) =>
+      lower.includes(w)
+    );
+
+    if (wantsActivity) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: "Te acompaño 🤍 ¿te gustaría hacer algo para sentirte mejor?",
+          options: activityOptions
+        }
+      ]);
+
+      setLoading(false);
+      return;
+    }
+
+    // =========================
+    // 🤖 IA NORMAL (CONVERSACIÓN)
+    // =========================
     try {
       const reply = await askAI(text, user?.nombre);
 
       setMessages((prev) => [
         ...prev,
-        { role: "ai", text: reply }
+        {
+          role: "ai",
+          text: reply?.split(".")[0] // breve
+        }
       ]);
-
-    } catch (error) {
+    } catch {
       setMessages((prev) => [
         ...prev,
-        { role: "ai", text: "Te escucho 🤍" }
+        { role: "ai", text: "Estoy contigo 🤍" }
       ]);
     }
 
     setLoading(false);
+  };
+
+  // =========================
+  // CLICK ACTIVIDAD
+  // =========================
+  const handleOptionClick = (opt) => {
+    const nueva = {
+      texto: opt,
+      tipo: "Actividad",
+      fecha: new Date().toISOString()
+    };
+
+    const data = JSON.parse(localStorage.getItem("actividades") || "[]");
+    localStorage.setItem("actividades", JSON.stringify([...data, nueva]));
+
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", text: opt },
+      { role: "ai", text: `✅ Actividad creada: ${opt}` },
+      { role: "ai", text: "👉 Te llevo a actividades" }
+    ]);
+
+    setTimeout(() => navigate("/actividades"), 1200);
   };
 
   // =========================
@@ -128,37 +191,19 @@ export default function User() {
   return (
     <div className="app-layout">
 
-      {/* LEFT PANEL */}
       <div className="left-panel">
         <h4>💡 Acompañamiento</h4>
-
         <div className="quote-box">{frase}</div>
 
         <div style={{ marginTop: 20, color: "#00e5ff" }}>
           👤 {user?.nombre || "Usuario"}
         </div>
-
-        <button
-          onClick={logout}
-          style={{
-            marginTop: 10,
-            padding: "8px 12px",
-            background: "#ff3b3b",
-            color: "#fff",
-            border: "none",
-            borderRadius: 8,
-            cursor: "pointer",
-          }}
-        >
-          Cerrar sesión
-        </button>
       </div>
 
-      {/* CENTER PANEL */}
       <div className="center-panel">
         <ChatBox
           messages={messages}
-          onOptionClick={() => {}}
+          onOptionClick={handleOptionClick}
         />
 
         <InputBox
@@ -169,7 +214,6 @@ export default function User() {
         />
       </div>
 
-      {/* RIGHT PANEL */}
       <div className="right-panel">
         <button onClick={() => navigate("/rutina")}>🧘 Rutina</button>
         <button onClick={() => navigate("/actividades")}>🎯 Actividades</button>
