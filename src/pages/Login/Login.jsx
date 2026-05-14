@@ -6,15 +6,15 @@ import LoginMatrix from "./LoginMatrix";
 export default function Login() {
   const navigate = useNavigate();
 
-  const [user, setUser] = useState({
-    user: "",
+  const [form, setForm] = useState({
+    nombre: "",
     password: ""
   });
 
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!user.user || !user.password) {
+    if (!form.nombre || !form.password) {
       alert("Completa usuario y contraseña");
       return;
     }
@@ -30,8 +30,8 @@ export default function Login() {
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            nombre: user.user,
-            password: user.password
+            nombre: form.nombre,
+            password: form.password
           })
         }
       );
@@ -43,19 +43,15 @@ export default function Login() {
         return;
       }
 
-      // guardar sesión
+      // 💾 guardar sesión
       localStorage.setItem(
-        "profile",
-        JSON.stringify({
-          name: data.user.nombre,
-          role: data.user.role,
-          id: data.user.id
-        })
+        "usuario",
+        JSON.stringify(data.user)
       );
 
-      alert("Login exitoso");
+      alert(`Bienvenido ${data.user.nombre}`);
 
-      // redirección por rol
+      // 🚪 redirección por rol
       if (data.user.role === "admin") {
         navigate("/admin");
       } else {
@@ -83,12 +79,12 @@ export default function Login() {
 
           <div style={styles.formBox}>
             <input
-              placeholder="Usuario"
-              value={user.user}
+              placeholder="Nombre de usuario"
+              value={form.nombre}
               onChange={(e) =>
-                setUser({
-                  ...user,
-                  user: e.target.value
+                setForm({
+                  ...form,
+                  nombre: e.target.value
                 })
               }
               style={styles.input}
@@ -97,10 +93,10 @@ export default function Login() {
             <input
               type="password"
               placeholder="Contraseña"
-              value={user.password}
+              value={form.password}
               onChange={(e) =>
-                setUser({
-                  ...user,
+                setForm({
+                  ...form,
                   password: e.target.value
                 })
               }
