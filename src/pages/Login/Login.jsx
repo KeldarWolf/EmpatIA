@@ -8,80 +8,38 @@ const router = express.Router();
 // ======================================================
 // REGISTER
 // ======================================================
-
 router.post("/register", async (req, res) => {
-
   try {
-
     console.log("📩 REGISTER:", req.body);
 
-    const {
-      nombre,
-      edad,
-      email,
-      password
-    } = req.body;
+    const { nombre, edad, email, password } = req.body;
 
-    // validar datos
     if (!nombre || !email || !password) {
-
-      return res.status(400).json({
-        error: "Faltan datos"
-      });
+      return res.status(400).json({ error: "Faltan datos" });
     }
 
-    // verificar si ya existe
-    const existingUser = await pool.query(
-      `
-      SELECT *
-      FROM usuario
-      WHERE email = $1
-      `,
+    // verificar usuario
+    const existing = await pool.query(
+      `SELECT id_usuario FROM usuario WHERE email = $1`,
       [email]
     );
 
-    if (existingUser.rows.length > 0) {
-
-      return res.status(400).json({
-        error: "El usuario ya existe"
-      });
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ error: "El usuario ya existe" });
     }
 
     console.log("🔐 Hasheando password...");
 
-    // hash password
     const hash = await bcrypt.hash(password, 10);
 
-    console.log("💾 Guardando usuario...");
-
-    // insertar usuario
     const result = await pool.query(
       `
-      INSERT INTO usuario
-      (
-        nombre,
-        edad,
-        email,
-        password_hash
-      )
-
-      VALUES ($1, $2, $3, $4)
-
-      RETURNING
-      id_usuario,
-      nombre,
-      email,
-      role
+      INSERT INTO usuario (nombre, edad, email, password_hash, role)
+      VALUES ($1, $2, $3, $4, 'user')
+      RETURNING id_usuario, nombre, email, role
       `,
-      [
-        nombre,
-        edad || null,
-        email,
-        hash
-      ]
+      [nombre, edad || null, email, hash]
     );
-
-    console.log("✅ USUARIO CREADO");
 
     return res.json({
       ok: true,
@@ -89,29 +47,8 @@ router.post("/register", async (req, res) => {
     });
 
   } catch (error) {
-
-    console.error("❌ REGISTER ERROR COMPLETO:");
-    console.error(error);
-
-    if (error.code) {
-      console.error("CODE:", error.code);
-    }
-
-    if (error.detail) {
-      console.error("DETAIL:", error.detail);
-    }
-
-    if (error.hint) {
-      console.error("HINT:", error.hint);
-    }
-
-    if (error.stack) {
-      console.error("STACK:", error.stack);
-    }
-
-    return res.status(500).json({
-      error: error.message
-    });
+    console.error("❌ REGISTER ERROR:", error);
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -119,86 +56,42 @@ router.post("/register", async (req, res) => {
 // ======================================================
 // LOGIN
 // ======================================================
-
 router.post("/login", async (req, res) => {
-
   try {
-
     console.log("📩 LOGIN:", req.body);
 
-    const {
-      email,
-      password
-    } = req.body;
+    const { email, password } = req.body;
 
-    // validar datos
     if (!email || !password) {
-
-      return res.status(400).json({
-        error: "Faltan datos"
-      });
+      return res.status(400).json({ error: "Faltan datos" });
     }
 
-    console.log("🔍 Buscando usuario...");
-
-    // buscar usuario
     const result = await pool.query(
-      `
-      SELECT *
-      FROM usuario
-      WHERE email = $1
-      `,
+      `SELECT * FROM usuario WHERE email = $1`,
       [email]
     );
 
-    console.log("📦 RESULTADO QUERY:", result.rows);
-
-    // usuario no encontrado
     if (result.rows.length === 0) {
-
-      return res.status(401).json({
-        error: "Usuario no encontrado"
-      });
+      return res.status(401).json({ error: "Usuario no encontrado" });
     }
 
     const user = result.rows[0];
 
-    console.log("👤 USER:", user);
-
     console.log("🔐 Comparando password...");
 
-    // ======================================================
-    // TEMPORAL SIN BCRYPT
-    // ======================================================
-
-    const validPassword =
-      password === user.password_hash;
-
-    // ======================================================
-    // CON BCRYPT (USAR DESPUÉS)
-    // ======================================================
-    /*
     const validPassword = await bcrypt.compare(
       password,
       user.password_hash
     );
-    */
 
-    console.log("✅ PASSWORD MATCH:", validPassword);
-
-    // password incorrecta
     if (!validPassword) {
-
-      return res.status(401).json({
-        error: "Contraseña incorrecta"
-      });
+      return res.status(401).json({ error: "Contraseña incorrecta" });
     }
 
     console.log("✅ LOGIN EXITOSO");
 
     return res.json({
       ok: true,
-
       user: {
         id: user.id_usuario,
         nombre: user.nombre,
@@ -208,29 +101,8 @@ router.post("/login", async (req, res) => {
     });
 
   } catch (error) {
-
-    console.error("❌ LOGIN ERROR COMPLETO:");
-    console.error(error);
-
-    if (error.code) {
-      console.error("CODE:", error.code);
-    }
-
-    if (error.detail) {
-      console.error("DETAIL:", error.detail);
-    }
-
-    if (error.hint) {
-      console.error("HINT:", error.hint);
-    }
-
-    if (error.stack) {
-      console.error("STACK:", error.stack);
-    }
-
-    return res.status(500).json({
-      error: error.message
-    });
+    console.error("❌ LOGIN ERROR:", error);
+    return res.status(500).json({ error: error.message });
   }
 });
 
