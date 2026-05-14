@@ -123,45 +123,50 @@ export default function Admin() {
   );
 }
 
-/* =========================
-   ESTILOS (si ya los tienes, ignóralo)
-========================= */
 const styles = {
   container: {
     minHeight: "100vh",
-    background: "radial-gradient(circle, #000, #050505)",
+    background: "radial-gradient(circle at center, #050505, #000)",
     display: "flex",
     justifyContent: "center",
+    alignItems: "center",
     padding: 20,
+    fontFamily: "Arial",
   },
 
   card: {
     width: "100%",
     maxWidth: 900,
-    background: "#111",
+    background: "rgba(10,10,10,0.95)",
+    borderRadius: 20,
     padding: 20,
-    borderRadius: 12,
-    color: "#fff",
+    border: "1px solid rgba(0,229,255,0.2)",
+    boxShadow: "0 0 40px rgba(0,229,255,0.15)",
   },
 
   title: {
     textAlign: "center",
     color: "#00e5ff",
+    fontSize: 26,
+    textShadow: "0 0 10px rgba(0,229,255,0.5)",
   },
 
   list: {
     display: "flex",
     flexDirection: "column",
-    gap: 10,
+    gap: 12,
     marginTop: 20,
   },
 
   userCard: {
     display: "flex",
     justifyContent: "space-between",
-    background: "#1a1a1a",
-    padding: 10,
-    borderRadius: 8,
+    alignItems: "center",
+    background: "#111",
+    padding: 15,
+    borderRadius: 12,
+    border: "1px solid rgba(0,229,255,0.1)",
+    boxShadow: "0 0 10px rgba(0,229,255,0.05)",
   },
 
   actions: {
@@ -175,23 +180,55 @@ const styles = {
     left: 0,
     width: "100%",
     height: "100%",
-    background: "rgba(0,0,0,0.6)",
+    background: "rgba(0,0,0,0.7)",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
   },
 
   modalBox: {
-    background: "#222",
+    width: 350,
+    background: "#111",
     padding: 20,
-    borderRadius: 10,
-    display: "flex",
-    flexDirection: "column",
-    gap: 10,
+    borderRadius: 12,
+    border: "1px solid #00e5ff",
+    boxShadow: "0 0 30px rgba(0,229,255,0.2)",
   },
 
   modalActions: {
     display: "flex",
     justifyContent: "space-between",
+    marginTop: 15,
+  },
+
+  input: {
+    width: "100%",
+    marginTop: 10,
+    padding: 10,
+    background: "#000",
+    color: "#fff",
+    border: "1px solid #00e5ff",
+    borderRadius: 6,
+    outline: "none",
+  },
+
+  button: {
+    background: "#00e5ff",
+    border: "none",
+    padding: "6px 10px",
+    borderRadius: 6,
+    cursor: "pointer",
+    fontWeight: "bold",
+    boxShadow: "0 0 10px rgba(0,229,255,0.2)",
+  },
+
+  deleteBtn: {
+    background: "#ff3b3b",
+    border: "none",
+    padding: "6px 10px",
+    borderRadius: 6,
+    color: "#fff",
+    cursor: "pointer",
+    fontWeight: "bold",
   },
 };
