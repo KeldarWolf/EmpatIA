@@ -11,16 +11,39 @@ const API_URLS = [
   "https://empatia-backend.onrender.com"
 ];
 
-// 🤖 IA REAL
+// =========================
+// PROMPT IA
+// =========================
+const SYSTEM_PROMPT = `
+Eres una IA de acompañamiento emocional.
+
+Reglas:
+- Responde SIEMPRE corto (máximo 1–2 frases).
+- Tono humano, cercano, calmado.
+- Evita respuestas largas o técnicas.
+- Si el usuario está triste o mal:
+  valida emoción y pregunta suavemente si quiere hablar más.
+- Si el usuario dice:
+  "no sé qué hacer", "estoy aburrido", "actividades", "actividad"
+  sugiere acompañarlo a una actividad sin imponer.
+- Mantén conversación natural, no listes demasiado.
+- Nunca seas robótico.
+`;
+
+// =========================
+// IA REQUEST
+// =========================
 const askAI = async (message, userName) => {
   for (const url of API_URLS) {
     try {
       const res = await fetch(`${url}/chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
-          message: `Usuario ${userName || "anónimo"}: ${message}`
-        })
+          message: `${SYSTEM_PROMPT}\n\nUsuario ${userName || "anónimo"}: ${message}`
+        }),
       });
 
       if (!res.ok) continue;
@@ -45,41 +68,13 @@ export default function User() {
   const [frase, setFrase] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // 👉 control de flujo actividades
-  const [activityStep, setActivityStep] = useState("chat"); 
-  // chat | confirm | select
-
-  const activityTriggers = [
-    "no se que hacer",
-    "no sé que hacer",
-    "estoy aburrido",
-    "estoy aburrida",
-    "no tengo nada que hacer",
-    "quiero actividades",
-    "actividades",
-    "actividad"
-  ];
-
-  const activityOptions = [
-    "Caminar",
-    "Meditar",
-    "Música",
-    "Respirar",
-    "Estiramientos",
-    "Escribir lo que siento",
-    "Ducha relajante",
-    "Ordenar espacio",
-    "Salir a tomar aire",
-    "Ejercicio ligero"
-  ];
-
   // =========================
   // INIT
   // =========================
   useEffect(() => {
     setMessages([
       { role: "ai", text: `Hola ${user?.nombre || "🤍"} estoy contigo` },
-      { role: "ai", text: "Cuéntame cómo te sientes" }
+      { role: "ai", text: "Cuéntame cómo te sientes" },
     ]);
 
     const interval = setInterval(() => {
@@ -90,141 +85,41 @@ export default function User() {
   }, []);
 
   // =========================
-  // CREAR ACTIVIDAD
+  // LOGOUT
   // =========================
-  const createActivities = () => {
-    setActivityStep("select");
-
-    setMessages(prev => [
-      ...prev,
-      {
-        role: "ai",
-        text: "Perfecto 🤍 elige una actividad:",
-        options: activityOptions
-      }
-    ]);
+  const logout = () => {
+    localStorage.removeItem("usuario");
+    navigate("/");
   };
 
   // =========================
-  // SEND MESSAGE
+  // CHAT IA
   // =========================
   const sendMessage = async () => {
     if (!input.trim()) return;
 
     const text = input;
-    const lower = text.toLowerCase();
 
-    setMessages(prev => [...prev, { role: "user", text }]);
+    setMessages((prev) => [...prev, { role: "user", text }]);
     setInput("");
     setLoading(true);
 
-    // =========================
-    // 1. SI YA ESTÁ EN SELECCIÓN
-    // =========================
-    if (activityStep === "select") {
-      const nueva = {
-        texto: text,
-        tipo: "Actividad",
-        fecha: new Date().toISOString()
-      };
+    try {
+      const reply = await askAI(text, user?.nombre);
 
-      const data = JSON.parse(localStorage.getItem("actividades") || "[]");
-      localStorage.setItem("actividades", JSON.stringify([...data, nueva]));
-
-      setMessages(prev => [
+      setMessages((prev) => [
         ...prev,
-        { role: "ai", text: `✅ Actividad creada: ${text}` },
-        { role: "ai", text: "👉 Redirigiendo..." }
+        { role: "ai", text: reply }
       ]);
 
-      setActivityStep("chat");
-
-      setTimeout(() => navigate("/actividades"), 1500);
-      setLoading(false);
-      return;
-    }
-
-    // =========================
-    // 2. CONFIRMACIÓN
-    // =========================
-    if (activityStep === "confirm") {
-      const yes = ["si", "sí", "dale", "ok", "claro", "ya", "vale"];
-
-      if (yes.some(w => lower.includes(w))) {
-        createActivities();
-      } else {
-        setMessages(prev => [
-          ...prev,
-          { role: "ai", text: "Está bien 🤍 seguimos conversando" }
-        ]);
-        setActivityStep("chat");
-      }
-
-      setLoading(false);
-      return;
-    }
-
-    // =========================
-    // 3. DETECTAR INTENCIÓN ACTIVIDAD
-    // =========================
-    const wantsActivity = activityTriggers.some(t =>
-      lower.includes(t)
-    );
-
-    if (wantsActivity) {
-      setActivityStep("confirm");
-
-      setMessages(prev => [
+    } catch (error) {
+      setMessages((prev) => [
         ...prev,
-        {
-          role: "ai",
-          text: "Te acompaño 🤍 ¿quieres que hagamos una actividad juntos?"
-        }
+        { role: "ai", text: "Te escucho 🤍" }
       ]);
-
-      setLoading(false);
-      return;
     }
-
-    // =========================
-    // 4. IA NORMAL (CONVERSACIÓN)
-    // =========================
-    const reply = await askAI(text, user?.nombre);
-
-    const shortReply = reply?.split(".")[0];
-
-    setMessages(prev => [
-      ...prev,
-      { role: "ai", text: shortReply }
-    ]);
 
     setLoading(false);
-  };
-
-  // =========================
-  // CLICK ACTIVIDAD
-  // =========================
-  const handleOptionClick = (opt) => {
-    setMessages(prev => [...prev, { role: "user", text: opt }]);
-
-    const nueva = {
-      texto: opt,
-      tipo: "Actividad",
-      fecha: new Date().toISOString()
-    };
-
-    const data = JSON.parse(localStorage.getItem("actividades") || "[]");
-    localStorage.setItem("actividades", JSON.stringify([...data, nueva]));
-
-    setMessages(prev => [
-      ...prev,
-      { role: "ai", text: `✅ Actividad creada: ${opt}` },
-      { role: "ai", text: "👉 Redirigiendo..." }
-    ]);
-
-    setActivityStep("chat");
-
-    setTimeout(() => navigate("/actividades"), 1500);
   };
 
   // =========================
@@ -233,21 +128,37 @@ export default function User() {
   return (
     <div className="app-layout">
 
-      {/* LEFT */}
+      {/* LEFT PANEL */}
       <div className="left-panel">
         <h4>💡 Acompañamiento</h4>
+
         <div className="quote-box">{frase}</div>
 
         <div style={{ marginTop: 20, color: "#00e5ff" }}>
           👤 {user?.nombre || "Usuario"}
         </div>
+
+        <button
+          onClick={logout}
+          style={{
+            marginTop: 10,
+            padding: "8px 12px",
+            background: "#ff3b3b",
+            color: "#fff",
+            border: "none",
+            borderRadius: 8,
+            cursor: "pointer",
+          }}
+        >
+          Cerrar sesión
+        </button>
       </div>
 
-      {/* CENTER */}
+      {/* CENTER PANEL */}
       <div className="center-panel">
         <ChatBox
           messages={messages}
-          onOptionClick={handleOptionClick}
+          onOptionClick={() => {}}
         />
 
         <InputBox
@@ -258,7 +169,7 @@ export default function User() {
         />
       </div>
 
-      {/* RIGHT */}
+      {/* RIGHT PANEL */}
       <div className="right-panel">
         <button onClick={() => navigate("/rutina")}>🧘 Rutina</button>
         <button onClick={() => navigate("/actividades")}>🎯 Actividades</button>
