@@ -1,28 +1,21 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { styles } from "./Login.styles";
+import LoginMatrix from "./LoginMatrix";
 
 export default function Login() {
   const navigate = useNavigate();
 
-  const [form, setForm] = useState({
-    nombre: "",
-    password: "",
+  const [user, setUser] = useState({
+    user: "",
+    password: ""
   });
 
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!form.nombre || !form.password) {
-      alert("Completa todos los campos");
+  const handleLogin = async () => {
+    if (!user.user || !user.password) {
+      alert("Completa usuario y contraseña");
       return;
     }
 
@@ -34,32 +27,44 @@ export default function Login() {
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            nombre: form.nombre,
-            password: form.password,
-          }),
+            nombre: user.user,
+            password: user.password
+          })
         }
       );
 
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.error || "Error al iniciar sesión");
+        alert(data.error || "Usuario o contraseña incorrectos");
         return;
       }
 
-      // guardar usuario completo
-      localStorage.setItem("usuario", JSON.stringify(data.user));
+      // guardar sesión
+      localStorage.setItem(
+        "profile",
+        JSON.stringify({
+          name: data.user.nombre,
+          role: data.user.role,
+          id: data.user.id
+        })
+      );
 
-      console.log("👤 Usuario logueado:", data.user.nombre);
+      alert("Login exitoso");
 
-      navigate("/user");
+      // redirección por rol
+      if (data.user.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/user");
+      }
 
     } catch (error) {
       console.error("❌ ERROR LOGIN:", error);
-      alert("Error de conexión con el servidor");
+      alert("Error conectando con el servidor");
     } finally {
       setLoading(false);
     }
@@ -67,120 +72,64 @@ export default function Login() {
 
   return (
     <div style={styles.container}>
-      <div style={styles.card}>
+      <LoginMatrix />
 
-        <h1 style={styles.title}>EmpatIA</h1>
-        <p style={styles.subtitle}>Inicia sesión para continuar</p>
+      <div style={styles.centerBlock}>
+        <div style={styles.card}>
+          <h1 style={styles.title}>EmpatIA</h1>
+          <p style={styles.subtitle}>
+            IA emocional en tiempo real
+          </p>
 
-        <form onSubmit={handleSubmit} style={styles.form}>
+          <div style={styles.formBox}>
+            <input
+              placeholder="Usuario"
+              value={user.user}
+              onChange={(e) =>
+                setUser({
+                  ...user,
+                  user: e.target.value
+                })
+              }
+              style={styles.input}
+            />
 
-          <input
-            type="text"
-            name="nombre"
-            placeholder="Nombre de usuario"
-            value={form.nombre}
-            onChange={handleChange}
-            style={styles.input}
-          />
+            <input
+              type="password"
+              placeholder="Contraseña"
+              value={user.password}
+              onChange={(e) =>
+                setUser({
+                  ...user,
+                  password: e.target.value
+                })
+              }
+              style={styles.input}
+            />
 
-          <input
-            type="password"
-            name="password"
-            placeholder="Contraseña"
-            value={form.password}
-            onChange={handleChange}
-            style={styles.input}
-          />
+            <button
+              style={styles.primaryBtn}
+              onClick={handleLogin}
+              disabled={loading}
+            >
+              {loading ? "Entrando..." : "Iniciar sesión"}
+            </button>
 
-          <button
-            type="submit"
-            style={styles.button}
-            disabled={loading}
-          >
-            {loading ? "Entrando..." : "Iniciar sesión"}
-          </button>
+            <button
+              style={styles.secondaryBtn}
+              onClick={() => navigate("/register")}
+            >
+              Registrarse
+            </button>
 
-        </form>
+            <div style={styles.divider}>o</div>
 
-        <p style={styles.text}>
-          ¿No tienes cuenta?{" "}
-          <span
-            style={styles.link}
-            onClick={() => navigate("/register")}
-          >
-            Regístrate
-          </span>
-        </p>
-
+            <button style={styles.googleBtn}>
+              🔵 Iniciar con Google
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
-
-const styles = {
-  container: {
-    height: "100vh",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    background: "radial-gradient(circle at center, #050505, #000)",
-  },
-
-  card: {
-    width: "90%",
-    maxWidth: "400px",
-    padding: "30px 20px",
-    borderRadius: "20px",
-    background: "rgba(10,10,10,0.9)",
-    boxShadow: "0 0 40px rgba(0,229,255,0.15)",
-    backdropFilter: "blur(8px)",
-  },
-
-  title: {
-    textAlign: "center",
-    color: "#00e5ff",
-    marginBottom: "5px",
-  },
-
-  subtitle: {
-    textAlign: "center",
-    color: "#aaa",
-    marginBottom: "20px",
-  },
-
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-  },
-
-  input: {
-    padding: "12px",
-    borderRadius: "10px",
-    border: "1px solid rgba(255,255,255,0.1)",
-    background: "#111",
-    color: "#fff",
-    outline: "none",
-  },
-
-  button: {
-    padding: "12px",
-    borderRadius: "10px",
-    border: "none",
-    background: "#00e5ff",
-    color: "#000",
-    fontWeight: "bold",
-    cursor: "pointer",
-  },
-
-  text: {
-    marginTop: "15px",
-    textAlign: "center",
-    color: "#aaa",
-  },
-
-  link: {
-    color: "#00e5ff",
-    cursor: "pointer",
-  },
-};
