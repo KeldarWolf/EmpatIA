@@ -6,19 +6,6 @@ import ChatBox from "./ChatBox";
 import InputBox from "./InputBox";
 import frases from "./frases";
 
-const isConfused = (text) => {
-  const t = text.toLowerCase();
-  return (
-    t.includes("no se") ||
-    t.includes("no sé") ||
-    t.includes("nose") ||
-    t.includes("que hacer") ||
-    t.includes("qué hacer") ||
-    t.includes("aburrido") ||
-    t.includes("no tengo idea")
-  );
-};
-
 export default function User() {
   const navigate = useNavigate();
 
@@ -27,21 +14,19 @@ export default function User() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [frase, setFrase] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState(null);
+  const [step, setStep] = useState("start");
   const [options, setOptions] = useState([]);
 
+  // =========================
+  // INIT
+  // =========================
   useEffect(() => {
     setMessages([
-      {
-        role: "ai",
-        text: `Hola ${user?.nombre || "🤍"} estoy contigo`,
-      },
-      {
-        role: "ai",
-        text: "Cuéntame cómo te sientes o si quieres hacer algo",
-      },
+      { role: "ai", text: `Hola ${user?.nombre || "🤍"} estoy contigo` },
+      { role: "ai", text: "¿Qué te gustaría hacer hoy?" },
     ]);
+
+    setOptions(getMainOptions());
 
     const interval = setInterval(() => {
       setFrase(frases[Math.floor(Math.random() * frases.length)]);
@@ -50,69 +35,159 @@ export default function User() {
     return () => clearInterval(interval);
   }, []);
 
+  // =========================
+  // OPCIONES BASE (5)
+  // =========================
+  const getMainOptions = () => [
+    "Caminar",
+    "Meditar",
+    "Música",
+    "No sé cuál",
+    "Cambiar opciones",
+  ];
+
+  const getAltOptions = () => [
+    "Respirar profundo",
+    "Estiramientos",
+    "Ducha relajante",
+    "Escribir lo que siento",
+    "Cambiar opciones",
+  ];
+
+  // =========================
+  // SUBMENÚ EMOCIONAL
+  // =========================
+  const getEmotionOptions = () => [
+    "Más tranquilo/a",
+    "Con energía",
+    "Despejar la mente",
+  ];
+
+  const getActivitiesByEmotion = (emotion) => {
+    const map = {
+      "Más tranquilo/a": [
+        "Respirar profundo",
+        "Ducha relajante",
+        "Meditar",
+      ],
+      "Con energía": [
+        "Caminar",
+        "Estiramientos",
+        "Música",
+      ],
+      "Despejar la mente": [
+        "Escribir lo que siento",
+        "Caminar",
+        "Música",
+      ],
+    };
+
+    return map[emotion] || [];
+  };
+
+  // =========================
+  // PASOS ACTIVIDAD
+  // =========================
   const getSteps = (act) => {
     const map = {
       Caminar: "Camina 10 minutos sin distracciones.",
       Meditar: "Respira profundo 5 minutos.",
-      Música: "Escucha música que te calme o motive.",
+      Música: "Escucha música que te relaje o motive.",
       "Respirar profundo": "Inhala 4s, exhala 6s.",
-      Estiramientos: "Estira lentamente todo tu cuerpo.",
+      Estiramientos: "Estira todo tu cuerpo lentamente.",
       "Ducha relajante": "Ducha consciente sin prisa.",
-      "Escribir lo que siento": "Escribe todo sin filtro.",
+      "Escribir lo que siento": "Escribe sin filtro lo que sientes.",
     };
 
     return map[act] || "Hazlo a tu ritmo 🤍";
   };
 
-  const sendMessage = async () => {
-    if (!input.trim()) return;
+  // =========================
+  // CLICK OPCIONES (ÁRBOL)
+  // =========================
+  const handleOptionClick = (opt) => {
+    setMessages((prev) => [...prev, { role: "user", text: opt }]);
 
-    const text = input;
+    // 🔁 cambiar set de opciones
+    if (opt === "Cambiar opciones") {
+      const newOptions =
+        options[0] === "Caminar"
+          ? getAltOptions()
+          : getMainOptions();
 
-    setMessages((prev) => [...prev, { role: "user", text }]);
-    setInput("");
-    setLoading(true);
+      setOptions(newOptions);
 
-    // 🧠 CASO: usuario perdido
-    if (isConfused(text)) {
-      const opts = [
-        "Caminar",
-        "Respirar profundo",
-        "Escuchar música",
-        "Escribir lo que siento",
-      ];
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: "Aquí tienes otras opciones 🤍", options: newOptions },
+      ]);
 
-      setStep("select_activity");
-      setOptions(opts);
+      return;
+    }
+
+    // ❓ NO SÉ
+    if (opt === "No sé cuál") {
+      setStep("emotion");
+
+      const emotions = getEmotionOptions();
+      setOptions(emotions);
 
       setMessages((prev) => [
         ...prev,
         {
           role: "ai",
-          text: "Está bien 🤍 elige algo simple para empezar:",
-          options: opts,
+          text: "Está bien 🤍 dime cómo te quieres sentir:",
+          options: emotions,
         },
       ]);
 
-      setLoading(false);
       return;
     }
 
-    // 🧠 respuesta normal corta y natural
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "ai",
-        text: "Te entiendo 🤍 si quieres puedo sugerirte algo para sentirte mejor",
-      },
-    ]);
+    // 🧠 NIVEL EMOCIÓN
+    if (step === "emotion") {
+      const acts = getActivitiesByEmotion(opt);
 
-    setLoading(false);
-  };
+      setStep("activity");
+      setOptions(acts);
 
-  const handleOptionClick = (opt) => {
-    setMessages((prev) => [...prev, { role: "user", text: opt }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: "Perfecto 🤍 aquí tienes actividades para ayudarte:",
+          options: acts,
+        },
+      ]);
 
+      return;
+    }
+
+    // 🎯 CREAR ACTIVIDAD FINAL
+    if (step === "activity") {
+      const nueva = {
+        texto: opt,
+        tipo: "Actividad",
+        pasos: getSteps(opt),
+        fecha: new Date().toISOString(),
+      };
+
+      const data = JSON.parse(localStorage.getItem("actividades") || "[]");
+      localStorage.setItem("actividades", JSON.stringify([...data, nueva]));
+
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: `✅ Actividad creada: ${opt}` },
+        { role: "ai", text: "👉 Redirigiendo..." },
+      ]);
+
+      setStep("start");
+
+      setTimeout(() => navigate("/actividades"), 2000);
+      return;
+    }
+
+    // 🟢 FLUJO NORMAL (opciones base)
     const nueva = {
       texto: opt,
       tipo: "Actividad",
@@ -126,19 +201,15 @@ export default function User() {
     setMessages((prev) => [
       ...prev,
       { role: "ai", text: `✅ Actividad creada: ${opt}` },
-      { role: "ai", text: "👉 Te llevo a actividades..." },
+      { role: "ai", text: "👉 Redirigiendo..." },
     ]);
-
-    setStep(null);
 
     setTimeout(() => navigate("/actividades"), 2000);
   };
 
-  const logout = () => {
-    localStorage.removeItem("usuario");
-    navigate("/");
-  };
-
+  // =========================
+  // UI
+  // =========================
   return (
     <div className="app-layout">
 
@@ -150,21 +221,6 @@ export default function User() {
         <div style={{ marginTop: 20, color: "#00e5ff" }}>
           👤 {user?.nombre || "Usuario"}
         </div>
-
-        <button
-          onClick={logout}
-          style={{
-            marginTop: 10,
-            padding: "8px 12px",
-            background: "#ff3b3b",
-            color: "#fff",
-            border: "none",
-            borderRadius: 8,
-            cursor: "pointer",
-          }}
-        >
-          Cerrar sesión
-        </button>
       </div>
 
       {/* CENTER */}
@@ -177,8 +233,7 @@ export default function User() {
         <InputBox
           input={input}
           setInput={setInput}
-          sendMessage={sendMessage}
-          loading={loading}
+          sendMessage={() => {}}
         />
       </div>
 
@@ -188,12 +243,6 @@ export default function User() {
         <button onClick={() => navigate("/actividades")}>🎯 Actividades</button>
         <button onClick={() => navigate("/estadisticas")}>📊 Estadísticas</button>
         <button onClick={() => navigate("/diario")}>📓 Diario</button>
-
-        {user?.role === "admin" && (
-          <button onClick={() => navigate("/admin")}>
-            🛠 Admin
-          </button>
-        )}
       </div>
 
     </div>
