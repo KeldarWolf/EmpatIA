@@ -10,29 +10,25 @@ const API_URLS = [
   "https://empatia-backend.onrender.com"
 ];
 
-const ACTIVITY_KEYWORDS = [
-  "aburrido", "aburrida", "no sé", "no se", "qué hago", "qué hacer",
-  "actividad", "actividades", "hacer algo", "aburrimiento", "entretenerme"
+// Prompt muy corto para ahorrar tokens
+const SYSTEM_PROMPT = "Eres un acompañante emocional cálido. Responde siempre muy breve (1-2 frases máximo).";
+
+const activityTriggers = [
+  "no sé qué hacer", "no se que hacer", "estoy aburrido", "estoy aburrida",
+  "actividades", "actividad", "qué hago", "que hago", "aburrimiento"
 ];
 
-const FALLBACK_WHEN_AI_DOWN = [
+const activityOptions = [
+  "Caminar", "Meditar", "Música", "Respirar", "Estiramientos",
+  "Escribir lo que siento", "Ducha relajante", "Ordenar espacio",
+  "Salir a tomar aire", "Ejercicio ligero"
+];
+
+const fallbackAI = [
   "Lo siento, no puedo responder ahora pero puedo ayudarte a crear actividades. ¿Quieres?",
-  "En este momento no puedo conversar, pero sí puedo ayudarte con una actividad. ¿Te parece?",
-  "Estoy con problemas para responder, pero puedo sugerirte actividades. ¿Quieres que te proponga alguna?",
+  "Estoy con problemas en este momento. ¿Te ayudo con una actividad?",
+  "No puedo conversar ahora, pero sí puedo sugerirte actividades. ¿Te parece bien?"
 ];
-
-const getRandomActivityFallback = () => {
-  return FALLBACK_WHEN_AI_DOWN[Math.floor(Math.random() * FALLBACK_WHEN_AI_DOWN.length)];
-};
-
-const getActivityOffer = () => {
-  const options = [
-    "¿Quieres que te sugiera una actividad ahora?",
-    "¿Te ayudo creando una actividad?",
-    "¿Hacemos una actividad juntos?",
-  ];
-  return options[Math.floor(Math.random() * options.length)];
-};
 
 export default function User() {
   const navigate = useNavigate();
@@ -43,65 +39,122 @@ export default function User() {
   const [frase, setFrase] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // ========================= INIT =========================
   useEffect(() => {
     setMessages([
-      { role: "ai", text: `Hola ${user?.nombre || ""}, estoy aquí.` },
-      { role: "ai", text: "Cómo te sientes?" },
+      { role: "ai", text: `Hola ${user?.nombre || "🤍"}, estoy contigo.` },
+      { role: "ai", text: "Cuéntame cómo te sientes..." },
     ]);
 
     const interval = setInterval(() => {
       setFrase(frases[Math.floor(Math.random() * frases.length)]);
-    }, 10000);
+    }, 7000);
 
     return () => clearInterval(interval);
   }, [user?.nombre]);
 
-  const shouldOfferActivity = (text: string) => {
-    const lower = text.toLowerCase();
-    return ACTIVITY_KEYWORDS.some(kw => lower.includes(kw));
-  };
+  // ========================= ASK AI =========================
+  const askAI = async (message) => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
 
-  const askAI = async (userMessage: string) => {
     for (const url of API_URLS) {
       try {
         const res = await fetch(`${url}/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: userMessage }),
+          signal: controller.signal,
+          body: JSON.stringify({
+            message: `${SYSTEM_PROMPT}\n\nUsuario: ${message}`
+          }),
         });
 
         if (res.ok) {
           const data = await res.json();
-          if (data?.reply && data.reply.length > 3) {
+          if (data?.reply?.trim()) {
+            clearTimeout(timeout);
             return data.reply;
           }
         }
       } catch (e) {
-        console.warn("API caída:", url);
+        console.warn("IA caída:", url);
       }
     }
-    // ← Aquí es donde se cae la IA
-    return getRandomActivityFallback();
+
+    clearTimeout(timeout);
+    return null; // null = IA caída
   };
 
+  // ========================= SEND MESSAGE =========================
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
 
-    const userMessage = input.trim();
-    setMessages(prev => [...prev, { role: "user", text: userMessage }]);
+    const text = input.trim();
+    const lower = text.toLowerCase();
+
+    setMessages((prev) => [...prev, { role: "user", text }]);
     setInput("");
     setLoading(true);
 
-    let reply;
+    // Trigger de actividad
+    const wantsActivity = activityTriggers.some((w) => lower.includes(w));
 
-    if (shouldOfferActivity(userMessage)) {
-      reply = getActivityOffer();
-    } else {
-      reply = await askAI(userMessage);
+    if (wantsActivity) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: "Estoy contigo 🤍 ¿Quieres que te ayude con una actividad?",
+          options: activityOptions
+        }
+      ]);
+      setLoading(false);
+      return;
     }
 
-    setMessages(prev => [...prev, { role: "ai", text: reply }]);
+    // Llamada normal a IA
+    const reply = await askAI(text);
+
+    if (!reply) {
+      // IA caída → mensaje útil
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: fallbackAI[Math.floor(Math.random() * fallbackAI.length)],
+          options: activityOptions  // ofrezco botones directamente
+        }
+      ]);
+    } else {
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: reply.split(".")[0] + "." }
+      ]);
+    }
+
     setLoading(false);
+  };
+
+  // ========================= SELECT ACTIVITY =========================
+  const handleOptionClick = (opt) => {
+    setMessages((prev) => [...prev, { role: "user", text: opt }]);
+
+    const nueva = {
+      texto: opt,
+      tipo: "Actividad",
+      fecha: new Date().toISOString()
+    };
+
+    const data = JSON.parse(localStorage.getItem("actividades") || "[]");
+    localStorage.setItem("actividades", JSON.stringify([...data, nueva]));
+
+    setMessages((prev) => [
+      ...prev,
+      { role: "ai", text: `✅ Actividad guardada: ${opt}` },
+      { role: "ai", text: "Redirigiendo..." }
+    ]);
+
+    setTimeout(() => navigate("/actividades"), 1500);
   };
 
   const logout = () => {
@@ -111,6 +164,7 @@ export default function User() {
 
   return (
     <div className="app-layout">
+      {/* LEFT PANEL */}
       <div className="left-panel">
         <h4>💡 Acompañamiento</h4>
         <div className="quote-box">{frase}</div>
@@ -122,8 +176,12 @@ export default function User() {
         </button>
       </div>
 
+      {/* CENTER PANEL */}
       <div className="center-panel">
-        <ChatBox messages={messages} onOptionClick={() => {}} />
+        <ChatBox
+          messages={messages}
+          onOptionClick={handleOptionClick}
+        />
         <InputBox
           input={input}
           setInput={setInput}
@@ -132,12 +190,15 @@ export default function User() {
         />
       </div>
 
+      {/* RIGHT PANEL */}
       <div className="right-panel">
         <button onClick={() => navigate("/rutina")}>🧘 Rutina</button>
         <button onClick={() => navigate("/actividades")}>🎯 Actividades</button>
         <button onClick={() => navigate("/estadisticas")}>📊 Estadísticas</button>
         <button onClick={() => navigate("/diario")}>📓 Diario</button>
-        {user?.role === "admin" && <button onClick={() => navigate("/admin")}>🛠 Admin</button>}
+        {user?.role === "admin" && (
+          <button onClick={() => navigate("/admin")}>🛠 Admin</button>
+        )}
       </div>
     </div>
   );
