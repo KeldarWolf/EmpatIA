@@ -1,99 +1,98 @@
-import express from "express";
-import pool from "../config/db.js";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-const router = express.Router();
+export default function Login() {
+  const navigate = useNavigate();
 
-/* =========================
-   REGISTER
-========================= */
-router.post("/register", async (req, res) => {
-  try {
-    const { nombre, edad, email, password } = req.body;
+  const [form, setForm] = useState({
+    nombre: "",
+    password: "",
+  });
 
-    console.log("📩 REGISTER:", req.body);
+  const [loading, setLoading] = useState(false);
 
-    if (!nombre || !email || !password) {
-      return res.status(400).json({ error: "Faltan datos" });
-    }
-
-    // verificar si existe usuario
-    const existingUser = await pool.query(
-      "SELECT id_usuario FROM usuario WHERE email = $1",
-      [email]
-    );
-
-    if (existingUser.rows.length > 0) {
-      return res.status(400).json({ error: "Usuario ya existe" });
-    }
-
-    // insertar usuario (password plano + role default user)
-    const result = await pool.query(
-      `
-      INSERT INTO usuario (nombre, edad, email, password_hash, role)
-      VALUES ($1, $2, $3, $4, 'user')
-      RETURNING id_usuario, nombre, email, role
-      `,
-      [nombre, edad || null, email, password]
-    );
-
-    return res.json({
-      ok: true,
-      user: result.rows[0],
+  const handleChange = (e) => {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
     });
+  };
 
-  } catch (error) {
-    console.error("❌ REGISTER ERROR:", error);
-    return res.status(500).json({ error: error.message });
-  }
-});
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-
-/* =========================
-   LOGIN
-========================= */
-router.post("/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    console.log("📩 LOGIN:", req.body);
-
-    if (!email || !password) {
-      return res.status(400).json({ error: "Faltan datos" });
+    if (!form.nombre || !form.password) {
+      alert("Completa los campos");
+      return;
     }
 
-    // buscar usuario
-    const result = await pool.query(
-      "SELECT * FROM usuario WHERE email = $1",
-      [email]
-    );
+    setLoading(true);
 
-    if (result.rows.length === 0) {
-      return res.status(401).json({ error: "Usuario no encontrado" });
+    try {
+      const response = await fetch(
+        "https://empatia-backend.onrender.com/api/auth/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            nombre: form.nombre,
+            password: form.password,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || "Error al iniciar sesión");
+        return;
+      }
+
+      console.log("LOGIN OK:", data);
+
+      // guardar usuario
+      localStorage.setItem("usuario", JSON.stringify(data.user));
+
+      // nombre del usuario (como pediste)
+      console.log("Bienvenido:", data.user.nombre);
+
+      navigate("/user");
+
+    } catch (error) {
+      console.error("ERROR LOGIN:", error);
+      alert("Error de conexión");
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const user = result.rows[0];
+  return (
+    <div>
+      <h2>Login</h2>
 
-    console.log("👤 USER FOUND:", user.email);
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          name="nombre"
+          placeholder="Nombre de usuario"
+          value={form.nombre}
+          onChange={handleChange}
+        />
 
-    // comparación simple (SIN BCRYPT)
-    if (password !== user.password_hash) {
-      return res.status(401).json({ error: "Contraseña incorrecta" });
-    }
+        <input
+          type="password"
+          name="password"
+          placeholder="Contraseña"
+          value={form.password}
+          onChange={handleChange}
+        />
 
-    return res.json({
-      ok: true,
-      user: {
-        id: user.id_usuario,
-        nombre: user.nombre,
-        email: user.email,
-        role: user.role,
-      },
-    });
-
-  } catch (error) {
-    console.error("❌ LOGIN ERROR:", error);
-    return res.status(500).json({ error: error.message });
-  }
-});
-
-export default router;
+        <button type="submit" disabled={loading}>
+          {loading ? "Entrando..." : "Iniciar sesión"}
+        </button>
+      </form>
+    </div>
+  );
+}
