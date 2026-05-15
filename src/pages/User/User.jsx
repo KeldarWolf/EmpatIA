@@ -1,6 +1,6 @@
-// ===============================
-// USER.JSX COMPLETO MODIFICADO
-// ===============================
+// ======================
+// USER.JSX
+// ======================
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -99,8 +99,14 @@ export default function User() {
   // INIT
   useEffect(() => {
     setMessages([
-      { role: "ai", text: `Hola ${user?.nombre || "🤍"}, estoy aquí.` },
-      { role: "ai", text: "Cuéntame cómo te sientes..." },
+      {
+        role: "ai",
+        text: `Hola ${user?.nombre || "🤍"}, estoy aquí.`,
+      },
+      {
+        role: "ai",
+        text: "Cuéntame cómo te sientes...",
+      },
     ]);
 
     const interval = setInterval(() => {
@@ -111,7 +117,9 @@ export default function User() {
   }, [user?.nombre]);
 
   const shouldTriggerActivity = (text) =>
-    activityTriggers.some((w) => text.toLowerCase().includes(w));
+    activityTriggers.some((w) =>
+      text.toLowerCase().includes(w)
+    );
 
   // ======================
   // IA
@@ -120,52 +128,105 @@ export default function User() {
     try {
       const res = await fetch(`${API_URL}/chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ message }),
       });
 
       if (!res.ok) return null;
 
       const data = await res.json();
+
       return data?.reply || null;
+
     } catch {
       return null;
     }
   };
 
   // ======================
-  // GUARDAR ACTIVIDAD BD
+  // 🔥 GUARDAR ACTIVIDAD BD
   // ======================
   const saveActivityToDB = async (nombreActividad) => {
     try {
-      // buscar actividad existente
-      const actRes = await fetch(`${API_URL}/actividades`);
-      const actividades = await actRes.json();
 
-      const actividad = actividades.find(
-        (a) =>
-          a.nombre.toLowerCase() === nombreActividad.toLowerCase()
+      console.log("👤 USER:", user);
+      console.log("👤 USER ID:", userId);
+      console.log("🎯 ACTIVIDAD:", nombreActividad);
+
+      // =========================
+      // CARGAR ACTIVIDADES
+      // =========================
+      const actRes = await fetch(
+        `${API_URL}/actividades`
       );
 
-      if (!actividad) return;
+      const actividades = await actRes.json();
 
-      await fetch(`${API_URL}/registro-actividad`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id_usuario: userId,
-          id_actividad: actividad.id_actividad,
-          puntaje_agrado: 8,
-          frecuencia_deseada: "media",
-          reaccion: "aceptada",
-        }),
-      });
+      console.log("📦 ACTIVIDADES:", actividades);
 
-      console.log("✅ actividad guardada");
+      // =========================
+      // BUSCAR ACTIVIDAD
+      // =========================
+      let actividad = actividades.find(
+        (a) =>
+          a.nombre
+            ?.toLowerCase()
+            .trim() ===
+          nombreActividad.toLowerCase().trim()
+      );
+
+      // fallback parcial
+      if (!actividad) {
+        actividad = actividades.find((a) =>
+          a.nombre
+            ?.toLowerCase()
+            .includes(nombreActividad.toLowerCase())
+        );
+      }
+
+      console.log("🧠 ENCONTRADA:", actividad);
+
+      // fallback final
+      if (!actividad) {
+        actividad = actividades?.[0];
+      }
+
+      // =========================
+      // VALIDAR
+      // =========================
+      if (!actividad?.id_actividad) {
+        console.log("❌ SIN ID ACTIVIDAD");
+        return;
+      }
+
+      // =========================
+      // REGISTRAR
+      // =========================
+      const response = await fetch(
+        `${API_URL}/registro-actividad`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            id_usuario: userId,
+            id_actividad: actividad.id_actividad,
+            puntaje_agrado: 8,
+            frecuencia_deseada: "media",
+            reaccion: nombreActividad,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      console.log("✅ GUARDADO:", data);
+
     } catch (err) {
-      console.log("❌ error guardando actividad");
+      console.log("❌ ERROR:", err);
     }
   };
 
@@ -177,7 +238,10 @@ export default function User() {
 
     const text = input.trim();
 
-    setMessages((prev) => [...prev, { role: "user", text }]);
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", text },
+    ]);
 
     setInput("");
     setLoading(true);
@@ -186,7 +250,10 @@ export default function User() {
     if (waitingForYes) {
       const lower = text.toLowerCase();
 
-      if (lower.includes("si") || lower.includes("sí")) {
+      if (
+        lower.includes("si") ||
+        lower.includes("sí")
+      ) {
         setMessages((prev) => [
           ...prev,
           {
@@ -222,7 +289,8 @@ export default function User() {
         ...prev,
         {
           role: "ai",
-          text: "🤍 ¿Quieres que te ayude con una actividad?",
+          text:
+            "🤍 ¿Quieres que te ayude con una actividad?",
           options: yesNoOptions,
         },
       ]);
@@ -251,7 +319,10 @@ export default function User() {
       return;
     }
 
-    setMessages((prev) => [...prev, { role: "ai", text: reply }]);
+    setMessages((prev) => [
+      ...prev,
+      { role: "ai", text: reply },
+    ]);
 
     setLoading(false);
   };
@@ -260,7 +331,11 @@ export default function User() {
   // BOTONES
   // ======================
   const handleOptionClick = async (opt) => {
-    setMessages((prev) => [...prev, { role: "user", text: opt }]);
+
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", text: opt },
+    ]);
 
     // Sí
     if (opt === "Sí") {
@@ -314,7 +389,7 @@ export default function User() {
       return;
     }
 
-    // 🔥 GUARDAR EN BD
+    // 🔥 GUARDAR BD
     await saveActivityToDB(opt);
 
     setMessages((prev) => [
@@ -325,22 +400,35 @@ export default function User() {
       },
     ]);
 
-    setTimeout(() => navigate("/actividades"), 1200);
+    setTimeout(() => {
+      navigate("/actividades");
+    }, 1200);
   };
 
   return (
     <div className="app-layout">
+
       <div className="left-panel">
+
         <h4>💡 Acompañamiento</h4>
 
-        <div className="quote-box">{frase}</div>
+        <div className="quote-box">
+          {frase}
+        </div>
 
-        <div style={{ marginTop: 20, color: "#00e5ff" }}>
+        <div
+          style={{
+            marginTop: 20,
+            color: "#00e5ff",
+          }}
+        >
           👤 {user?.nombre || "Usuario"}
         </div>
+
       </div>
 
       <div className="center-panel">
+
         <ChatBox
           messages={messages}
           onOptionClick={handleOptionClick}
@@ -352,9 +440,11 @@ export default function User() {
           sendMessage={sendMessage}
           loading={loading}
         />
+
       </div>
 
       <div className="right-panel">
+
         <button onClick={() => navigate("/rutina")}>
           🧘 Rutina
         </button>
@@ -370,7 +460,9 @@ export default function User() {
         <button onClick={() => navigate("/diario")}>
           📓 Diario
         </button>
+
       </div>
+
     </div>
   );
 }
