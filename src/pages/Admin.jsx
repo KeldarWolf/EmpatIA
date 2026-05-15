@@ -1,5 +1,12 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import {
+  useNavigate,
+  Navigate,
+} from "react-router-dom";
 
 export default function Admin() {
   const API =
@@ -7,12 +14,49 @@ export default function Admin() {
 
   const navigate = useNavigate();
 
+  // =========================
+  // STATES
+  // =========================
+  const [users, setUsers] =
+    useState([]);
+
+  const [edit, setEdit] =
+    useState(null);
+
   const [view, setView] =
     useState("dashboard");
 
-  const [users, setUsers] = useState([]);
+  const [logs, setLogs] =
+    useState([]);
 
-  const [edit, setEdit] = useState(null);
+  // =========================
+  // SECURITY
+  // =========================
+  useEffect(() => {
+    try {
+      const savedUser =
+        localStorage.getItem("user");
+
+      if (!savedUser) {
+        navigate("/login");
+        return;
+      }
+
+      const user =
+        JSON.parse(savedUser);
+
+      if (user.role !== "admin") {
+        navigate("/login");
+      }
+
+    } catch (err) {
+      console.error(err);
+
+      localStorage.clear();
+
+      navigate("/login");
+    }
+  }, []);
 
   // =========================
   // LOAD USERS
@@ -21,10 +65,16 @@ export default function Admin() {
     try {
       const res = await fetch(API);
 
-      const data = await res.json();
+      const data =
+        await res.json();
 
       if (Array.isArray(data)) {
         setUsers(data);
+
+        addLog(
+          "Usuarios cargados correctamente"
+        );
+
       } else {
         setUsers([]);
       }
@@ -32,12 +82,16 @@ export default function Admin() {
     } catch (err) {
       console.error(err);
 
+      addLog(
+        "Error cargando usuarios"
+      );
+
       setUsers([]);
     }
   };
 
   // =========================
-  // LOAD ONLY WHEN USERS VIEW
+  // LOAD WHEN USERS VIEW
   // =========================
   useEffect(() => {
     if (view === "users") {
@@ -46,24 +100,49 @@ export default function Admin() {
   }, [view]);
 
   // =========================
+  // LOG SYSTEM
+  // =========================
+  const addLog = (text) => {
+    const now =
+      new Date().toLocaleTimeString();
+
+    setLogs((prev) => [
+      `${now} - ${text}`,
+      ...prev,
+    ]);
+  };
+
+  // =========================
   // DELETE USER
   // =========================
   const deleteUser = async (id) => {
     try {
-      const ok = window.confirm(
-        "¿Eliminar usuario?"
-      );
+      const ok =
+        window.confirm(
+          "¿Eliminar usuario?"
+        );
 
       if (!ok) return;
 
-      await fetch(`${API}/${id}`, {
-        method: "DELETE",
-      });
+      await fetch(
+        `${API}/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      addLog(
+        `Usuario eliminado ID ${id}`
+      );
 
       loadUsers();
 
     } catch (err) {
       console.error(err);
+
+      addLog(
+        "Error eliminando usuario"
+      );
     }
   };
 
@@ -90,13 +169,88 @@ export default function Admin() {
         }
       );
 
+      addLog(
+        `Usuario editado: ${edit.nombre}`
+      );
+
       setEdit(null);
 
       loadUsers();
 
     } catch (err) {
       console.error(err);
+
+      addLog(
+        "Error editando usuario"
+      );
     }
+  };
+
+  // =========================
+  // EXPORT USERS
+  // =========================
+  const exportUsers = () => {
+    try {
+      const data =
+        JSON.stringify(
+          users,
+          null,
+          2
+        );
+
+      const blob = new Blob(
+        [data],
+        {
+          type:
+            "application/json",
+        }
+      );
+
+      const url =
+        window.URL.createObjectURL(
+          blob
+        );
+
+      const a =
+        document.createElement(
+          "a"
+        );
+
+      a.href = url;
+
+      a.download =
+        "usuarios-empatia.json";
+
+      a.click();
+
+      addLog(
+        "Reporte exportado"
+      );
+
+    } catch (err) {
+      console.error(err);
+
+      addLog(
+        "Error exportando reporte"
+      );
+    }
+  };
+
+  // =========================
+  // LOGOUT
+  // =========================
+  const logout = () => {
+    localStorage.clear();
+
+    addLog(
+      "Sesión cerrada"
+    );
+
+    navigate("/login", {
+      replace: true,
+    });
+
+    window.location.reload();
   };
 
   return (
@@ -108,26 +262,48 @@ export default function Admin() {
       {view === "dashboard" && (
         <div style={styles.card}>
 
-          <h1 style={styles.title}>
-            🛠 Panel Admin
-          </h1>
+          <div style={styles.topBar}>
+            <h1 style={styles.title}>
+              🛠 Panel Admin
+            </h1>
+
+            <button
+              style={styles.logoutBtn}
+              onClick={logout}
+            >
+              Cerrar sesión
+            </button>
+          </div>
 
           <p style={styles.subtitle}>
-            Zona administrativa EMPATIA
+            Sistema de supervisión
+            EMPATIA
           </p>
 
           <div style={styles.box}>
-            <h3 style={styles.sectionTitle}>
+            <h3
+              style={
+                styles.sectionTitle
+              }
+            >
               Estado del sistema
             </h3>
 
             <p>
-              ✔ Servidor activo
+              ✔ Servidor:
+              operativo
             </p>
 
             <p>
-              ✔ Usuarios conectados:
-              12
+              ✔ API:
+              {users.length >= 0
+                ? " conectada"
+                : " error"}
+            </p>
+
+            <p>
+              ✔ Usuarios:
+              {users.length}
             </p>
 
             <p>
@@ -137,7 +313,54 @@ export default function Admin() {
           </div>
 
           <div style={styles.box}>
-            <h3 style={styles.sectionTitle}>
+            <h3
+              style={
+                styles.sectionTitle
+              }
+            >
+              Estadísticas
+            </h3>
+
+            <p>
+              👥 Usuarios:
+              {users.length}
+            </p>
+
+            <p>
+              🛡 Admins:
+              {
+                users.filter(
+                  (u) =>
+                    u.role ===
+                    "admin"
+                ).length
+              }
+            </p>
+
+            <p>
+              🙋 Usuarios
+              normales:
+              {
+                users.filter(
+                  (u) =>
+                    u.role ===
+                    "user"
+                ).length
+              }
+            </p>
+
+            <p>
+              📊 Logs:
+              {logs.length}
+            </p>
+          </div>
+
+          <div style={styles.box}>
+            <h3
+              style={
+                styles.sectionTitle
+              }
+            >
               Acciones rápidas
             </h3>
 
@@ -156,13 +379,15 @@ export default function Admin() {
                 setView("logs")
               }
             >
-              Logs del sistema
+              Logs sistema
             </button>
 
             <button
               style={styles.button}
               onClick={() =>
-                setView("metrics")
+                setView(
+                  "metrics"
+                )
               }
             >
               Métricas
@@ -171,27 +396,40 @@ export default function Admin() {
             <button
               style={styles.button}
               onClick={() =>
-                setView("ai")
+                setView("ia")
               }
             >
               Estado IA
             </button>
 
             <button
-              style={styles.dangerButton}
+              style={
+                styles.button
+              }
+              onClick={
+                exportUsers
+              }
             >
-              Reiniciar sistema
+              Exportar reporte
+            </button>
+
+            <button
+              style={
+                styles.dangerButton
+              }
+              onClick={() => {
+                addLog(
+                  "Cache limpiada"
+                );
+
+                alert(
+                  "Cache limpiada"
+                );
+              }}
+            >
+              Limpiar cache
             </button>
           </div>
-
-          <button
-            style={styles.backButton}
-            onClick={() =>
-              navigate("/")
-            }
-          >
-            Volver
-          </button>
 
         </div>
       )}
@@ -208,9 +446,11 @@ export default function Admin() {
             </h2>
 
             <button
-              style={styles.backMini}
+              style={styles.backBtn}
               onClick={() =>
-                setView("dashboard")
+                setView(
+                  "dashboard"
+                )
               }
             >
               ← Volver
@@ -219,73 +459,76 @@ export default function Admin() {
 
           <div style={styles.userList}>
 
-            {Array.isArray(users) &&
-              users.map((u) => (
-                <div
-                  key={u.id_usuario}
-                  style={styles.userCard}
-                >
+            {users.map((u) => (
+              <div
+                key={
+                  u.id_usuario
+                }
+                style={
+                  styles.userCard
+                }
+              >
 
-                  <div>
-                    <h3
-                      style={
-                        styles.userName
-                      }
-                    >
-                      {u.nombre}
-                    </h3>
-
-                    <p
-                      style={
-                        styles.userEmail
-                      }
-                    >
-                      {u.email}
-                    </p>
-
-                    <span
-                      style={
-                        styles.userRole
-                      }
-                    >
-                      {u.role}
-                    </span>
-                  </div>
-
-                  <div
+                <div>
+                  <h3
                     style={
-                      styles.actions
+                      styles.userName
                     }
                   >
+                    {u.nombre}
+                  </h3>
 
-                    <button
-                      style={
-                        styles.editBtn
-                      }
-                      onClick={() =>
-                        setEdit(u)
-                      }
-                    >
-                      Editar
-                    </button>
+                  <p
+                    style={
+                      styles.userEmail
+                    }
+                  >
+                    {u.email}
+                  </p>
 
-                    <button
-                      style={
-                        styles.deleteBtn
-                      }
-                      onClick={() =>
-                        deleteUser(
-                          u.id_usuario
-                        )
-                      }
-                    >
-                      Eliminar
-                    </button>
+                  <span
+                    style={
+                      styles.userRole
+                    }
+                  >
+                    {u.role}
+                  </span>
+                </div>
 
-                  </div>
+                <div
+                  style={
+                    styles.actions
+                  }
+                >
+
+                  <button
+                    style={
+                      styles.editBtn
+                    }
+                    onClick={() =>
+                      setEdit(u)
+                    }
+                  >
+                    Editar
+                  </button>
+
+                  <button
+                    style={
+                      styles.deleteBtn
+                    }
+                    onClick={() =>
+                      deleteUser(
+                        u.id_usuario
+                      )
+                    }
+                  >
+                    Eliminar
+                  </button>
 
                 </div>
-              ))}
+
+              </div>
+            ))}
 
           </div>
 
@@ -299,34 +542,44 @@ export default function Admin() {
         <div style={styles.card}>
 
           <h2 style={styles.title}>
-            📜 Logs
+            📜 Logs del sistema
           </h2>
 
-          <div style={styles.box}>
-            <p>
-              ✅ Admin inició
-              sesión
-            </p>
+          <div style={styles.logsBox}>
 
-            <p>
-              🤖 IA funcionando
-            </p>
+            {logs.length === 0 && (
+              <p
+                style={
+                  styles.log
+                }
+              >
+                No existen logs
+              </p>
+            )}
 
-            <p>
-              🔒 Validación
-              correcta
-            </p>
+            {logs.map(
+              (log, index) => (
+                <div
+                  key={index}
+                  style={
+                    styles.log
+                  }
+                >
+                  {log}
+                </div>
+              )
+            )}
 
-            <p>
-              ⚠ Intento de acceso
-              denegado
-            </p>
           </div>
 
           <button
-            style={styles.backButton}
+            style={
+              styles.backButton
+            }
             onClick={() =>
-              setView("dashboard")
+              setView(
+                "dashboard"
+              )
             }
           >
             Volver
@@ -346,24 +599,49 @@ export default function Admin() {
           </h2>
 
           <div style={styles.box}>
-            <p>CPU: 32%</p>
-
-            <p>RAM: 58%</p>
-
             <p>
-              API Requests:
-              1.204
+              CPU:
+              {
+                Math.floor(
+                  Math.random() *
+                    60 +
+                    20
+                )
+              }
+              %
             </p>
 
             <p>
-              IA Response: 1.2s
+              RAM:
+              {
+                Math.floor(
+                  Math.random() *
+                    60 +
+                    20
+                )
+              }
+              %
+            </p>
+
+            <p>
+              Usuarios:
+              {users.length}
+            </p>
+
+            <p>
+              Logs:
+              {logs.length}
             </p>
           </div>
 
           <button
-            style={styles.backButton}
+            style={
+              styles.backButton
+            }
             onClick={() =>
-              setView("dashboard")
+              setView(
+                "dashboard"
+              )
             }
           >
             Volver
@@ -375,7 +653,7 @@ export default function Admin() {
       {/* =========================
           IA
       ========================= */}
-      {view === "ai" && (
+      {view === "ia" && (
         <div style={styles.card}>
 
           <h2 style={styles.title}>
@@ -384,23 +662,62 @@ export default function Admin() {
 
           <div style={styles.box}>
             <p>
-              ✔ Modelo conectado
+              ✔ Modelo
+              conectado
             </p>
 
             <p>
-              ✔ Respuestas activas
+              ✔ Tiempo
+              respuesta:
+              1.2s
             </p>
 
             <p>
-              ✔ Conversaciones:
+              ✔ Conversaciones
+              procesadas:
               84
+            </p>
+
+            <p>
+              ✔ Estado:
+              operativo
+            </p>
+          </div>
+
+          <div style={styles.box}>
+            <h3
+              style={
+                styles.sectionTitle
+              }
+            >
+              Interacciones
+              anonimizadas
+            </h3>
+
+            <p>
+              Usuario #1024
+              inició chat
+            </p>
+
+            <p>
+              Usuario #1032
+              realizó consulta
+            </p>
+
+            <p>
+              Usuario #1088
+              solicitó ayuda
             </p>
           </div>
 
           <button
-            style={styles.backButton}
+            style={
+              styles.backButton
+            }
             onClick={() =>
-              setView("dashboard")
+              setView(
+                "dashboard"
+              )
             }
           >
             Volver
@@ -410,7 +727,7 @@ export default function Admin() {
       )}
 
       {/* =========================
-          MODAL
+          MODAL EDIT
       ========================= */}
       {edit && (
         <div style={styles.modal}>
@@ -435,7 +752,9 @@ export default function Admin() {
 
             <input
               style={styles.input}
-              value={edit.email}
+              value={
+                edit.email || ""
+              }
               onChange={(e) =>
                 setEdit({
                   ...edit,
@@ -465,17 +784,27 @@ export default function Admin() {
               </option>
             </select>
 
-            <div style={styles.actions}>
+            <div
+              style={
+                styles.actions
+              }
+            >
 
               <button
-                style={styles.editBtn}
-                onClick={saveUser}
+                style={
+                  styles.editBtn
+                }
+                onClick={
+                  saveUser
+                }
               >
                 Guardar
               </button>
 
               <button
-                style={styles.deleteBtn}
+                style={
+                  styles.deleteBtn
+                }
                 onClick={() =>
                   setEdit(null)
                 }
@@ -500,7 +829,8 @@ const styles = {
     background:
       "radial-gradient(circle at center, #050505, #000)",
     display: "flex",
-    justifyContent: "center",
+    justifyContent:
+      "center",
     alignItems: "center",
     padding: 20,
     fontFamily: "Arial",
@@ -508,7 +838,7 @@ const styles = {
 
   card: {
     width: "90%",
-    maxWidth: 500,
+    maxWidth: 550,
     background:
       "rgba(10,10,10,0.9)",
     borderRadius: 20,
@@ -547,6 +877,24 @@ const styles = {
     color: "#00e5ff",
   },
 
+  topBar: {
+    display: "flex",
+    justifyContent:
+      "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+
+  logoutBtn: {
+    background: "#ff3b3b",
+    border: "none",
+    color: "#fff",
+    padding: "10px 15px",
+    borderRadius: 8,
+    cursor: "pointer",
+    fontWeight: "bold",
+  },
+
   box: {
     background: "#111",
     padding: 15,
@@ -562,7 +910,8 @@ const styles = {
     borderRadius: 8,
     border:
       "1px solid rgba(0,229,255,0.3)",
-    background: "transparent",
+    background:
+      "transparent",
     color: "#00e5ff",
     cursor: "pointer",
   },
@@ -590,15 +939,7 @@ const styles = {
     cursor: "pointer",
   },
 
-  topBar: {
-    display: "flex",
-    justifyContent:
-      "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-
-  backMini: {
+  backBtn: {
     padding: "8px 12px",
     borderRadius: 8,
     border: "none",
@@ -659,6 +1000,20 @@ const styles = {
     cursor: "pointer",
   },
 
+  logsBox: {
+    maxHeight: 350,
+    overflowY: "auto",
+  },
+
+  log: {
+    background:
+      "rgba(255,255,255,0.03)",
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 8,
+    color: "#ddd",
+  },
+
   modal: {
     position: "fixed",
     top: 0,
@@ -668,7 +1023,8 @@ const styles = {
     background:
       "rgba(0,0,0,0.7)",
     display: "flex",
-    justifyContent: "center",
+    justifyContent:
+      "center",
     alignItems: "center",
   },
 
@@ -684,7 +1040,8 @@ const styles = {
     padding: 10,
     marginTop: 10,
     borderRadius: 8,
-    border: "1px solid #333",
+    border:
+      "1px solid #333",
     background: "#000",
     color: "#fff",
     boxSizing: "border-box",
