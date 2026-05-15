@@ -1,5 +1,5 @@
 // =========================
-// Actividades.jsx COMPLETO
+// ACTIVIDADES.JSX COMPLETO MOD
 // =========================
 
 import { useState, useEffect } from "react";
@@ -10,14 +10,12 @@ const API = "https://empatia-backend.onrender.com";
 export default function Actividades() {
   const navigate = useNavigate();
 
+  const user = JSON.parse(localStorage.getItem("usuario") || "null");
+
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [savedActivities, setSavedActivities] = useState([]);
   const [selected, setSelected] = useState(null);
-
-  const user = JSON.parse(
-    localStorage.getItem("usuario") || "null"
-  );
 
   // ===============================
   // IA
@@ -41,40 +39,44 @@ export default function Actividades() {
   };
 
   // ===============================
-  // CARGAR ACTIVIDADES
+  // CARGAR ACTIVIDADES USER
   // ===============================
   const loadActivities = async () => {
     try {
+      if (!user?.id_usuario) {
+        console.log("❌ SIN USER");
+        return;
+      }
+
+      console.log("👤 USER:", user);
+
       const res = await fetch(
         `${API}/mis-actividades/${user.id_usuario}`
       );
 
       const data = await res.json();
 
-      console.log("📌 DATA:", data);
+      console.log("📦 DATA:", data);
 
       setSavedActivities(data || []);
+
+      setMessages([
+        {
+          role: "ai",
+          text: "Aquí puedes ver tus actividades 🤍",
+        },
+        {
+          role: "ai",
+          text: "Haz click en una para ver cómo hacerlo",
+        },
+      ]);
     } catch (err) {
       console.log(err);
     }
   };
 
-  // ===============================
-  // INIT
-  // ===============================
   useEffect(() => {
     loadActivities();
-
-    setMessages([
-      {
-        role: "ai",
-        text: "Aquí puedes ver tus actividades 🤍",
-      },
-      {
-        role: "ai",
-        text: "Haz click en una para ver cómo hacerlo",
-      },
-    ]);
   }, []);
 
   // ===============================
@@ -87,10 +89,7 @@ export default function Actividades() {
 
     setMessages((prev) => [
       ...prev,
-      {
-        role: "user",
-        text: userText,
-      },
+      { role: "user", text: userText },
     ]);
 
     setInput("");
@@ -99,10 +98,7 @@ export default function Actividades() {
 
     setMessages((prev) => [
       ...prev,
-      {
-        role: "ai",
-        text: reply,
-      },
+      { role: "ai", text: reply },
     ]);
   };
 
@@ -112,9 +108,10 @@ export default function Actividades() {
   const openActivity = async (activity) => {
     if (
       selected &&
-      selected.id_registro === activity.id_registro
-    )
+      selected.nombre_actividad === activity.nombre_actividad
+    ) {
       return;
+    }
 
     setSelected(activity);
 
@@ -153,7 +150,7 @@ export default function Actividades() {
           <h1>🎯 Actividades</h1>
 
           <p style={{ opacity: 0.7 }}>
-            Haz click en una actividad para ver cómo realizarla
+            Haz click en una actividad
           </p>
         </div>
 
@@ -166,7 +163,6 @@ export default function Actividades() {
       </div>
 
       <div style={styles.grid}>
-        {/* CHAT */}
         <div style={styles.left}>
           <h3>💬 Acompañamiento</h3>
 
@@ -182,9 +178,7 @@ export default function Actividades() {
           <div style={styles.inputRow}>
             <input
               value={input}
-              onChange={(e) =>
-                setInput(e.target.value)
-              }
+              onChange={(e) => setInput(e.target.value)}
               style={styles.input}
               placeholder="Escribe..."
             />
@@ -198,14 +192,11 @@ export default function Actividades() {
           </div>
         </div>
 
-        {/* ACTIVIDADES */}
         <div style={styles.center}>
           <h3>📌 Tus actividades</h3>
 
           {savedActivities.length === 0 && (
-            <p style={{ opacity: 0.6 }}>
-              No tienes actividades aún
-            </p>
+            <p>No tienes actividades aún</p>
           )}
 
           {savedActivities.map((a, i) => (
@@ -216,42 +207,29 @@ export default function Actividades() {
             >
               <h4>{a.nombre_actividad}</h4>
 
-              <p style={{ fontSize: 12 }}>
-                Actividad personalizada guardada
+              <p>
+                ⭐ Gusto: {a.puntaje_agrado || 7}/10
               </p>
 
-              <p
-                style={{
-                  opacity: 0.7,
-                  fontSize: 12,
-                }}
-              >
-                Emocional
+              <p>
+                📅 {a.fecha}
               </p>
             </div>
           ))}
         </div>
 
-        {/* INFO */}
         <div style={styles.right}>
           <h3>🧠 Ayuda</h3>
 
           <div style={styles.tip}>
-            Haz click en una actividad y la IA
-            te explicará cómo hacerla
-          </div>
-
-          <div style={styles.tip}>
-            Las actividades están conectadas a
-            Supabase
+            Haz click en una actividad y la IA te
+            explicará cómo hacerla
           </div>
         </div>
       </div>
     </div>
   );
 }
-
-/* ================= STYLES ================= */
 
 const styles = {
   page: {
@@ -297,6 +275,7 @@ const styles = {
     background: "#0f1620",
     padding: 15,
     borderRadius: 12,
+    overflowY: "auto",
   },
 
   right: {
