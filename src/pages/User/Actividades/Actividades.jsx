@@ -1,67 +1,82 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-const actividadesBase = [
-  { id: 1, nombre: "🎵 Música", descripcion: "Escuchar música relajante" },
-  { id: 2, nombre: "🧘 Relajación", descripcion: "Respiración guiada" },
-  { id: 3, nombre: "🚶 Ejercicio ligero", descripcion: "Caminar suave" },
-  { id: 4, nombre: "📖 Lectura", descripcion: "Leer algo tranquilo" },
-  { id: 5, nombre: "🎨 Creatividad", descripcion: "Dibujar o crear algo" },
-];
+const API = "https://empatia-backend.onrender.com";
 
 export default function Actividades() {
+  const user = JSON.parse(localStorage.getItem("usuario") || "{}");
+
+  const [actividades, setActividades] = useState([]);
   const [selected, setSelected] = useState(null);
   const [gusto, setGusto] = useState(5);
-  const [guardadas, setGuardadas] = useState([]);
   const [editId, setEditId] = useState(null);
 
   // =========================
-  // SELECT
+  // CARGAR BD
   // =========================
-  const seleccionarActividad = (act) => {
-    setSelected(act);
-    setGusto(5);
-    setEditId(null);
-  };
+  useEffect(() => {
+    const load = async () => {
+      if (!user?.id_usuario) return;
 
-  // =========================
-  // GUARDAR / ACTUALIZAR
-  // =========================
-  const guardarActividad = () => {
-    if (!selected) return;
-
-    // EDITAR
-    if (editId !== null) {
-      setGuardadas((prev) =>
-        prev.map((a) =>
-          a.id === editId ? { ...a, gusto: Number(gusto) } : a
-        )
+      const res = await fetch(
+        `${API}/mis-actividades/${user.id_usuario}`
       );
 
-      setEditId(null);
-      setSelected(null);
-      return;
-    }
-
-    // NUEVA
-    const nueva = {
-      id: Date.now(),
-      nombre: selected.nombre,
-      descripcion: selected.descripcion,
-      gusto: Number(gusto),
-      fecha: new Date(),
+      const data = await res.json();
+      setActividades(data);
     };
 
-    setGuardadas((prev) => [nueva, ...prev]);
-    setSelected(null);
+    load();
+  }, []);
+
+  // =========================
+  // SELECCIONAR
+  // =========================
+  const seleccionar = (act) => {
+    setSelected(act);
+    setGusto(act.puntaje_agrado || 5);
+    setEditId(act.id_registro);
   };
 
   // =========================
-  // EDITAR
+  // GUARDAR O EDITAR
   // =========================
-  const editarActividad = (act) => {
-    setSelected(act);
-    setGusto(act.gusto);
-    setEditId(act.id);
+  const guardar = async () => {
+    if (!selected) return;
+
+    if (editId) {
+      // UPDATE
+      await fetch(`${API}/registro-actividad/${editId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          puntaje_agrado: gusto,
+        }),
+      });
+    } else {
+      // NUEVO (si algún día lo usas aquí)
+      await fetch(`${API}/registro-actividad`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_usuario: user.id_usuario,
+          nombre_actividad: selected.nombre_actividad,
+          puntaje_agrado: gusto,
+          frecuencia_deseada: "media",
+          reaccion: "positiva",
+        }),
+      });
+    }
+
+    // refrescar
+    const res = await fetch(
+      `${API}/mis-actividades/${user.id_usuario}`
+    );
+
+    const data = await res.json();
+    setActividades(data);
+
+    setSelected(null);
+    setEditId(null);
   };
 
   return (
@@ -71,13 +86,13 @@ export default function Actividades() {
       <div className="sidebar">
         <h2>🎯 Actividades</h2>
 
-        {actividadesBase.map((act) => (
+        {actividades.map((a) => (
           <button
-            key={act.id}
+            key={a.id_registro}
             className="btn"
-            onClick={() => seleccionarActividad(act)}
+            onClick={() => seleccionar(a)}
           >
-            {act.nombre}
+            {a.nombre_actividad}
           </button>
         ))}
       </div>
@@ -85,62 +100,39 @@ export default function Actividades() {
       {/* MAIN */}
       <div className="main">
 
-        {/* ACTIVIDAD SELECCIONADA */}
         {selected && (
           <div className="card">
 
-            <h2>{selected.nombre}</h2>
-            <p>{selected.descripcion}</p>
+            <h2>{selected.nombre_actividad}</h2>
 
-            <div className="gustoBox">
+            <p>⭐ Gusto: {gusto}/10</p>
 
-              <h3>⭐ ¿Qué tanto te gustó?</h3>
+            <input
+              type="range"
+              min="1"
+              max="10"
+              value={gusto}
+              onChange={(e) => setGusto(Number(e.target.value))}
+            />
 
-              <input
-                type="range"
-                min="1"
-                max="10"
-                value={gusto}
-                onChange={(e) =>
-                  setGusto(Number(e.target.value))
-                }
-                className="range"
-              />
+            <button className="saveBtn" onClick={guardar}>
+              💾 {editId ? "Actualizar" : "Guardar"}
+            </button>
 
-              <div className="gustoValue">
-                {gusto}/10
-              </div>
-
-              <button className="saveBtn" onClick={guardarActividad}>
-                💾 {editId ? "Actualizar" : "Guardar"}
-              </button>
-
-            </div>
           </div>
         )}
 
-        {/* GUARDADAS */}
         <div className="list">
+          <h2>📌 Guardadas</h2>
 
-          <h2>📌 Actividades guardadas</h2>
+          {actividades.map((a) => (
+            <div key={a.id_registro} className="cardSaved">
 
-          {guardadas.length === 0 && (
-            <p>No hay actividades aún</p>
-          )}
+              <h3>{a.nombre_actividad}</h3>
 
-          {guardadas.map((act) => (
-            <div key={act.id} className="cardSaved">
+              <p>⭐ {a.puntaje_agrado}/10</p>
 
-              <h3>{act.nombre}</h3>
-              <p>⭐ Gusto: {act.gusto}/10</p>
-              <p>
-                📅 {new Date(act.fecha).toLocaleDateString()}
-              </p>
-
-              <button
-                className="editBtn"
-                onClick={() => editarActividad(act)}
-              >
+              <button onClick={() => seleccionar(a)}>
                 ✏️ Editar
               </button>
 
@@ -149,94 +141,6 @@ export default function Actividades() {
         </div>
 
       </div>
-
-      {/* =========================
-          CSS ABAJO (TODO EN UNO)
-      ========================== */}
-      <style>{`
-        .container {
-          display: flex;
-          height: 100vh;
-          background: #0b0f19;
-          color: white;
-          font-family: Arial;
-        }
-
-        .sidebar {
-          width: 260px;
-          padding: 20px;
-          background: #111827;
-        }
-
-        .btn {
-          width: 100%;
-          margin: 8px 0;
-          padding: 10px;
-          border: none;
-          border-radius: 10px;
-          background: #1f2937;
-          color: white;
-          cursor: pointer;
-        }
-
-        .main {
-          flex: 1;
-          padding: 20px;
-          overflow-y: auto;
-        }
-
-        .card {
-          background: #1f2937;
-          padding: 20px;
-          border-radius: 12px;
-        }
-
-        .gustoBox {
-          margin-top: 15px;
-        }
-
-        .range {
-          width: 100%;
-          cursor: pointer;
-        }
-
-        .gustoValue {
-          margin-top: 10px;
-          font-size: 22px;
-          font-weight: bold;
-        }
-
-        .saveBtn {
-          margin-top: 10px;
-          padding: 10px;
-          border: none;
-          border-radius: 10px;
-          background: #38bdf8;
-          color: white;
-          cursor: pointer;
-        }
-
-        .list {
-          margin-top: 20px;
-        }
-
-        .cardSaved {
-          background: #111827;
-          padding: 15px;
-          margin-top: 10px;
-          border-radius: 12px;
-        }
-
-        .editBtn {
-          margin-top: 10px;
-          padding: 6px 10px;
-          border: none;
-          border-radius: 8px;
-          background: #f59e0b;
-          cursor: pointer;
-        }
-      `}</style>
-
     </div>
   );
 }
