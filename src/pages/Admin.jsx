@@ -12,6 +12,28 @@ export default function Admin() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // 🆕 ESTADO SERVIDOR
+  const [serverStatus, setServerStatus] = useState("checking");
+
+  // =========================
+  // CHECK SERVER STATUS
+  // =========================
+  const checkServer = async () => {
+    try {
+      const res = await fetch(API);
+      if (res.ok) {
+        setServerStatus("online");
+        addLog("Servidor ONLINE");
+      } else {
+        setServerStatus("offline");
+        addLog("Servidor OFFLINE");
+      }
+    } catch (e) {
+      setServerStatus("offline");
+      addLog("Servidor OFFLINE");
+    }
+  };
+
   // =========================
   // LOAD USERS
   // =========================
@@ -33,6 +55,7 @@ export default function Admin() {
 
   useEffect(() => {
     loadUsers();
+    checkServer(); // 🆕 se revisa al entrar
   }, []);
 
   const addLog = (msg) => {
@@ -108,9 +131,22 @@ export default function Admin() {
         {/* DASHBOARD */}
         {tab === "dashboard" && (
           <div style={styles.cards}>
-            <div style={styles.card}>👤 Usuarios <b>{users.length}</b></div>
-            <div style={styles.card}>⚡ Activos <b>{Math.floor(users.length * 0.7)}</b></div>
-            <div style={styles.card}>📜 Logs <b>{logs.length}</b></div>
+
+            <div style={styles.card}>
+              👤 Usuarios <b>{users.length}</b>
+            </div>
+
+            <div style={styles.card}>
+              ⚡ Estado servidor <br />
+              {serverStatus === "online" && <b style={{ color: "#00ff88" }}>🟢 ONLINE</b>}
+              {serverStatus === "offline" && <b style={{ color: "#ff3b3b" }}>🔴 OFFLINE</b>}
+              {serverStatus === "checking" && <b>⏳ CHECKING...</b>}
+            </div>
+
+            <div style={styles.card}>
+              📜 Logs <b>{logs.length}</b>
+            </div>
+
           </div>
         )}
 
@@ -176,119 +212,3 @@ export default function Admin() {
     </div>
   );
 }
-
-/* =========================
-   🎨 ESTILOS (TODO AQUÍ ABAJO)
-========================= */
-const styles = {
-  layout: {
-    height: "100vh",
-    background: "#0a0f1c",
-    color: "#e6f1ff",
-    fontFamily: "Arial",
-  },
-
-  topbar: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "15px 20px",
-    borderBottom: "1px solid #1e293b",
-    background: "#0f172a",
-  },
-
-  title: {
-    color: "#00e5ff",
-  },
-
-  tabs: {
-    display: "flex",
-    gap: "10px",
-    flexWrap: "wrap",
-  },
-
-  tab: {
-    padding: "8px 12px",
-    background: "#111827",
-    border: "1px solid #1e293b",
-    color: "white",
-    borderRadius: "8px",
-    cursor: "pointer",
-  },
-
-  tabActive: {
-    padding: "8px 12px",
-    background: "#00e5ff",
-    border: "none",
-    color: "black",
-    borderRadius: "8px",
-    cursor: "pointer",
-  },
-
-  main: {
-    padding: "20px",
-  },
-
-  input: {
-    padding: "10px",
-    borderRadius: "8px",
-    border: "none",
-    width: "250px",
-    marginBottom: "15px",
-  },
-
-  tableBox: {
-    background: "#111827",
-    padding: "15px",
-    borderRadius: "12px",
-    overflowX: "auto",
-  },
-
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-  },
-
-  th: {
-    padding: "10px",
-    borderBottom: "1px solid #1e293b",
-    textAlign: "left",
-  },
-
-  td: {
-    padding: "10px",
-    borderBottom: "1px solid #1e293b",
-  },
-
-  danger: {
-    background: "#ff3b3b",
-    border: "none",
-    padding: "5px 10px",
-    color: "white",
-    borderRadius: "6px",
-    cursor: "pointer",
-  },
-
-  logsBox: {
-    background: "#111827",
-    padding: "15px",
-    borderRadius: "12px",
-    fontSize: "12px",
-    maxHeight: "500px",
-    overflowY: "auto",
-  },
-
-  cards: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
-    gap: "15px",
-  },
-
-  card: {
-    background: "#111827",
-    padding: "20px",
-    borderRadius: "12px",
-    textAlign: "center",
-    fontSize: "18px",
-  },
-};
