@@ -1,3 +1,7 @@
+// ===============================
+// USER.JSX COMPLETO MODIFICADO
+// ===============================
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./user.css";
@@ -82,15 +86,15 @@ export default function User() {
 
   const user = JSON.parse(localStorage.getItem("usuario") || "null");
 
+  // 🔥 FIX
+  const userId = user?.id || user?.id_usuario;
+
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [frase, setFrase] = useState("");
   const [loading, setLoading] = useState(false);
 
   const [waitingForYes, setWaitingForYes] = useState(false);
-  const [writingActivity, setWritingActivity] = useState(false);
-
-  const [currentCategory, setCurrentCategory] = useState(null);
 
   // INIT
   useEffect(() => {
@@ -130,54 +134,38 @@ export default function User() {
   };
 
   // ======================
-  // GUARDAR ACTIVIDAD EN BD
+  // GUARDAR ACTIVIDAD BD
   // ======================
-  const saveActivityToDB = async (activityName) => {
+  const saveActivityToDB = async (nombreActividad) => {
     try {
-      if (!user?.id_usuario) return;
+      // buscar actividad existente
+      const actRes = await fetch(`${API_URL}/actividades`);
+      const actividades = await actRes.json();
 
-      // 1️⃣ buscar actividad en catálogo
-      const res = await fetch(`${API_URL}/actividades`);
-      const actividades = await res.json();
-
-      let actividad = actividades.find(
+      const actividad = actividades.find(
         (a) =>
-          a.nombre.toLowerCase() === activityName.toLowerCase()
+          a.nombre.toLowerCase() === nombreActividad.toLowerCase()
       );
 
-      // 2️⃣ si no existe → crear
-      if (!actividad) {
-        const createRes = await fetch(`${API_URL}/crear-actividad`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            nombre: activityName,
-            descripcion: activityName,
-            categoria: currentCategory || "general",
-          }),
-        });
+      if (!actividad) return;
 
-        actividad = await createRes.json();
-      }
-
-      // 3️⃣ registrar actividad al usuario
       await fetch(`${API_URL}/registro-actividad`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          id_usuario: user.id_usuario,
+          id_usuario: userId,
           id_actividad: actividad.id_actividad,
-          puntaje_agrado: 5,
+          puntaje_agrado: 8,
           frecuencia_deseada: "media",
-          reaccion: "seleccionada",
+          reaccion: "aceptada",
         }),
       });
+
+      console.log("✅ actividad guardada");
     } catch (err) {
-      console.log("ERROR BD:", err);
+      console.log("❌ error guardando actividad");
     }
   };
 
@@ -190,24 +178,9 @@ export default function User() {
     const text = input.trim();
 
     setMessages((prev) => [...prev, { role: "user", text }]);
+
     setInput("");
     setLoading(true);
-
-    // ✍️ escribir actividad
-    if (writingActivity) {
-      await saveActivityToDB(text);
-
-      setMessages((prev) => [
-        ...prev,
-        { role: "ai", text: `✅ Actividad guardada: ${text}` },
-      ]);
-
-      setWritingActivity(false);
-      setLoading(false);
-
-      setTimeout(() => navigate("/actividades"), 1200);
-      return;
-    }
 
     // SI / NO
     if (waitingForYes) {
@@ -231,7 +204,10 @@ export default function User() {
       if (lower.includes("no")) {
         setMessages((prev) => [
           ...prev,
-          { role: "ai", text: "🤍 Está bien, aquí estoy." },
+          {
+            role: "ai",
+            text: "🤍 Está bien, aquí estoy.",
+          },
         ]);
 
         setWaitingForYes(false);
@@ -276,6 +252,7 @@ export default function User() {
     }
 
     setMessages((prev) => [...prev, { role: "ai", text: reply }]);
+
     setLoading(false);
   };
 
@@ -289,7 +266,11 @@ export default function User() {
     if (opt === "Sí") {
       setMessages((prev) => [
         ...prev,
-        { role: "ai", text: "¿Qué te gustaría hacer?", options: mainOptions },
+        {
+          role: "ai",
+          text: "¿Qué te gustaría hacer?",
+          options: mainOptions,
+        },
       ]);
 
       setWaitingForYes(false);
@@ -300,7 +281,10 @@ export default function User() {
     if (opt === "No") {
       setMessages((prev) => [
         ...prev,
-        { role: "ai", text: "🤍 Está bien, aquí estoy contigo." },
+        {
+          role: "ai",
+          text: "🤍 Está bien, aquí estoy contigo.",
+        },
       ]);
 
       setWaitingForYes(false);
@@ -318,8 +302,6 @@ export default function User() {
         : null;
 
     if (groupKey) {
-      setCurrentCategory(groupKey);
-
       setMessages((prev) => [
         ...prev,
         {
@@ -332,12 +314,15 @@ export default function User() {
       return;
     }
 
-    // guardar actividad BD
+    // 🔥 GUARDAR EN BD
     await saveActivityToDB(opt);
 
     setMessages((prev) => [
       ...prev,
-      { role: "ai", text: `✅ Guardado: ${opt}` },
+      {
+        role: "ai",
+        text: `✅ Guardado: ${opt}`,
+      },
     ]);
 
     setTimeout(() => navigate("/actividades"), 1200);
@@ -370,7 +355,9 @@ export default function User() {
       </div>
 
       <div className="right-panel">
-        <button onClick={() => navigate("/rutina")}>🧘 Rutina</button>
+        <button onClick={() => navigate("/rutina")}>
+          🧘 Rutina
+        </button>
 
         <button onClick={() => navigate("/actividades")}>
           🎯 Actividades
