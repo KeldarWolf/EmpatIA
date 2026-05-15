@@ -16,51 +16,12 @@ export default function Admin() {
   const [section, setSection] =
     useState("dashboard");
 
-  const [loading, setLoading] =
-    useState(true);
-
-  // =========================
-  // SECURITY ADMIN
-  // =========================
-  useEffect(() => {
-    try {
-      const user = JSON.parse(
-        localStorage.getItem("user")
-      );
-
-      if (!user || user.role !== "admin") {
-        navigate("/login", {
-          replace: true,
-        });
-
-        return;
-      }
-
-      loadUsers();
-
-    } catch (err) {
-      console.error(err);
-
-      navigate("/login", {
-        replace: true,
-      });
-    }
-  }, []);
-
   // =========================
   // LOAD USERS
   // =========================
   const loadUsers = async () => {
     try {
-      setLoading(true);
-
       const res = await fetch(API);
-
-      if (!res.ok) {
-        throw new Error(
-          "Error obteniendo usuarios"
-        );
-      }
 
       const data = await res.json();
 
@@ -77,14 +38,15 @@ export default function Admin() {
       );
 
       setUsers([]);
-
-    } finally {
-      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
   // =========================
-  // DELETE
+  // DELETE USER
   // =========================
   const deleteUser = async (id) => {
     try {
@@ -107,7 +69,7 @@ export default function Admin() {
   };
 
   // =========================
-  // SAVE
+  // SAVE USER
   // =========================
   const saveUser = async () => {
     try {
@@ -146,13 +108,11 @@ export default function Admin() {
 
     localStorage.removeItem("token");
 
-    navigate("/login", {
-      replace: true,
-    });
+    navigate("/login");
   };
 
   // =========================
-  // EXPORT REPORT
+  // EXPORT USERS
   // =========================
   const exportUsers = () => {
     const data = JSON.stringify(
@@ -178,17 +138,6 @@ export default function Admin() {
 
     a.click();
   };
-
-  // =========================
-  // LOADING
-  // =========================
-  if (loading) {
-    return (
-      <div style={styles.loadingScreen}>
-        Cargando panel administrador...
-      </div>
-    );
-  }
 
   return (
     <div style={styles.page}>
@@ -319,7 +268,7 @@ export default function Admin() {
         )}
 
         {/* =========================
-            USERS CRUD
+            USERS
         ========================= */}
         {section === "users" && (
           <div style={styles.list}>
@@ -396,12 +345,12 @@ export default function Admin() {
             </div>
 
             <div style={styles.log}>
-              🤖 IA funcionando correctamente
+              🤖 IA funcionando
             </div>
 
             <div style={styles.log}>
               🔒 Validación de sesión
-              realizada
+              correcta
             </div>
 
             <div style={styles.log}>
@@ -465,7 +414,7 @@ export default function Admin() {
         )}
 
         {/* =========================
-            AI
+            IA
         ========================= */}
         {section === "ai" && (
           <div style={styles.logsBox}>
@@ -530,7 +479,7 @@ export default function Admin() {
         )}
 
         {/* =========================
-            MODAL EDIT
+            MODAL
         ========================= */}
         {edit && (
           <div style={styles.modal}>
@@ -636,20 +585,11 @@ const styles = {
     fontFamily: "Arial",
   },
 
-  loadingScreen: {
-    height: "100vh",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    background: "#05070a",
-    color: "#00e5ff",
-    fontSize: 24,
-  },
-
   container: {
     width: "100%",
     maxWidth: 1200,
-    background: "rgba(15,22,32,0.9)",
+    background:
+      "rgba(15,22,32,0.9)",
     borderRadius: 20,
     padding: 20,
     border:
