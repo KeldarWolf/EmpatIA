@@ -1,6 +1,6 @@
-// ======================
-// USER.JSX
-// ======================
+// =========================
+// USER.JSX COMPLETO MOD
+// =========================
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -86,27 +86,19 @@ export default function User() {
 
   const user = JSON.parse(localStorage.getItem("usuario") || "null");
 
-  // 🔥 FIX
-  const userId = user?.id || user?.id_usuario;
-
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [frase, setFrase] = useState("");
   const [loading, setLoading] = useState(false);
 
   const [waitingForYes, setWaitingForYes] = useState(false);
+  const [writingActivity, setWritingActivity] = useState(false);
 
   // INIT
   useEffect(() => {
     setMessages([
-      {
-        role: "ai",
-        text: `Hola ${user?.nombre || "🤍"}, estoy aquí.`,
-      },
-      {
-        role: "ai",
-        text: "Cuéntame cómo te sientes...",
-      },
+      { role: "ai", text: `Hola ${user?.nombre || "🤍"}, estoy aquí.` },
+      { role: "ai", text: "Cuéntame cómo te sientes..." },
     ]);
 
     const interval = setInterval(() => {
@@ -117,9 +109,7 @@ export default function User() {
   }, [user?.nombre]);
 
   const shouldTriggerActivity = (text) =>
-    activityTriggers.some((w) =>
-      text.toLowerCase().includes(w)
-    );
+    activityTriggers.some((w) => text.toLowerCase().includes(w));
 
   // ======================
   // IA
@@ -128,83 +118,32 @@ export default function User() {
     try {
       const res = await fetch(`${API_URL}/chat`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message }),
       });
 
       if (!res.ok) return null;
 
       const data = await res.json();
-
       return data?.reply || null;
-
     } catch {
       return null;
     }
   };
 
   // ======================
-  // 🔥 GUARDAR ACTIVIDAD BD
+  // GUARDAR ACTIVIDAD BD
   // ======================
   const saveActivityToDB = async (nombreActividad) => {
     try {
-
-      console.log("👤 USER:", user);
-      console.log("👤 USER ID:", userId);
-      console.log("🎯 ACTIVIDAD:", nombreActividad);
-
-      // =========================
-      // CARGAR ACTIVIDADES
-      // =========================
-      const actRes = await fetch(
-        `${API_URL}/actividades`
-      );
-
-      const actividades = await actRes.json();
-
-      console.log("📦 ACTIVIDADES:", actividades);
-
-      // =========================
-      // BUSCAR ACTIVIDAD
-      // =========================
-      let actividad = actividades.find(
-        (a) =>
-          a.nombre
-            ?.toLowerCase()
-            .trim() ===
-          nombreActividad.toLowerCase().trim()
-      );
-
-      // fallback parcial
-      if (!actividad) {
-        actividad = actividades.find((a) =>
-          a.nombre
-            ?.toLowerCase()
-            .includes(nombreActividad.toLowerCase())
-        );
-      }
-
-      console.log("🧠 ENCONTRADA:", actividad);
-
-      // fallback final
-      if (!actividad) {
-        actividad = actividades?.[0];
-      }
-
-      // =========================
-      // VALIDAR
-      // =========================
-      if (!actividad?.id_actividad) {
-        console.log("❌ SIN ID ACTIVIDAD");
+      if (!user?.id_usuario) {
+        console.log("❌ usuario sin id_usuario");
         return;
       }
 
-      // =========================
-      // REGISTRAR
-      // =========================
-      const response = await fetch(
+      console.log("👤 USER:", user);
+
+      const res = await fetch(
         `${API_URL}/registro-actividad`,
         {
           method: "POST",
@@ -212,19 +151,18 @@ export default function User() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            id_usuario: userId,
-            id_actividad: actividad.id_actividad,
-            puntaje_agrado: 8,
+            id_usuario: user.id_usuario,
+            nombre_actividad: nombreActividad,
+            puntaje_agrado: 7,
             frecuencia_deseada: "media",
-            reaccion: nombreActividad,
+            reaccion: "positiva",
           }),
         }
       );
 
-      const data = await response.json();
+      const data = await res.json();
 
       console.log("✅ GUARDADO:", data);
-
     } catch (err) {
       console.log("❌ ERROR:", err);
     }
@@ -238,22 +176,14 @@ export default function User() {
 
     const text = input.trim();
 
-    setMessages((prev) => [
-      ...prev,
-      { role: "user", text },
-    ]);
-
+    setMessages((prev) => [...prev, { role: "user", text }]);
     setInput("");
     setLoading(true);
 
-    // SI / NO
     if (waitingForYes) {
       const lower = text.toLowerCase();
 
-      if (
-        lower.includes("si") ||
-        lower.includes("sí")
-      ) {
+      if (lower.includes("si") || lower.includes("sí")) {
         setMessages((prev) => [
           ...prev,
           {
@@ -271,10 +201,7 @@ export default function User() {
       if (lower.includes("no")) {
         setMessages((prev) => [
           ...prev,
-          {
-            role: "ai",
-            text: "🤍 Está bien, aquí estoy.",
-          },
+          { role: "ai", text: "🤍 Está bien, aquí estoy." },
         ]);
 
         setWaitingForYes(false);
@@ -283,14 +210,12 @@ export default function User() {
       }
     }
 
-    // trigger actividad
     if (shouldTriggerActivity(text)) {
       setMessages((prev) => [
         ...prev,
         {
           role: "ai",
-          text:
-            "🤍 ¿Quieres que te ayude con una actividad?",
+          text: "🤍 ¿Quieres que te ayude con una actividad?",
           options: yesNoOptions,
         },
       ]);
@@ -300,7 +225,6 @@ export default function User() {
       return;
     }
 
-    // IA
     const reply = await askAI(text);
 
     if (!reply) {
@@ -319,10 +243,7 @@ export default function User() {
       return;
     }
 
-    setMessages((prev) => [
-      ...prev,
-      { role: "ai", text: reply },
-    ]);
+    setMessages((prev) => [...prev, { role: "ai", text: reply }]);
 
     setLoading(false);
   };
@@ -331,13 +252,8 @@ export default function User() {
   // BOTONES
   // ======================
   const handleOptionClick = async (opt) => {
+    setMessages((prev) => [...prev, { role: "user", text: opt }]);
 
-    setMessages((prev) => [
-      ...prev,
-      { role: "user", text: opt },
-    ]);
-
-    // Sí
     if (opt === "Sí") {
       setMessages((prev) => [
         ...prev,
@@ -352,7 +268,6 @@ export default function User() {
       return;
     }
 
-    // No
     if (opt === "No") {
       setMessages((prev) => [
         ...prev,
@@ -366,7 +281,6 @@ export default function User() {
       return;
     }
 
-    // categorías
     const groupKey =
       opt.includes("Música")
         ? "musica"
@@ -389,14 +303,16 @@ export default function User() {
       return;
     }
 
-    // 🔥 GUARDAR BD
+    // ======================
+    // GUARDAR EN SUPABASE
+    // ======================
     await saveActivityToDB(opt);
 
     setMessages((prev) => [
       ...prev,
       {
         role: "ai",
-        text: `✅ Guardado: ${opt}`,
+        text: `✅ Actividad guardada: ${opt}`,
       },
     ]);
 
@@ -407,28 +323,17 @@ export default function User() {
 
   return (
     <div className="app-layout">
-
       <div className="left-panel">
-
         <h4>💡 Acompañamiento</h4>
 
-        <div className="quote-box">
-          {frase}
-        </div>
+        <div className="quote-box">{frase}</div>
 
-        <div
-          style={{
-            marginTop: 20,
-            color: "#00e5ff",
-          }}
-        >
+        <div style={{ marginTop: 20, color: "#00e5ff" }}>
           👤 {user?.nombre || "Usuario"}
         </div>
-
       </div>
 
       <div className="center-panel">
-
         <ChatBox
           messages={messages}
           onOptionClick={handleOptionClick}
@@ -440,11 +345,9 @@ export default function User() {
           sendMessage={sendMessage}
           loading={loading}
         />
-
       </div>
 
       <div className="right-panel">
-
         <button onClick={() => navigate("/rutina")}>
           🧘 Rutina
         </button>
@@ -460,9 +363,7 @@ export default function User() {
         <button onClick={() => navigate("/diario")}>
           📓 Diario
         </button>
-
       </div>
-
     </div>
   );
 }
