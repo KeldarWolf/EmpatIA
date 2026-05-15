@@ -1,3 +1,7 @@
+// ===============================
+// User.jsx
+// ===============================
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./user.css";
@@ -6,7 +10,7 @@ import ChatBox from "./ChatBox";
 import InputBox from "./InputBox";
 import frases from "./frases";
 
-const API_URL = "https://empatia-backend.onrender.com";
+const API_URL = "http://localhost:3001";
 
 // 🔎 triggers
 const activityTriggers = [
@@ -130,6 +134,26 @@ export default function User() {
   };
 
   // ======================
+  // GUARDAR BD
+  // ======================
+  const saveActivityToDB = async (texto) => {
+    try {
+      await fetch(`${API_URL}/guardar-actividad-usuario`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id_usuario: user?.id_usuario,
+          texto,
+        }),
+      });
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  // ======================
   // SEND MESSAGE
   // ======================
   const sendMessage = async () => {
@@ -143,15 +167,7 @@ export default function User() {
 
     // ✍️ escribir actividad
     if (writingActivity) {
-      const data = JSON.parse(localStorage.getItem("actividades") || "[]");
-
-      const nueva = {
-        texto: text,
-        tipo: "Personalizada",
-        fecha: new Date().toISOString(),
-      };
-
-      localStorage.setItem("actividades", JSON.stringify([...data, nueva]));
+      await saveActivityToDB(text);
 
       setMessages((prev) => [
         ...prev,
@@ -165,7 +181,7 @@ export default function User() {
       return;
     }
 
-    // SI / NO por texto (fallback)
+    // SI / NO por texto
     if (waitingForYes) {
       const lower = text.toLowerCase();
 
@@ -238,7 +254,7 @@ export default function User() {
   // ======================
   // BOTONES
   // ======================
-  const handleOptionClick = (opt) => {
+  const handleOptionClick = async (opt) => {
     setMessages((prev) => [...prev, { role: "user", text: opt }]);
 
     // Sí
@@ -263,15 +279,40 @@ export default function User() {
       return;
     }
 
-    // escribir actividad
-    if (opt.includes("Escribir")) {
-      setWritingActivity(true);
-
+    // cambiar respuestas
+    if (opt.includes("Cambiar")) {
       setMessages((prev) => [
         ...prev,
         {
           role: "ai",
-          text: "✍️ Escribe tu actividad:",
+          text: "✨ Puedes elegir otra categoría:",
+          options: [
+            "🎵 Música",
+            "🧘 Relajación",
+            "🏃 Actividad física",
+            "❓ No sé qué hacer",
+          ],
+        },
+      ]);
+
+      return;
+    }
+
+    // no sé qué hacer
+    if (opt.includes("No sé")) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: "🤍 Probemos algo suave:",
+          options: [
+            "Respirar profundo",
+            "Escuchar música",
+            "Caminar",
+            "Tomar agua",
+            "Cerrar los ojos",
+            "Estiramientos",
+          ],
         },
       ]);
 
@@ -304,15 +345,7 @@ export default function User() {
     }
 
     // guardar actividad
-    const data = JSON.parse(localStorage.getItem("actividades") || "[]");
-
-    const nueva = {
-      texto: opt,
-      tipo: "Actividad",
-      fecha: new Date().toISOString(),
-    };
-
-    localStorage.setItem("actividades", JSON.stringify([...data, nueva]));
+    await saveActivityToDB(opt);
 
     setMessages((prev) => [
       ...prev,
@@ -326,14 +359,19 @@ export default function User() {
     <div className="app-layout">
       <div className="left-panel">
         <h4>💡 Acompañamiento</h4>
+
         <div className="quote-box">{frase}</div>
+
         <div style={{ marginTop: 20, color: "#00e5ff" }}>
           👤 {user?.nombre || "Usuario"}
         </div>
       </div>
 
       <div className="center-panel">
-        <ChatBox messages={messages} onOptionClick={handleOptionClick} />
+        <ChatBox
+          messages={messages}
+          onOptionClick={handleOptionClick}
+        />
 
         <InputBox
           input={input}
@@ -345,9 +383,18 @@ export default function User() {
 
       <div className="right-panel">
         <button onClick={() => navigate("/rutina")}>🧘 Rutina</button>
-        <button onClick={() => navigate("/actividades")}>🎯 Actividades</button>
-        <button onClick={() => navigate("/estadisticas")}>📊 Estadísticas</button>
-        <button onClick={() => navigate("/diario")}>📓 Diario</button>
+
+        <button onClick={() => navigate("/actividades")}>
+          🎯 Actividades
+        </button>
+
+        <button onClick={() => navigate("/estadisticas")}>
+          📊 Estadísticas
+        </button>
+
+        <button onClick={() => navigate("/diario")}>
+          📓 Diario
+        </button>
       </div>
     </div>
   );
