@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
+const API = "https://empatia-backend.onrender.com";
+
 export default function Actividades() {
   const navigate = useNavigate();
 
@@ -9,50 +11,45 @@ export default function Actividades() {
   const [savedActivities, setSavedActivities] = useState([]);
   const [selected, setSelected] = useState(null);
 
-  const API_URLS = [
-    "http://localhost:3001",
-    "https://empatia-backend.onrender.com"
-  ];
+  const user = JSON.parse(localStorage.getItem("usuario") || "null");
+
+  // ===============================
+  // CARGAR ACTIVIDADES DESDE BD
+  // ===============================
+  const loadActivities = async () => {
+    try {
+      const res = await fetch(`${API}/actividades`);
+      const data = await res.json();
+
+      setSavedActivities(data || []);
+    } catch (err) {
+      console.log("Error cargando actividades", err);
+    }
+  };
 
   // ===============================
   // IA
   // ===============================
   const askAI = async (message) => {
-    for (const url of API_URLS) {
-      try {
-        const res = await fetch(`${url}/chat`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message }),
-        });
+    try {
+      const res = await fetch(`${API}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
+      });
 
-        if (!res.ok) continue;
-
-        const data = await res.json();
-        if (data?.reply) return data.reply;
-
-      } catch {
-        console.warn("Error conexión:", url);
-      }
+      const data = await res.json();
+      return data.reply || "No pude responder";
+    } catch {
+      return "Error de conexión 😢";
     }
-
-    return "Error de conexión 😢";
   };
 
   // ===============================
-  // CARGA LOCALSTORAGE
+  // INIT
   // ===============================
   useEffect(() => {
-    const data = JSON.parse(localStorage.getItem("actividades") || "[]");
-
-    const normalized = data.map((a) => ({
-      ...a,
-      gusto: a.gusto ?? 5,
-      pasos: a.pasos ?? "Respira profundo y realiza la actividad a tu ritmo.",
-      enRutina: a.enRutina ?? false,
-    }));
-
-    setSavedActivities(normalized);
+    loadActivities();
 
     setMessages([
       { role: "ai", text: "Aquí puedes ver tus actividades 🤍" },
@@ -80,17 +77,17 @@ export default function Actividades() {
   // CLICK ACTIVIDAD
   // ===============================
   const openActivity = async (activity) => {
-    if (selected && selected.texto === activity.texto) return;
+    if (!activity) return;
 
     setSelected(activity);
 
     setMessages([
-      { role: "ai", text: `🧠 Actividad: ${activity.texto}` },
+      { role: "ai", text: `🧠 Actividad: ${activity.nombre}` },
       { role: "ai", text: "Estoy preparando cómo ayudarte..." },
     ]);
 
     const reply = await askAI(
-      `Explícame paso a paso cómo hacer esta actividad: ${activity.texto}`
+      `Explícame paso a paso cómo hacer: ${activity.nombre}`
     );
 
     setMessages((prev) => [
@@ -101,41 +98,31 @@ export default function Actividades() {
   };
 
   // ===============================
-  // GUSTO
+  // GUARDAR EN BD (REAL)
   // ===============================
-  const changeGusto = (index, value) => {
-    const updated = [...savedActivities];
-    updated[index].gusto = value;
+  const saveActivity = async (activity) => {
+    if (!user?.id_usuario) {
+      alert("Usuario no válido");
+      return;
+    }
 
-    setSavedActivities(updated);
-    localStorage.setItem("actividades", JSON.stringify(updated));
-  };
+    try {
+      await fetch(`${API}/registro-actividad`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_usuario: user.id_usuario,
+          id_actividad: activity.id_actividad,
+          puntaje_agrado: 5,
+          frecuencia_deseada: "media",
+          reaccion: "vista",
+        }),
+      });
 
-  // ===============================
-  // ELIMINAR
-  // ===============================
-  const deleteActivity = (index) => {
-    const confirmDelete = window.confirm(
-      "⚠️ ¿Seguro que quieres eliminarla?"
-    );
-
-    if (!confirmDelete) return;
-
-    const updated = savedActivities.filter((_, i) => i !== index);
-
-    setSavedActivities(updated);
-    localStorage.setItem("actividades", JSON.stringify(updated));
-  };
-
-  // ===============================
-  // RUTINA
-  // ===============================
-  const addToRoutine = (index) => {
-    const updated = [...savedActivities];
-    updated[index].enRutina = true;
-
-    setSavedActivities(updated);
-    localStorage.setItem("actividades", JSON.stringify(updated));
+      alert("✔ Actividad guardada en tu perfil");
+    } catch (err) {
+      console.log("Error guardando", err);
+    }
   };
 
   // ===============================
@@ -143,9 +130,13 @@ export default function Actividades() {
   // ===============================
   return (
     <div style={styles.page}>
-
       <div style={styles.header}>
-        <h1>🎯 Actividades</h1>
+        <div>
+          <h1>🎯 Actividades</h1>
+          <p style={{ opacity: 0.7 }}>
+            Haz click para ver o guardar actividades
+          </p>
+        </div>
 
         <button onClick={() => navigate("/user")} style={styles.backBtn}>
           ⬅ Volver
@@ -153,10 +144,9 @@ export default function Actividades() {
       </div>
 
       <div style={styles.grid}>
-
         {/* CHAT */}
         <div style={styles.left}>
-          <h3>💬 IA</h3>
+          <h3>💬 Acompañamiento</h3>
 
           <div style={styles.chatBox}>
             {messages.map((m, i) => (
@@ -174,7 +164,6 @@ export default function Actividades() {
               style={styles.input}
               placeholder="Escribe..."
             />
-
             <button onClick={sendMessage} style={styles.send}>
               Enviar
             </button>
@@ -183,54 +172,30 @@ export default function Actividades() {
 
         {/* ACTIVIDADES */}
         <div style={styles.center}>
-          <h3>📌 Actividades</h3>
+          <h3>📌 Actividades disponibles</h3>
 
-          {savedActivities.map((a, i) => (
-            <div key={i} style={styles.card} onClick={() => openActivity(a)}>
-              <h4>{a.texto}</h4>
+          {savedActivities.length === 0 && (
+            <p style={{ opacity: 0.6 }}>No hay actividades</p>
+          )}
 
-              <div style={styles.barContainer}>
-                {Array.from({ length: 10 }, (_, idx) => (
-                  <div
-                    key={idx}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      changeGusto(i, idx + 1);
-                    }}
-                    style={{
-                      ...styles.bar,
-                      background:
-                        idx + 1 <= a.gusto ? "#22c55e" : "#374151",
-                    }}
-                  />
-                ))}
-              </div>
+          {savedActivities.map((a) => (
+            <div key={a.id_actividad} style={styles.card}>
+              <h4>{a.nombre}</h4>
+              <p style={{ fontSize: 12 }}>{a.descripcion}</p>
 
-              {a.enRutina && (
-                <p style={{ color: "#22c55e", fontSize: 12 }}>
-                  ✔ En rutina
-                </p>
-              )}
-
-              <div style={{ display: "flex", gap: 8 }}>
+              <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    addToRoutine(i);
-                  }}
                   style={styles.routineBtn}
+                  onClick={() => openActivity(a)}
                 >
-                  ➕ Rutina
+                  👁 Ver
                 </button>
 
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteActivity(i);
-                  }}
-                  style={styles.deleteBtn}
+                  style={{ ...styles.routineBtn, background: "#1d9bf0" }}
+                  onClick={() => saveActivity(a)}
                 >
-                  🗑 Eliminar
+                  ➕ Guardar
                 </button>
               </div>
             </div>
@@ -242,52 +207,112 @@ export default function Actividades() {
           <h3>🧠 Ayuda</h3>
 
           <div style={styles.tip}>
-            Haz click en una actividad para ver cómo realizarla
+            Guarda actividades para que queden asociadas a tu usuario
           </div>
 
           <div style={styles.tip}>
-            La IA te acompaña mientras exploras
+            La IA te explica cómo realizarlas paso a paso
           </div>
         </div>
-
       </div>
     </div>
   );
 }
 
-/* estilos igual que tu versión original */
+/* ================= STYLES ================= */
+
 const styles = {
-  page: { height: "100vh", background: "#0b0f14", color: "white" },
+  page: {
+    height: "100vh",
+    background: "#0b0f14",
+    color: "white",
+    display: "flex",
+    flexDirection: "column",
+  },
   header: {
     display: "flex",
     justifyContent: "space-between",
     padding: 20,
+    borderBottom: "1px solid #1f2a37",
   },
   backBtn: {
-    padding: 8,
+    padding: "8px 12px",
     borderRadius: 8,
     border: "none",
     background: "#1f2937",
     color: "white",
   },
-  grid: { display: "flex", gap: 15, padding: 15 },
-  left: { width: "30%", background: "#0f1620", padding: 15 },
-  center: { flex: 1, background: "#0f1620", padding: 15 },
-  right: { width: "25%", background: "#0f1620", padding: 15 },
-
-  chatBox: { height: "60%", overflowY: "auto" },
-  msg: { padding: 8, background: "#111827", marginBottom: 6 },
-
-  inputRow: { display: "flex", gap: 8 },
-  input: { flex: 1, padding: 10, background: "#111827", color: "white" },
-  send: { background: "#1d9bf0", padding: 10 },
-
-  card: { background: "#111827", padding: 12, marginBottom: 10 },
-  barContainer: { display: "flex", gap: 3 },
-  bar: { width: 18, height: 8 },
-
-  routineBtn: { background: "#22c55e", padding: 6 },
-  deleteBtn: { background: "#ef4444", padding: 6 },
-
-  tip: { background: "#111827", padding: 10, marginTop: 10 },
+  grid: {
+    flex: 1,
+    display: "flex",
+    gap: 15,
+    padding: 15,
+  },
+  left: {
+    width: "30%",
+    background: "#0f1620",
+    padding: 15,
+    borderRadius: 12,
+  },
+  center: {
+    flex: 1,
+    background: "#0f1620",
+    padding: 15,
+    borderRadius: 12,
+  },
+  right: {
+    width: "25%",
+    background: "#0f1620",
+    padding: 15,
+    borderRadius: 12,
+  },
+  chatBox: {
+    height: "60%",
+    overflowY: "auto",
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+  },
+  msg: {
+    padding: 8,
+    background: "#111827",
+    borderRadius: 8,
+    fontSize: 13,
+  },
+  inputRow: { display: "flex", gap: 8, marginTop: 10 },
+  input: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 8,
+    background: "#111827",
+    color: "white",
+    border: "none",
+  },
+  send: {
+    padding: 10,
+    background: "#1d9bf0",
+    borderRadius: 8,
+    border: "none",
+    color: "white",
+  },
+  card: {
+    background: "#111827",
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  routineBtn: {
+    background: "#22c55e",
+    border: "none",
+    padding: "6px 10px",
+    borderRadius: 6,
+    color: "white",
+  },
+  tip: {
+    background: "#111827",
+    padding: 10,
+    borderRadius: 10,
+    marginTop: 10,
+    fontSize: 13,
+  },
 };
