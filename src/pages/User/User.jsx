@@ -8,7 +8,7 @@ import frases from "./frases";
 
 const API_URL = "https://empatia-backend.onrender.com";
 
-// 🔎 detectar actividades
+// 🔎 triggers
 const activityTriggers = [
   "aburrido",
   "aburrida",
@@ -21,7 +21,7 @@ const activityTriggers = [
   "aburrimiento",
 ];
 
-// 🎯 categorías principales
+// 🎯 opciones principales
 const mainOptions = [
   "🎵 Música",
   "🧘 Relajación",
@@ -31,7 +31,9 @@ const mainOptions = [
   "🔄 Cambiar respuestas rápidas",
 ];
 
-// 🧠 actividades por categoría
+const yesNoOptions = ["Sí", "No"];
+
+// 🧠 actividades
 const activityGroups = {
   musica: [
     [
@@ -46,20 +48,6 @@ const activityGroups = {
       "Descubrir música nueva",
       "Escuchar piano",
       "Cantar una canción",
-    ],
-
-    [
-      "Escuchar jazz",
-      "Música para dormir",
-      "Rock suave",
-      "Playlist feliz",
-      "Escuchar guitarra",
-      "Escuchar música triste",
-      "Música ambiental",
-      "Sonidos del mar",
-      "Playlist focus",
-      "Música clásica",
-      "Escuchar algo nuevo",
     ],
   ],
 
@@ -77,20 +65,6 @@ const activityGroups = {
       "Escribir lo que siento",
       "Relajar hombros",
     ],
-
-    [
-      "Respirar lento",
-      "Caminar tranquilo",
-      "Tomar té",
-      "Mirar el cielo",
-      "Mover el cuerpo suave",
-      "Relajar mandíbula",
-      "Escuchar música suave",
-      "Acostarse un rato",
-      "Masajear manos",
-      "Pausar pensamientos",
-      "Mirar naturaleza",
-    ],
   ],
 
   fisica: [
@@ -103,23 +77,9 @@ const activityGroups = {
       "Bailar una canción",
       "Salir a tomar aire",
       "Subir escaleras",
-      "Caminar escuchando música",
+      "Caminar con música",
       "Rutina corta",
       "Mover cuello y hombros",
-    ],
-
-    [
-      "Trotar suave",
-      "Saltar un poco",
-      "Yoga",
-      "Mover articulaciones",
-      "Caminar sin celular",
-      "Ejercicio corto",
-      "Rutina rápida",
-      "Salir al patio",
-      "Mover espalda",
-      "Activar el cuerpo",
-      "Moverse 10 minutos",
     ],
   ],
 };
@@ -134,10 +94,12 @@ export default function User() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [frase, setFrase] = useState("");
-
   const [loading, setLoading] = useState(false);
 
   const [waitingForYes, setWaitingForYes] =
+    useState(false);
+
+  const [writingActivity, setWritingActivity] =
     useState(false);
 
   const [currentCategory, setCurrentCategory] =
@@ -146,10 +108,7 @@ export default function User() {
   const [currentPage, setCurrentPage] =
     useState(0);
 
-  const [writingActivity, setWritingActivity] =
-    useState(false);
-
-  // 🚀 init
+  // INIT
   useEffect(() => {
     setMessages([
       {
@@ -171,89 +130,33 @@ export default function User() {
     return () => clearInterval(interval);
   }, [user?.nombre]);
 
-  // 🔎 detectar trigger
-  const shouldTriggerActivity = (text) => {
-    const lower = text.toLowerCase();
-
-    return activityTriggers.some((word) =>
-      lower.includes(word)
+  // DETECTAR
+  const shouldTriggerActivity = (text) =>
+    activityTriggers.some((w) =>
+      text.toLowerCase().includes(w)
     );
-  };
 
-  // ✅ respuesta positiva
-  const isPositiveResponse = (text) => {
-    const lower = text.toLowerCase().trim();
-
-    return [
-      "si",
-      "sí",
-      "vale",
-      "ok",
-      "quiero",
-      "dale",
-      "claro",
-      "por favor",
-    ].some((w) => lower.includes(w));
-  };
-
-  // 🤖 IA
+  // IA
   const askAI = async (message) => {
     try {
       const res = await fetch(`${API_URL}/chat`, {
         method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-        },
-
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message }),
       });
 
-      if (!res.ok) {
-        return null;
-      }
+      if (!res.ok) return null;
 
       const data = await res.json();
-
-      if (
-        data?.reply &&
-        typeof data.reply === "string"
-      ) {
-        return data.reply;
-      }
-
-      return null;
-
-    } catch (e) {
-      console.error("Error conexión IA", e);
+      return data?.reply || null;
+    } catch {
       return null;
     }
   };
 
-  // 🎯 mostrar categoría
-  const showCategoryOptions = (category, page = 0) => {
-    const activities =
-      activityGroups[category][page];
-
-    setCurrentCategory(category);
-    setCurrentPage(page);
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "ai",
-        text: "🤍 Estas opciones podrían ayudarte:",
-        options: [
-          ...activities,
-          "❓ No sé cuál",
-          "🔄 Cambiar respuestas rápidas",
-          "✍️ Escribir actividad",
-        ],
-      },
-    ]);
-  };
-
-  // 💬 enviar mensaje
+  // ======================
+  // SEND MESSAGE
+  // ======================
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
 
@@ -269,21 +172,15 @@ export default function User() {
 
     // ✍️ escribir actividad
     if (writingActivity) {
-      let data = [];
-
-      try {
-        data = JSON.parse(
-          localStorage.getItem("actividades") || "[]"
-        );
-      } catch {
-        data = [];
-      }
-
       const nueva = {
         texto: text,
-        tipo: "Actividad personalizada",
+        tipo: "Personalizada",
         fecha: new Date().toISOString(),
       };
+
+      const data = JSON.parse(
+        localStorage.getItem("actividades") || "[]"
+      );
 
       localStorage.setItem(
         "actividades",
@@ -302,17 +199,14 @@ export default function User() {
 
       setTimeout(() => {
         navigate("/actividades");
-      }, 1400);
+      }, 1200);
 
       setLoading(false);
       return;
     }
 
-    // ✅ respondió sí
-    if (
-      waitingForYes &&
-      isPositiveResponse(text)
-    ) {
+    // SI
+    if (waitingForYes && ["si", "sí"].includes(text.toLowerCase())) {
       setMessages((prev) => [
         ...prev,
         {
@@ -327,7 +221,22 @@ export default function User() {
       return;
     }
 
-    // 🎯 detectar actividad
+    // NO
+    if (waitingForYes && text.toLowerCase() === "no") {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: "🤍 Está bien, aquí estoy si me necesitas.",
+        },
+      ]);
+
+      setWaitingForYes(false);
+      setLoading(false);
+      return;
+    }
+
+    // trigger actividad
     if (shouldTriggerActivity(text)) {
       setMessages((prev) => [
         ...prev,
@@ -335,114 +244,117 @@ export default function User() {
           role: "ai",
           text:
             "🤍 ¿Quieres que te acompañe con una actividad?",
+          options: yesNoOptions,
         },
       ]);
 
       setWaitingForYes(true);
       setLoading(false);
-
       return;
     }
 
-    // 🤖 IA normal
+    // IA
     const reply = await askAI(text);
 
-    if (reply) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text: reply,
-        },
-      ]);
-    } else {
+    if (!reply) {
       setMessages((prev) => [
         ...prev,
         {
           role: "ai",
           text:
-            "🤍 Ahora mismo no puedo conversar, pero puedo acompañarte con una actividad. ¿Quieres?",
+            "🤍 Ahora mismo no puedo conversar, pero puedo acompañarte con una actividad.",
+          options: yesNoOptions,
         },
       ]);
 
       setWaitingForYes(true);
+      setLoading(false);
+      return;
     }
+
+    setMessages((prev) => [
+      ...prev,
+      { role: "ai", text: reply },
+    ]);
 
     setLoading(false);
   };
 
-  // 🔘 botones
+  // ======================
+  // BOTONES
+  // ======================
   const handleOptionClick = (opt) => {
     setMessages((prev) => [
       ...prev,
       { role: "user", text: opt },
     ]);
 
-    // 🎵 música
+    // YES
+    if (opt === "Sí") {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: "¿Qué te gustaría probar?",
+          options: mainOptions,
+        },
+      ]);
+
+      setWaitingForYes(false);
+      return;
+    }
+
+    // NO
+    if (opt === "No") {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: "🤍 Está bien, aquí estoy.",
+        },
+      ]);
+
+      setWaitingForYes(false);
+      return;
+    }
+
+    // categorías
     if (opt.includes("Música")) {
-      showCategoryOptions("musica");
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: "🎵 Opciones de música:",
+          options: activityGroups.musica[0],
+        },
+      ]);
       return;
     }
 
-    // 🧘 relajación
     if (opt.includes("Relajación")) {
-      showCategoryOptions("relajacion");
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: "🧘 Opciones de relajación:",
+          options: activityGroups.relajacion[0],
+        },
+      ]);
       return;
     }
 
-    // 🏃 física
     if (opt.includes("Actividad física")) {
-      showCategoryOptions("fisica");
-      return;
-    }
-
-    // 🤍 hablar
-    if (opt.includes("Hablar")) {
       setMessages((prev) => [
         ...prev,
         {
           role: "ai",
-          text:
-            "🤍 Estoy aquí contigo. Puedes contarme lo que quieras.",
+          text: "🏃 Opciones físicas:",
+          options: activityGroups.fisica[0],
         },
       ]);
       return;
     }
 
-    // ❓ no sé
-    if (opt.includes("No sé")) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text:
-            "🤍 A veces cuesta decidir. Elige lo que más te llame aunque sea poquito.",
-        },
-      ]);
-      return;
-    }
-
-    // 🔄 cambiar
-    if (
-      opt.includes("Cambiar respuestas rápidas")
-    ) {
-      if (!currentCategory) return;
-
-      const totalPages =
-        activityGroups[currentCategory].length;
-
-      const nextPage =
-        (currentPage + 1) % totalPages;
-
-      showCategoryOptions(
-        currentCategory,
-        nextPage
-      );
-
-      return;
-    }
-
-    // ✍️ escribir actividad
     if (opt.includes("Escribir actividad")) {
       setWritingActivity(true);
 
@@ -450,24 +362,17 @@ export default function User() {
         ...prev,
         {
           role: "ai",
-          text:
-            "🤍 Escribe la actividad que te gustaría hacer.",
+          text: "✍️ Escribe la actividad que quieres hacer.",
         },
       ]);
 
       return;
     }
 
-    // ✅ guardar actividad
-    let data = [];
-
-    try {
-      data = JSON.parse(
-        localStorage.getItem("actividades") || "[]"
-      );
-    } catch {
-      data = [];
-    }
+    // guardar actividad
+    const data = JSON.parse(
+      localStorage.getItem("actividades") || "[]"
+    );
 
     const nueva = {
       texto: opt,
@@ -484,52 +389,13 @@ export default function User() {
       ...prev,
       {
         role: "ai",
-        text: `✅ Actividad guardada: ${opt}`,
-      },
-      {
-        role: "ai",
-        text: "Redirigiendo...",
+        text: `✅ Guardado: ${opt}`,
       },
     ]);
-
-    setTimeout(() => {
-      navigate("/actividades");
-    }, 1400);
-  };
-
-  // 🚪 logout
-  const logout = () => {
-    localStorage.removeItem("usuario");
-    navigate("/");
   };
 
   return (
     <div className="app-layout">
-
-      <div className="left-panel">
-        <h4>💡 Acompañamiento</h4>
-
-        <div className="quote-box">
-          {frase}
-        </div>
-
-        <div
-          style={{
-            marginTop: 20,
-            color: "#00e5ff",
-          }}
-        >
-          👤 {user?.nombre || "Usuario"}
-        </div>
-
-        <button
-          onClick={logout}
-          className="logout-btn"
-        >
-          Cerrar sesión
-        </button>
-      </div>
-
       <div className="center-panel">
         <ChatBox
           messages={messages}
@@ -542,32 +408,6 @@ export default function User() {
           sendMessage={sendMessage}
           loading={loading}
         />
-      </div>
-
-      <div className="right-panel">
-        <button
-          onClick={() => navigate("/rutina")}
-        >
-          🧘 Rutina
-        </button>
-
-        <button
-          onClick={() => navigate("/actividades")}
-        >
-          🎯 Actividades
-        </button>
-
-        <button
-          onClick={() => navigate("/estadisticas")}
-        >
-          📊 Estadísticas
-        </button>
-
-        <button
-          onClick={() => navigate("/diario")}
-        >
-          📓 Diario
-        </button>
       </div>
     </div>
   );
