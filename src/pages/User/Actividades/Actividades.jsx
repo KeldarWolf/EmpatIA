@@ -1,341 +1,361 @@
-// =========================
-// ACTIVIDADES.JSX COMPLETO MOD
-// =========================
-
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "./user.css";
 
-const API = "https://empatia-backend.onrender.com";
+import ChatBox from "./ChatBox";
+import InputBox from "./InputBox";
+import frases from "./frases";
 
-export default function Actividades() {
+const API_URL = "https://empatia-backend.onrender.com";
+
+// =========================
+// ACTIVIDADES
+// =========================
+const actividades = [
+  {
+    nombre: "🎵 Música",
+    prompt:
+      "Recomienda una actividad musical relajante y explica cómo hacerla paso a paso.",
+  },
+  {
+    nombre: "🧘 Relajación",
+    prompt:
+      "Explica una actividad simple de relajación guiada para alguien con ansiedad.",
+  },
+  {
+    nombre: "🚶 Ejercicio ligero",
+    prompt:
+      "Explica un ejercicio suave y fácil para mejorar el ánimo.",
+  },
+  {
+    nombre: "📖 Lectura",
+    prompt:
+      "Recomienda una actividad de lectura tranquila y cómo disfrutarla.",
+  },
+  {
+    nombre: "🎨 Creatividad",
+    prompt:
+      "Explica una actividad creativa relajante y entretenida.",
+  },
+];
+
+export default function User() {
   const navigate = useNavigate();
 
-  const user = JSON.parse(localStorage.getItem("usuario") || "null");
-
-  const [input, setInput] = useState("");
+  // =========================
+  // CHAT
+  // =========================
   const [messages, setMessages] = useState([]);
-  const [savedActivities, setSavedActivities] = useState([]);
-  const [selected, setSelected] = useState(null);
+  const [input, setInput] = useState("");
 
-  // ===============================
-  // IA
-  // ===============================
-  const askAI = async (message) => {
+  // =========================
+  // ACTIVIDADES
+  // =========================
+  const [selectedActivity, setSelectedActivity] = useState(null);
+  const [activityResponse, setActivityResponse] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // =========================
+  // GUSTO
+  // =========================
+  const [gusto, setGusto] = useState(5);
+  const [savedActivities, setSavedActivities] = useState([]);
+
+  // =========================
+  // FRASE MOTIVACIONAL
+  // =========================
+  const [frase, setFrase] = useState("");
+
+  useEffect(() => {
+    const random =
+      frases[Math.floor(Math.random() * frases.length)];
+
+    setFrase(random);
+
+    const user = localStorage.getItem("nombre") || "Usuario";
+
+    setMessages([
+      {
+        sender: "bot",
+        text: `Hola ${user} 💙 estoy aquí contigo`,
+      },
+      {
+        sender: "bot",
+        text: "Cuéntame cómo te sientes...",
+      },
+    ]);
+  }, []);
+
+  // =========================
+  // ENVIAR MENSAJE
+  // =========================
+  const sendMessage = async () => {
+    if (!input.trim()) return;
+
+    const newMessages = [
+      ...messages,
+      { sender: "user", text: input },
+    ];
+
+    setMessages(newMessages);
+
+    const userInput = input;
+
+    setInput("");
+
     try {
-      const res = await fetch(`${API}/chat`, {
+      const res = await fetch(`${API_URL}/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({
+          message: userInput,
+        }),
       });
 
       const data = await res.json();
 
-      return data.reply;
-    } catch {
-      return "Error de conexión 😢";
-    }
-  };
-
-  // ===============================
-  // CARGAR ACTIVIDADES USER
-  // ===============================
-  const loadActivities = async () => {
-    try {
-      if (!user?.id_usuario) {
-        console.log("❌ SIN USER");
-        return;
-      }
-
-      console.log("👤 USER:", user);
-
-      const res = await fetch(
-        `${API}/mis-actividades/${user.id_usuario}`
-      );
-
-      const data = await res.json();
-
-      console.log("📦 DATA:", data);
-
-      setSavedActivities(data || []);
-
-      setMessages([
+      setMessages((prev) => [
+        ...prev,
         {
-          role: "ai",
-          text: "Aquí puedes ver tus actividades 🤍",
-        },
-        {
-          role: "ai",
-          text: "Haz click en una para ver cómo hacerlo",
+          sender: "bot",
+          text:
+            data.reply ||
+            "Estoy aquí contigo 💙",
         },
       ]);
     } catch (err) {
       console.log(err);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "bot",
+          text:
+            "⚠ Error al conectar con EmpatIA",
+        },
+      ]);
     }
   };
 
-  useEffect(() => {
-    loadActivities();
-  }, []);
-
-  // ===============================
-  // CHAT
-  // ===============================
-  const sendMessage = async () => {
-    if (!input.trim()) return;
-
-    const userText = input;
-
-    setMessages((prev) => [
-      ...prev,
-      { role: "user", text: userText },
-    ]);
-
-    setInput("");
-
-    const reply = await askAI(userText);
-
-    setMessages((prev) => [
-      ...prev,
-      { role: "ai", text: reply },
-    ]);
-  };
-
-  // ===============================
-  // CLICK ACTIVIDAD
-  // ===============================
+  // =========================
+  // ACTIVIDAD IA
+  // =========================
   const openActivity = async (activity) => {
-    if (
-      selected &&
-      selected.nombre_actividad === activity.nombre_actividad
-    ) {
-      return;
+    setSelectedActivity(activity);
+    setActivityResponse([]);
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${API_URL}/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: activity.prompt,
+        }),
+      });
+
+      const data = await res.json();
+
+      const lines = (
+        data.reply ||
+        "No pude generar la actividad."
+      ).split("\n");
+
+      setActivityResponse(lines);
+    } catch (err) {
+      console.log(err);
+
+      setActivityResponse([
+        "⚠ Error cargando actividad",
+      ]);
     }
 
-    setSelected(activity);
+    setLoading(false);
+  };
 
-    setMessages([
-      {
-        role: "ai",
-        text: `🧠 Actividad: ${activity.nombre_actividad}`,
-      },
-      {
-        role: "ai",
-        text: "Estoy preparando cómo ayudarte...",
-      },
-    ]);
+  // =========================
+  // GUARDAR ACTIVIDAD
+  // =========================
+  const guardarActividad = () => {
+    if (!selectedActivity) return;
 
-    const reply = await askAI(
-      `Explícame paso a paso cómo hacer esta actividad: ${activity.nombre_actividad}`
-    );
+    const nuevaActividad = {
+      nombre: selectedActivity.nombre,
+      gusto,
+      fecha: new Date(),
+    };
 
-    setMessages((prev) => [
+    setSavedActivities((prev) => [
+      nuevaActividad,
       ...prev,
-      {
-        role: "ai",
-        text: "👉 Cómo hacerlo:",
-      },
-      {
-        role: "ai",
-        text: reply,
-      },
     ]);
   };
 
   return (
-    <div style={styles.page}>
-      <div style={styles.header}>
-        <div>
-          <h1>🎯 Actividades</h1>
+    <div className="user-container">
+      {/* =========================
+          SIDEBAR
+      ========================== */}
+      <div className="sidebar">
+        <h2>🎯 Actividades</h2>
 
-          <p style={{ opacity: 0.7 }}>
-            Haz click en una actividad
-          </p>
-        </div>
+        <p>Haz click en una actividad</p>
+
+        {actividades.map((act, index) => (
+          <button
+            key={index}
+            className="activity-btn"
+            onClick={() => openActivity(act)}
+          >
+            {act.nombre}
+          </button>
+        ))}
 
         <button
-          onClick={() => navigate("/user")}
-          style={styles.backBtn}
+          className="logout-btn"
+          onClick={() => {
+            localStorage.clear();
+            navigate("/");
+          }}
         >
           ⬅ Volver
         </button>
       </div>
 
-      <div style={styles.grid}>
-        <div style={styles.left}>
-          <h3>💬 Acompañamiento</h3>
-
-          <div style={styles.chatBox}>
-            {messages.map((m, i) => (
-              <div key={i} style={styles.msg}>
-                {m.role === "ai" ? "🤖 " : "👤 "}
-                {m.text}
-              </div>
-            ))}
-          </div>
-
-          <div style={styles.inputRow}>
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              style={styles.input}
-              placeholder="Escribe..."
-            />
-
-            <button
-              onClick={sendMessage}
-              style={styles.send}
-            >
-              Enviar
-            </button>
-          </div>
+      {/* =========================
+          MAIN
+      ========================== */}
+      <div className="main-content">
+        {/* =========================
+            FRASE
+        ========================== */}
+        <div className="frase-box">
+          ✨ {frase}
         </div>
 
-        <div style={styles.center}>
-          <h3>📌 Tus actividades</h3>
+        {/* =========================
+            CHAT
+        ========================== */}
+        <div className="chat-section">
+          <h2>💬 Acompañamiento</h2>
+
+          <ChatBox messages={messages} />
+
+          <InputBox
+            input={input}
+            setInput={setInput}
+            sendMessage={sendMessage}
+          />
+        </div>
+
+        {/* =========================
+            ACTIVIDAD
+        ========================== */}
+        {selectedActivity && (
+          <div className="activity-box">
+            <h2>
+              🤖 🧠 Actividad:{" "}
+              {selectedActivity.nombre}
+            </h2>
+
+            {loading && (
+              <p>
+                🤖 Estoy preparando cómo ayudarte...
+              </p>
+            )}
+
+            {!loading && (
+              <>
+                <div className="ia-response">
+                  {activityResponse.map((msg, i) => (
+                    <p key={i}>{msg}</p>
+                  ))}
+                </div>
+
+                {/* =========================
+                    GUSTO
+                ========================== */}
+                <div className="gusto-box">
+                  <h3>
+                    ⭐ ¿Qué tanto te gustó?
+                  </h3>
+
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    value={gusto}
+                    onChange={(e) =>
+                      setGusto(e.target.value)
+                    }
+                    className="gusto-range"
+                  />
+
+                  <div className="gusto-value">
+                    {gusto}/10
+                  </div>
+
+                  <button
+                    className="save-btn"
+                    onClick={guardarActividad}
+                  >
+                    💾 Guardar actividad
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* =========================
+            ACTIVIDADES GUARDADAS
+        ========================== */}
+        <div className="saved-box">
+          <h2>📌 Tus actividades</h2>
 
           {savedActivities.length === 0 && (
-            <p>No tienes actividades aún</p>
+            <p>
+              Aún no guardas actividades 💙
+            </p>
           )}
 
-          {savedActivities.map((a, i) => (
+          {savedActivities.map((act, index) => (
             <div
-              key={i}
-              style={styles.card}
-              onClick={() => openActivity(a)}
+              key={index}
+              className="saved-card"
             >
-              <h4>{a.nombre_actividad}</h4>
+              <h3>{act.nombre}</h3>
 
               <p>
-                ⭐ Gusto: {a.puntaje_agrado || 7}/10
+                ⭐ Gusto: {act.gusto}/10
               </p>
 
               <p>
-                📅 {a.fecha}
+                📅{" "}
+                {new Date(
+                  act.fecha
+                ).toLocaleDateString()}
               </p>
             </div>
           ))}
         </div>
 
-        <div style={styles.right}>
-          <h3>🧠 Ayuda</h3>
+        {/* =========================
+            AYUDA
+        ========================== */}
+        <div className="help-box">
+          <h2>🧠 Ayuda</h2>
 
-          <div style={styles.tip}>
-            Haz click en una actividad y la IA te
-            explicará cómo hacerla
-          </div>
+          <p>
+            Haz click en una actividad y la IA
+            te explicará cómo hacerla
+          </p>
         </div>
       </div>
     </div>
   );
 }
-
-const styles = {
-  page: {
-    height: "100vh",
-    background: "#0b0f14",
-    color: "white",
-    display: "flex",
-    flexDirection: "column",
-    fontFamily: "Arial",
-  },
-
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    padding: 20,
-    borderBottom: "1px solid #1f2a37",
-  },
-
-  backBtn: {
-    padding: "8px 12px",
-    borderRadius: 8,
-    border: "none",
-    background: "#1f2937",
-    color: "white",
-  },
-
-  grid: {
-    flex: 1,
-    display: "flex",
-    gap: 15,
-    padding: 15,
-  },
-
-  left: {
-    width: "30%",
-    background: "#0f1620",
-    padding: 15,
-    borderRadius: 12,
-  },
-
-  center: {
-    flex: 1,
-    background: "#0f1620",
-    padding: 15,
-    borderRadius: 12,
-    overflowY: "auto",
-  },
-
-  right: {
-    width: "25%",
-    background: "#0f1620",
-    padding: 15,
-    borderRadius: 12,
-  },
-
-  chatBox: {
-    height: "60%",
-    overflowY: "auto",
-    display: "flex",
-    flexDirection: "column",
-    gap: 8,
-  },
-
-  msg: {
-    padding: 8,
-    background: "#111827",
-    borderRadius: 8,
-    fontSize: 13,
-  },
-
-  inputRow: {
-    display: "flex",
-    gap: 8,
-    marginTop: 10,
-  },
-
-  input: {
-    flex: 1,
-    padding: 10,
-    borderRadius: 8,
-    background: "#111827",
-    color: "white",
-    border: "none",
-  },
-
-  send: {
-    padding: 10,
-    background: "#1d9bf0",
-    borderRadius: 8,
-    border: "none",
-    color: "white",
-  },
-
-  card: {
-    background: "#111827",
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 10,
-    cursor: "pointer",
-  },
-
-  tip: {
-    background: "#111827",
-    padding: 10,
-    borderRadius: 10,
-    marginTop: 10,
-    fontSize: 13,
-  },
-};
