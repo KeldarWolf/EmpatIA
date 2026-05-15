@@ -5,12 +5,31 @@ import {
 
 import {
   useNavigate,
-  Navigate,
 } from "react-router-dom";
 
 export default function Admin() {
   const API =
     "https://empatia-backend.onrender.com/api/users";
+
+  // =========================
+  // IA STATUS API
+  // =========================
+  // CREA ESTE ENDPOINT EN TU BACKEND:
+  //
+  // GET /api/ai-status
+  //
+  // Debe responder:
+  //
+  // {
+  //   "online": true,
+  //   "model": "Gemini 2.5 Flash",
+  //   "token": true
+  // }
+  //
+  // =========================
+
+  const AI_API =
+    "https://empatia-backend.onrender.com/api/ai-status";
 
   const navigate = useNavigate();
 
@@ -29,13 +48,35 @@ export default function Admin() {
   const [logs, setLogs] =
     useState([]);
 
+  const [serverStatus,
+    setServerStatus] =
+    useState("Verificando...");
+
+  const [aiStatus,
+    setAiStatus] =
+    useState({
+      online: false,
+      model: "Desconocido",
+      token: false,
+    });
+
+  const [metrics,
+    setMetrics] =
+    useState({
+      ram: 0,
+      cpu: 0,
+      requests: 0,
+    });
+
   // =========================
   // SECURITY
   // =========================
   useEffect(() => {
     try {
       const savedUser =
-        localStorage.getItem("user");
+        localStorage.getItem(
+          "user"
+        );
 
       if (!savedUser) {
         navigate("/login");
@@ -45,7 +86,9 @@ export default function Admin() {
       const user =
         JSON.parse(savedUser);
 
-      if (user.role !== "admin") {
+      if (
+        user.role !== "admin"
+      ) {
         navigate("/login");
       }
 
@@ -63,7 +106,9 @@ export default function Admin() {
   // =========================
   const loadUsers = async () => {
     try {
-      const res = await fetch(API);
+      const res = await fetch(
+        API
+      );
 
       const data =
         await res.json();
@@ -71,36 +116,128 @@ export default function Admin() {
       if (Array.isArray(data)) {
         setUsers(data);
 
+        setServerStatus(
+          "Operativo"
+        );
+
         addLog(
-          "Usuarios cargados correctamente"
+          "Usuarios cargados"
         );
 
       } else {
         setUsers([]);
+
+        setServerStatus(
+          "Error"
+        );
       }
 
     } catch (err) {
       console.error(err);
 
-      addLog(
-        "Error cargando usuarios"
+      setServerStatus(
+        "Sin conexión"
       );
 
-      setUsers([]);
+      addLog(
+        "Error backend"
+      );
     }
   };
 
   // =========================
-  // LOAD WHEN USERS VIEW
+  // LOAD AI STATUS
   // =========================
-  useEffect(() => {
-    if (view === "users") {
-      loadUsers();
-    }
-  }, [view]);
+  const loadAIStatus =
+    async () => {
+      try {
+        const res =
+          await fetch(
+            AI_API
+          );
+
+        const data =
+          await res.json();
+
+        setAiStatus({
+          online:
+            data.online,
+          model:
+            data.model,
+          token:
+            data.token,
+        });
+
+        addLog(
+          "Estado IA actualizado"
+        );
+
+      } catch (err) {
+        console.error(err);
+
+        setAiStatus({
+          online: false,
+          model:
+            "Sin conexión",
+          token: false,
+        });
+
+        addLog(
+          "Error IA"
+        );
+      }
+    };
 
   // =========================
-  // LOG SYSTEM
+  // FAKE METRICS SIMPLE
+  // =========================
+  // Simula métricas dinámicas
+  // mientras no tengas backend real
+  // =========================
+  const loadMetrics = () => {
+    setMetrics({
+      ram:
+        Math.floor(
+          Math.random() * 30
+        ) + 40,
+
+      cpu:
+        Math.floor(
+          Math.random() * 30
+        ) + 20,
+
+      requests:
+        Math.floor(
+          Math.random() * 2000
+        ) + 500,
+    });
+  };
+
+  // =========================
+  // INIT
+  // =========================
+  useEffect(() => {
+    loadUsers();
+
+    loadAIStatus();
+
+    loadMetrics();
+
+    const interval =
+      setInterval(() => {
+        loadMetrics();
+
+        loadAIStatus();
+      }, 8000);
+
+    return () =>
+      clearInterval(
+        interval
+      );
+  }, []);
+
+  // =========================
+  // LOGS
   // =========================
   const addLog = (text) => {
     const now =
@@ -115,125 +252,123 @@ export default function Admin() {
   // =========================
   // DELETE USER
   // =========================
-  const deleteUser = async (id) => {
-    try {
-      const ok =
-        window.confirm(
-          "¿Eliminar usuario?"
+  const deleteUser =
+    async (id) => {
+      try {
+        const ok =
+          window.confirm(
+            "¿Eliminar usuario?"
+          );
+
+        if (!ok) return;
+
+        await fetch(
+          `${API}/${id}`,
+          {
+            method:
+              "DELETE",
+          }
         );
 
-      if (!ok) return;
+        addLog(
+          `Usuario eliminado ${id}`
+        );
 
-      await fetch(
-        `${API}/${id}`,
-        {
-          method: "DELETE",
-        }
-      );
+        loadUsers();
 
-      addLog(
-        `Usuario eliminado ID ${id}`
-      );
+      } catch (err) {
+        console.error(err);
 
-      loadUsers();
-
-    } catch (err) {
-      console.error(err);
-
-      addLog(
-        "Error eliminando usuario"
-      );
-    }
-  };
+        addLog(
+          "Error eliminando usuario"
+        );
+      }
+    };
 
   // =========================
   // SAVE USER
   // =========================
-  const saveUser = async () => {
-    try {
-      await fetch(
-        `${API}/${edit.id_usuario}`,
-        {
-          method: "PUT",
+  const saveUser =
+    async () => {
+      try {
+        await fetch(
+          `${API}/${edit.id_usuario}`,
+          {
+            method: "PUT",
 
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
 
-          body: JSON.stringify({
-            nombre: edit.nombre,
-            email: edit.email,
-            role: edit.role,
-          }),
-        }
-      );
+            body:
+              JSON.stringify({
+                nombre:
+                  edit.nombre,
 
-      addLog(
-        `Usuario editado: ${edit.nombre}`
-      );
+                email:
+                  edit.email,
 
-      setEdit(null);
+                role:
+                  edit.role,
+              }),
+          }
+        );
 
-      loadUsers();
+        addLog(
+          `Usuario editado ${edit.nombre}`
+        );
 
-    } catch (err) {
-      console.error(err);
+        setEdit(null);
 
-      addLog(
-        "Error editando usuario"
-      );
-    }
-  };
+        loadUsers();
+
+      } catch (err) {
+        console.error(err);
+
+        addLog(
+          "Error editando usuario"
+        );
+      }
+    };
 
   // =========================
   // EXPORT USERS
   // =========================
   const exportUsers = () => {
-    try {
-      const data =
-        JSON.stringify(
-          users,
-          null,
-          2
-        );
-
-      const blob = new Blob(
-        [data],
-        {
-          type:
-            "application/json",
-        }
+    const data =
+      JSON.stringify(
+        users,
+        null,
+        2
       );
 
-      const url =
-        window.URL.createObjectURL(
-          blob
-        );
+    const blob =
+      new Blob([data], {
+        type:
+          "application/json",
+      });
 
-      const a =
-        document.createElement(
-          "a"
-        );
-
-      a.href = url;
-
-      a.download =
-        "usuarios-empatia.json";
-
-      a.click();
-
-      addLog(
-        "Reporte exportado"
+    const url =
+      window.URL.createObjectURL(
+        blob
       );
 
-    } catch (err) {
-      console.error(err);
-
-      addLog(
-        "Error exportando reporte"
+    const a =
+      document.createElement(
+        "a"
       );
-    }
+
+    a.href = url;
+
+    a.download =
+      "usuarios.json";
+
+    a.click();
+
+    addLog(
+      "Reporte exportado"
+    );
   };
 
   // =========================
@@ -241,10 +376,6 @@ export default function Admin() {
   // =========================
   const logout = () => {
     localStorage.clear();
-
-    addLog(
-      "Sesión cerrada"
-    );
 
     navigate("/login", {
       replace: true,
@@ -259,75 +390,127 @@ export default function Admin() {
       {/* =========================
           DASHBOARD
       ========================= */}
-      {view === "dashboard" && (
+      {view ===
+        "dashboard" && (
         <div style={styles.card}>
 
-          <div style={styles.topBar}>
-            <h1 style={styles.title}>
-              🛠 Panel Admin
+          <div
+            style={
+              styles.topBar
+            }
+          >
+
+            <h1
+              style={
+                styles.title
+              }
+            >
+              🛠 EMPATIA ADMIN
             </h1>
 
             <button
-              style={styles.logoutBtn}
-              onClick={logout}
+              style={
+                styles.logoutBtn
+              }
+              onClick={
+                logout
+              }
             >
-              Cerrar sesión
+              Salir
             </button>
+
           </div>
 
-          <p style={styles.subtitle}>
-            Sistema de supervisión
-            EMPATIA
+          <p
+            style={
+              styles.subtitle
+            }
+          >
+            Supervisión del
+            sistema
           </p>
 
+          {/* =========================
+              SYSTEM STATUS
+          ========================= */}
           <div style={styles.box}>
+
             <h3
               style={
                 styles.sectionTitle
               }
             >
-              Estado del sistema
+              Estado sistema
             </h3>
 
             <p>
-              ✔ Servidor:
-              operativo
-            </p>
-
-            <p>
-              ✔ API:
-              {users.length >= 0
-                ? " conectada"
-                : " error"}
-            </p>
-
-            <p>
-              ✔ Usuarios:
-              {users.length}
-            </p>
-
-            <p>
-              ✔ IA emocional:
-              online
-            </p>
-          </div>
-
-          <div style={styles.box}>
-            <h3
-              style={
-                styles.sectionTitle
+              🟢 Servidor:
+              {
+                serverStatus
               }
-            >
-              Estadísticas
-            </h3>
+            </p>
 
             <p>
               👥 Usuarios:
-              {users.length}
+              {
+                users.length
+              }
             </p>
 
             <p>
-              🛡 Admins:
+              🤖 IA:
+              {aiStatus.online
+                ? " Operativa"
+                : " Desconectada"}
+            </p>
+
+            <p>
+              🔑 Token IA:
+              {aiStatus.token
+                ? " válido"
+                : " inválido"}
+            </p>
+
+          </div>
+
+          {/* =========================
+              METRICS
+          ========================= */}
+          <div style={styles.box}>
+
+            <h3
+              style={
+                styles.sectionTitle
+              }
+            >
+              Métricas
+            </h3>
+
+            <p>
+              CPU:
+              {
+                metrics.cpu
+              }
+              %
+            </p>
+
+            <p>
+              RAM:
+              {
+                metrics.ram
+              }
+              %
+            </p>
+
+            <p>
+              Requests:
+              {
+                metrics.requests
+              }
+            </p>
+
+            <p>
+              Admins:
               {
                 users.filter(
                   (u) =>
@@ -337,69 +520,81 @@ export default function Admin() {
               }
             </p>
 
-            <p>
-              🙋 Usuarios
-              normales:
-              {
-                users.filter(
-                  (u) =>
-                    u.role ===
-                    "user"
-                ).length
-              }
-            </p>
-
-            <p>
-              📊 Logs:
-              {logs.length}
-            </p>
           </div>
 
+          {/* =========================
+              IA STATUS
+          ========================= */}
           <div style={styles.box}>
+
             <h3
               style={
                 styles.sectionTitle
               }
             >
-              Acciones rápidas
+              Estado IA
+            </h3>
+
+            <p>
+              Modelo:
+              {
+                aiStatus.model
+              }
+            </p>
+
+            <p>
+              Estado:
+              {aiStatus.online
+                ? " Online"
+                : " Offline"}
+            </p>
+
+            <p>
+              API Key:
+              {aiStatus.token
+                ? " Detectada"
+                : " No detectada"}
+            </p>
+
+          </div>
+
+          {/* =========================
+              ACTIONS
+          ========================= */}
+          <div style={styles.box}>
+
+            <h3
+              style={
+                styles.sectionTitle
+              }
+            >
+              Acciones
             </h3>
 
             <button
-              style={styles.button}
-              onClick={() =>
-                setView("users")
+              style={
+                styles.button
               }
-            >
-              Ver usuarios
-            </button>
-
-            <button
-              style={styles.button}
-              onClick={() =>
-                setView("logs")
-              }
-            >
-              Logs sistema
-            </button>
-
-            <button
-              style={styles.button}
               onClick={() =>
                 setView(
-                  "metrics"
+                  "users"
                 )
               }
             >
-              Métricas
+              Usuarios
             </button>
 
             <button
-              style={styles.button}
+              style={
+                styles.button
+              }
               onClick={() =>
-                setView("ia")
+                setView(
+                  "logs"
+                )
               }
             >
-              Estado IA
+              Logs
             </button>
 
             <button
@@ -429,6 +624,7 @@ export default function Admin() {
             >
               Limpiar cache
             </button>
+
           </div>
 
         </div>
@@ -438,15 +634,30 @@ export default function Admin() {
           USERS
       ========================= */}
       {view === "users" && (
-        <div style={styles.bigPanel}>
+        <div
+          style={
+            styles.bigPanel
+          }
+        >
 
-          <div style={styles.topBar}>
-            <h2 style={styles.title}>
+          <div
+            style={
+              styles.topBar
+            }
+          >
+
+            <h2
+              style={
+                styles.title
+              }
+            >
               👥 Usuarios
             </h2>
 
             <button
-              style={styles.backBtn}
+              style={
+                styles.backBtn
+              }
               onClick={() =>
                 setView(
                   "dashboard"
@@ -455,9 +666,14 @@ export default function Admin() {
             >
               ← Volver
             </button>
+
           </div>
 
-          <div style={styles.userList}>
+          <div
+            style={
+              styles.userList
+            }
+          >
 
             {users.map((u) => (
               <div
@@ -541,24 +757,23 @@ export default function Admin() {
       {view === "logs" && (
         <div style={styles.card}>
 
-          <h2 style={styles.title}>
-            📜 Logs del sistema
+          <h2
+            style={styles.title}
+          >
+            📜 Logs
           </h2>
 
-          <div style={styles.logsBox}>
-
-            {logs.length === 0 && (
-              <p
-                style={
-                  styles.log
-                }
-              >
-                No existen logs
-              </p>
-            )}
+          <div
+            style={
+              styles.logsBox
+            }
+          >
 
             {logs.map(
-              (log, index) => (
+              (
+                log,
+                index
+              ) => (
                 <div
                   key={index}
                   style={
@@ -589,189 +804,72 @@ export default function Admin() {
       )}
 
       {/* =========================
-          METRICS
-      ========================= */}
-      {view === "metrics" && (
-        <div style={styles.card}>
-
-          <h2 style={styles.title}>
-            📊 Métricas
-          </h2>
-
-          <div style={styles.box}>
-            <p>
-              CPU:
-              {
-                Math.floor(
-                  Math.random() *
-                    60 +
-                    20
-                )
-              }
-              %
-            </p>
-
-            <p>
-              RAM:
-              {
-                Math.floor(
-                  Math.random() *
-                    60 +
-                    20
-                )
-              }
-              %
-            </p>
-
-            <p>
-              Usuarios:
-              {users.length}
-            </p>
-
-            <p>
-              Logs:
-              {logs.length}
-            </p>
-          </div>
-
-          <button
-            style={
-              styles.backButton
-            }
-            onClick={() =>
-              setView(
-                "dashboard"
-              )
-            }
-          >
-            Volver
-          </button>
-
-        </div>
-      )}
-
-      {/* =========================
-          IA
-      ========================= */}
-      {view === "ia" && (
-        <div style={styles.card}>
-
-          <h2 style={styles.title}>
-            🤖 Estado IA
-          </h2>
-
-          <div style={styles.box}>
-            <p>
-              ✔ Modelo
-              conectado
-            </p>
-
-            <p>
-              ✔ Tiempo
-              respuesta:
-              1.2s
-            </p>
-
-            <p>
-              ✔ Conversaciones
-              procesadas:
-              84
-            </p>
-
-            <p>
-              ✔ Estado:
-              operativo
-            </p>
-          </div>
-
-          <div style={styles.box}>
-            <h3
-              style={
-                styles.sectionTitle
-              }
-            >
-              Interacciones
-              anonimizadas
-            </h3>
-
-            <p>
-              Usuario #1024
-              inició chat
-            </p>
-
-            <p>
-              Usuario #1032
-              realizó consulta
-            </p>
-
-            <p>
-              Usuario #1088
-              solicitó ayuda
-            </p>
-          </div>
-
-          <button
-            style={
-              styles.backButton
-            }
-            onClick={() =>
-              setView(
-                "dashboard"
-              )
-            }
-          >
-            Volver
-          </button>
-
-        </div>
-      )}
-
-      {/* =========================
-          MODAL EDIT
+          MODAL
       ========================= */}
       {edit && (
         <div style={styles.modal}>
 
-          <div style={styles.modalBox}>
+          <div
+            style={
+              styles.modalBox
+            }
+          >
 
-            <h2 style={styles.title}>
+            <h2
+              style={
+                styles.title
+              }
+            >
               Editar usuario
             </h2>
 
             <input
-              style={styles.input}
-              value={edit.nombre}
+              style={
+                styles.input
+              }
+              value={
+                edit.nombre
+              }
               onChange={(e) =>
                 setEdit({
                   ...edit,
                   nombre:
-                    e.target.value,
+                    e.target
+                      .value,
                 })
               }
             />
 
             <input
-              style={styles.input}
+              style={
+                styles.input
+              }
               value={
-                edit.email || ""
+                edit.email
               }
               onChange={(e) =>
                 setEdit({
                   ...edit,
                   email:
-                    e.target.value,
+                    e.target
+                      .value,
                 })
               }
             />
 
             <select
-              style={styles.input}
-              value={edit.role}
+              style={
+                styles.input
+              }
+              value={
+                edit.role
+              }
               onChange={(e) =>
                 setEdit({
                   ...edit,
                   role:
-                    e.target.value,
+                    e.target
+                      .value,
                 })
               }
             >
@@ -806,7 +904,9 @@ export default function Admin() {
                   styles.deleteBtn
                 }
                 onClick={() =>
-                  setEdit(null)
+                  setEdit(
+                    null
+                  )
                 }
               >
                 Cancelar
@@ -840,41 +940,26 @@ const styles = {
     width: "90%",
     maxWidth: 550,
     background:
-      "rgba(10,10,10,0.9)",
+      "rgba(10,10,10,0.92)",
     borderRadius: 20,
     padding: 25,
-    boxShadow:
-      "0 0 40px rgba(0,229,255,0.15)",
     border:
       "1px solid rgba(0,229,255,0.2)",
+    boxShadow:
+      "0 0 40px rgba(0,229,255,0.15)",
   },
 
   bigPanel: {
     width: "95%",
     maxWidth: 1100,
     background:
-      "rgba(10,10,10,0.9)",
+      "rgba(10,10,10,0.92)",
     borderRadius: 20,
     padding: 25,
-    boxShadow:
-      "0 0 40px rgba(0,229,255,0.15)",
     border:
       "1px solid rgba(0,229,255,0.2)",
-  },
-
-  title: {
-    color: "#00e5ff",
-    textAlign: "center",
-  },
-
-  subtitle: {
-    color: "#aaa",
-    textAlign: "center",
-    marginBottom: 20,
-  },
-
-  sectionTitle: {
-    color: "#00e5ff",
+    boxShadow:
+      "0 0 40px rgba(0,229,255,0.15)",
   },
 
   topBar: {
@@ -885,14 +970,18 @@ const styles = {
     marginBottom: 20,
   },
 
-  logoutBtn: {
-    background: "#ff3b3b",
-    border: "none",
-    color: "#fff",
-    padding: "10px 15px",
-    borderRadius: 8,
-    cursor: "pointer",
-    fontWeight: "bold",
+  title: {
+    color: "#00e5ff",
+  },
+
+  subtitle: {
+    color: "#aaa",
+    marginBottom: 20,
+  },
+
+  sectionTitle: {
+    color: "#00e5ff",
+    marginBottom: 10,
   },
 
   box: {
@@ -927,15 +1016,12 @@ const styles = {
     cursor: "pointer",
   },
 
-  backButton: {
-    width: "100%",
-    marginTop: 15,
-    padding: 10,
-    borderRadius: 10,
+  logoutBtn: {
+    background: "#ff3b3b",
     border: "none",
-    background: "#00e5ff",
-    color: "#000",
-    fontWeight: "bold",
+    color: "#fff",
+    padding: "10px 15px",
+    borderRadius: 8,
     cursor: "pointer",
   },
 
@@ -1012,6 +1098,18 @@ const styles = {
     borderRadius: 8,
     marginBottom: 8,
     color: "#ddd",
+  },
+
+  backButton: {
+    width: "100%",
+    marginTop: 15,
+    padding: 10,
+    borderRadius: 10,
+    border: "none",
+    background: "#00e5ff",
+    color: "#000",
+    fontWeight: "bold",
+    cursor: "pointer",
   },
 
   modal: {
