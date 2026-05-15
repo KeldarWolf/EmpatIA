@@ -1,8 +1,8 @@
 // =========================
-// Actividades.jsx
+// Actividades.jsx COMPLETO
 // =========================
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const API = "https://empatia-backend.onrender.com";
@@ -10,13 +10,14 @@ const API = "https://empatia-backend.onrender.com";
 export default function Actividades() {
   const navigate = useNavigate();
 
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [savedActivities, setSavedActivities] = useState([]);
+  const [selected, setSelected] = useState(null);
+
   const user = JSON.parse(
     localStorage.getItem("usuario") || "null"
   );
-
-  const [messages, setMessages] = useState([]);
-  const [savedActivities, setSavedActivities] = useState([]);
-  const [input, setInput] = useState("");
 
   // ===============================
   // IA
@@ -40,7 +41,7 @@ export default function Actividades() {
   };
 
   // ===============================
-  // CARGAR ACTIVIDADES DEL USUARIO
+  // CARGAR ACTIVIDADES
   // ===============================
   const loadActivities = async () => {
     try {
@@ -49,6 +50,8 @@ export default function Actividades() {
       );
 
       const data = await res.json();
+
+      console.log("📌 DATA:", data);
 
       setSavedActivities(data || []);
     } catch (err) {
@@ -69,7 +72,7 @@ export default function Actividades() {
       },
       {
         role: "ai",
-        text: "Haz click en una para ver cómo hacerla",
+        text: "Haz click en una para ver cómo hacerlo",
       },
     ]);
   }, []);
@@ -104,13 +107,21 @@ export default function Actividades() {
   };
 
   // ===============================
-  // ABRIR ACTIVIDAD
+  // CLICK ACTIVIDAD
   // ===============================
   const openActivity = async (activity) => {
+    if (
+      selected &&
+      selected.id_registro === activity.id_registro
+    )
+      return;
+
+    setSelected(activity);
+
     setMessages([
       {
         role: "ai",
-        text: `🧠 Actividad: ${activity.actividad.nombre}`,
+        text: `🧠 Actividad: ${activity.nombre_actividad}`,
       },
       {
         role: "ai",
@@ -119,7 +130,7 @@ export default function Actividades() {
     ]);
 
     const reply = await askAI(
-      `Explícame paso a paso cómo hacer: ${activity.actividad.nombre}`
+      `Explícame paso a paso cómo hacer esta actividad: ${activity.nombre_actividad}`
     );
 
     setMessages((prev) => [
@@ -142,7 +153,7 @@ export default function Actividades() {
           <h1>🎯 Actividades</h1>
 
           <p style={{ opacity: 0.7 }}>
-            Tus actividades guardadas
+            Haz click en una actividad para ver cómo realizarla
           </p>
         </div>
 
@@ -171,7 +182,9 @@ export default function Actividades() {
           <div style={styles.inputRow}>
             <input
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) =>
+                setInput(e.target.value)
+              }
               style={styles.input}
               placeholder="Escribe..."
             />
@@ -190,7 +203,9 @@ export default function Actividades() {
           <h3>📌 Tus actividades</h3>
 
           {savedActivities.length === 0 && (
-            <p>No tienes actividades aún</p>
+            <p style={{ opacity: 0.6 }}>
+              No tienes actividades aún
+            </p>
           )}
 
           {savedActivities.map((a, i) => (
@@ -199,9 +214,11 @@ export default function Actividades() {
               style={styles.card}
               onClick={() => openActivity(a)}
             >
-              <h4>{a.actividad?.nombre}</h4>
+              <h4>{a.nombre_actividad}</h4>
 
-              <p>{a.actividad?.descripcion}</p>
+              <p style={{ fontSize: 12 }}>
+                Actividad personalizada guardada
+              </p>
 
               <p
                 style={{
@@ -209,7 +226,7 @@ export default function Actividades() {
                   fontSize: 12,
                 }}
               >
-                Categoría: {a.actividad?.categoria}
+                Emocional
               </p>
             </div>
           ))}
@@ -220,11 +237,13 @@ export default function Actividades() {
           <h3>🧠 Ayuda</h3>
 
           <div style={styles.tip}>
-            Las actividades se guardan automáticamente
+            Haz click en una actividad y la IA
+            te explicará cómo hacerla
           </div>
 
           <div style={styles.tip}>
-            Cada usuario tiene sus propias actividades
+            Las actividades están conectadas a
+            Supabase
           </div>
         </div>
       </div>
@@ -232,9 +251,7 @@ export default function Actividades() {
   );
 }
 
-// ===============================
-// STYLES
-// ===============================
+/* ================= STYLES ================= */
 
 const styles = {
   page: {
@@ -243,6 +260,7 @@ const styles = {
     color: "white",
     display: "flex",
     flexDirection: "column",
+    fontFamily: "Arial",
   },
 
   header: {
