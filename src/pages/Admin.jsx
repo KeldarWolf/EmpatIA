@@ -15,6 +15,7 @@ export default function Admin() {
 
   const [users, setUsers] = useState([]);
   const [edit, setEdit] = useState(null);
+
   const [view, setView] = useState("dashboard");
 
   const [ai, setAi] = useState({
@@ -34,19 +35,12 @@ export default function Admin() {
   const [logs, setLogs] = useState([]);
 
   // =========================
-  // SAFE AUTH (EVITA BLANK SCREEN)
+  // SECURITY
   // =========================
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("user");
-      if (!raw) return navigate("/login");
+    const user = JSON.parse(localStorage.getItem("user"));
 
-      const user = JSON.parse(raw);
-      if (!user || user.role !== "admin") {
-        navigate("/login");
-      }
-    } catch (e) {
-      localStorage.clear();
+    if (!user || user.role !== "admin") {
       navigate("/login");
     }
   }, []);
@@ -60,60 +54,49 @@ export default function Admin() {
   };
 
   // =========================
-  // USERS SAFE FETCH
+  // USERS
   // =========================
   const loadUsers = async () => {
     try {
       const res = await fetch(USERS_API);
-
-      if (!res.ok) {
-        addLog("Error API usuarios");
-        return;
-      }
-
       const data = await res.json();
-      setUsers(Array.isArray(data) ? data : []);
+      setUsers(data);
       addLog("Usuarios cargados");
-    } catch {
-      addLog("Fallo usuarios");
+    } catch (e) {
+      addLog("Error usuarios");
     }
   };
 
   // =========================
-  // IA STATUS SAFE
+  // AI STATUS
   // =========================
   const loadAI = async () => {
     try {
       const res = await fetch(AI_API);
-
-      if (!res.ok) {
-        setAi({ online: false, token: false, model: "error", message: "offline" });
-        return;
-      }
-
       const data = await res.json();
       setAi(data);
+      addLog("IA verificada");
     } catch {
-      setAi({ online: false, token: false, model: "error", message: "sin conexión" });
+      addLog("Error IA");
     }
   };
 
   // =========================
-  // SYSTEM SAFE
+  // SYSTEM STATUS
   // =========================
   const loadSystem = async () => {
     try {
       const res = await fetch(SYSTEM_API);
-
-      if (!res.ok) return;
-
       const data = await res.json();
       setSystem(data);
-    } catch {}
+      addLog("Sistema verificado");
+    } catch {
+      addLog("Error sistema");
+    }
   };
 
   // =========================
-  // INIT
+  // INIT LIVE
   // =========================
   useEffect(() => {
     loadUsers();
@@ -129,40 +112,34 @@ export default function Admin() {
   }, []);
 
   // =========================
-  // DELETE SAFE
+  // DELETE USER
   // =========================
   const deleteUser = async (id) => {
-    if (!window.confirm("¿Eliminar usuario?")) return;
+    if (!confirm("¿Eliminar usuario?")) return;
 
-    try {
-      await fetch(`${USERS_API}/${id}`, {
-        method: "DELETE",
-      });
+    await fetch(`${USERS_API}/${id}`, {
+      method: "DELETE",
+    });
 
-      addLog(`Usuario eliminado ${id}`);
-      loadUsers();
-    } catch {
-      addLog("Error eliminar usuario");
-    }
+    addLog(`Usuario eliminado ${id}`);
+    loadUsers();
   };
 
   // =========================
-  // SAVE SAFE
+  // SAVE USER
   // =========================
   const saveUser = async () => {
-    try {
-      await fetch(`${USERS_API}/${edit.id_usuario}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(edit),
-      });
+    await fetch(`${USERS_API}/${edit.id_usuario}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(edit),
+    });
 
-      setEdit(null);
-      loadUsers();
-      addLog("Usuario actualizado");
-    } catch {
-      addLog("Error al actualizar");
-    }
+    addLog(`Usuario editado ${edit.nombre}`);
+    setEdit(null);
+    loadUsers();
   };
 
   // =========================
@@ -180,9 +157,10 @@ export default function Admin() {
 
         {/* HEADER */}
         <div style={styles.header}>
-          <h1 style={styles.title}>🛠 EMPATIA ADMIN</h1>
+          <h1 style={styles.title}>🛠 EMPATIA ADMIN PANEL</h1>
+
           <button style={styles.logout} onClick={logout}>
-            Salir
+            Logout
           </button>
         </div>
 
@@ -194,19 +172,20 @@ export default function Admin() {
           <button onClick={() => setView("logs")}>Logs</button>
         </div>
 
-        {/* DASHBOARD */}
+        {/* ================= DASHBOARD ================= */}
         {view === "dashboard" && (
           <div>
-            <h2>Estado</h2>
-            <p>🟢 Server: {system.server || "..."}</p>
+            <h2>Estado general</h2>
+
+            <p>🟢 Server: {system.server}</p>
             <p>🤖 IA: {ai.online ? "Online" : "Offline"}</p>
-            <p>🔑 Token: {ai.token ? "OK" : "FAIL"}</p>
-            <p>💾 RAM: {system.ram || "0"}</p>
-            <p>⏱ Uptime: {system.uptime || "0"}</p>
+            <p>🔑 Token: {ai.token ? "OK" : "FALLA"}</p>
+            <p>💾 RAM: {system.ram}</p>
+            <p>⏱ Uptime: {system.uptime}</p>
           </div>
         )}
 
-        {/* USERS */}
+        {/* ================= USERS ================= */}
         {view === "users" && (
           <div>
             {users.map((u) => (
@@ -223,46 +202,49 @@ export default function Admin() {
           </div>
         )}
 
-        {/* IA */}
+        {/* ================= IA ================= */}
         {view === "ai" && (
           <div>
-            <h2>IA STATUS</h2>
-            <p>Modelo: {ai.model || "..."}</p>
+            <h2>IA REAL STATUS</h2>
+
+            <p>Modelo: {ai.model}</p>
             <p>Estado: {ai.online ? "Online" : "Offline"}</p>
+            <p>Token: {ai.token ? "OK" : "ERROR"}</p>
             <p>{ai.message}</p>
           </div>
         )}
 
-        {/* LOGS */}
+        {/* ================= LOGS ================= */}
         {view === "logs" && (
           <div>
-            <h2>Logs</h2>
+            <h2>Logs sistema</h2>
+
             {logs.map((l, i) => (
               <p key={i}>{l}</p>
             ))}
           </div>
         )}
 
-        {/* MODAL SAFE */}
+        {/* ================= EDIT MODAL ================= */}
         {edit && (
           <div style={styles.modal}>
             <div style={styles.modalBox}>
               <input
-                value={edit?.nombre || ""}
+                value={edit.nombre}
                 onChange={(e) =>
                   setEdit({ ...edit, nombre: e.target.value })
                 }
               />
 
               <input
-                value={edit?.email || ""}
+                value={edit.email}
                 onChange={(e) =>
                   setEdit({ ...edit, email: e.target.value })
                 }
               />
 
               <select
-                value={edit?.role || "user"}
+                value={edit.role}
                 onChange={(e) =>
                   setEdit({ ...edit, role: e.target.value })
                 }
@@ -281,7 +263,7 @@ export default function Admin() {
   );
 }
 
-/* STYLE MINIMO */
+/* ================= STYLE ================= */
 const styles = {
   container: {
     minHeight: "100vh",
@@ -293,7 +275,7 @@ const styles = {
 
   card: {
     width: "100%",
-    maxWidth: 900,
+    maxWidth: 1000,
     background: "#111",
     padding: 20,
     borderRadius: 20,
@@ -305,7 +287,9 @@ const styles = {
     justifyContent: "space-between",
   },
 
-  title: { color: "#00e5ff" },
+  title: {
+    color: "#00e5ff",
+  },
 
   logout: {
     background: "red",
@@ -317,7 +301,7 @@ const styles = {
   menu: {
     display: "flex",
     gap: 10,
-    marginTop: 10,
+    marginTop: 20,
   },
 
   user: {
@@ -328,7 +312,10 @@ const styles = {
 
   modal: {
     position: "fixed",
-    inset: 0,
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
     background: "rgba(0,0,0,0.7)",
     display: "flex",
     justifyContent: "center",
