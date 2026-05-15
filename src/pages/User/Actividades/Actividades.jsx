@@ -1,170 +1,143 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
+const API = "https://empatia-backend.onrender.com";
+
 export default function Actividades() {
   const navigate = useNavigate();
 
-  const [input, setInput] = useState("");
-  const [messages, setMessages] = useState([]);
-  const [savedActivities, setSavedActivities] = useState([]);
+  const user = JSON.parse(localStorage.getItem("usuario"));
+
+  const [actividades, setActividades] = useState([]);
   const [selected, setSelected] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // 🌐 ENDPOINTS (LOCAL + ONLINE)
-  const API_URLS = [
-    "http://localhost:3001",
-    "https://empatia-backend.onrender.com"
-  ];
-
-  // ===============================
-  // 🤖 CONEXIÓN IA
-  // ===============================
-  const askAI = async (message) => {
-    for (const url of API_URLS) {
-      try {
-        const res = await fetch(`${url}/chat`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message }),
-        });
-
-        if (!res.ok) continue;
-
-        const data = await res.json();
-        if (data?.reply) return data.reply;
-
-      } catch {
-        console.warn("Error conexión:", url);
-      }
-    }
-
-    return "Error de conexión 😢";
-  };
-
-  // ===============================
-  // 🔄 CARGAR
-  // ===============================
+  // =========================
+  // CARGAR ACTIVIDADES BD
+  // =========================
   useEffect(() => {
-    const data = JSON.parse(localStorage.getItem("actividades") || "[]");
+    const load = async () => {
+      try {
+        const res = await fetch(`${API}/actividades`);
+        const data = await res.json();
 
-    const normalized = data.map((a) => ({
-      ...a,
-      gusto: a.gusto ?? 5,
-      pasos: a.pasos ?? "Respira profundo y realiza la actividad a tu ritmo.",
-      enRutina: a.enRutina ?? false,
-    }));
+        setActividades(data || []);
 
-    setSavedActivities(normalized);
+        setMessages([
+          { role: "ai", text: "Aquí están tus actividades 🤍" },
+          { role: "ai", text: "Haz click en una para ver detalles" },
+        ]);
+      } catch (err) {
+        setMessages([
+          { role: "ai", text: "Error cargando actividades 😢" },
+        ]);
+      }
+    };
 
-    setMessages([
-      { role: "ai", text: "Aquí puedes ver tus actividades 🤍" },
-      { role: "ai", text: "Haz click en una para ver cómo hacerlo" },
-    ]);
+    load();
   }, []);
 
-  // ===============================
-  // 💬 CHAT
-  // ===============================
+  // =========================
+  // IA (fallback backend)
+  // =========================
+  const askAI = async (message) => {
+    try {
+      const res = await fetch(`${API}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
+      });
+
+      const data = await res.json();
+      return data.reply || "No pude responder";
+    } catch {
+      return "Error de conexión 😢";
+    }
+  };
+
+  // =========================
+  // ENVIAR MENSAJE
+  // =========================
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    const userText = input;
+    const text = input;
 
-    setMessages((prev) => [...prev, { role: "user", text: userText }]);
+    setMessages((prev) => [...prev, { role: "user", text }]);
     setInput("");
+    setLoading(true);
 
-    const reply = await askAI(userText);
+    const reply = await askAI(text);
 
     setMessages((prev) => [...prev, { role: "ai", text: reply }]);
+
+    setLoading(false);
   };
 
-  // ===============================
-  // 🎯 CLICK ACTIVIDAD
-  // ===============================
-  const openActivity = async (activity) => {
-    if (selected && selected.texto === activity.texto) return;
-
-    setSelected(activity);
+  // =========================
+  // CLICK ACTIVIDAD
+  // =========================
+  const openActivity = async (act) => {
+    setSelected(act);
 
     setMessages([
-      { role: "ai", text: `🧠 Actividad: ${activity.texto}` },
-      { role: "ai", text: "Estoy preparando cómo ayudarte..." },
+      { role: "ai", text: `🧠 ${act.nombre}` },
+      { role: "ai", text: "Preparando guía..." },
     ]);
 
     const reply = await askAI(
-      `Explícame paso a paso cómo hacer esta actividad: ${activity.texto}`
+      `Explícame paso a paso cómo hacer: ${act.nombre}. ${act.descripcion || ""}`
     );
 
     setMessages((prev) => [
       ...prev,
-      { role: "ai", text: "👉 Cómo hacerlo:" },
+      { role: "ai", text: "👉 Guía:" },
       { role: "ai", text: reply },
     ]);
+
+    // =========================
+    // GUARDAR EN BD
+    // =========================
+    await fetch(`${API}/registro-actividad`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id_usuario: user.id_usuario,
+        id_actividad: act.id_actividad,
+        puntaje_agrado: 5,
+        frecuencia_deseada: "media",
+        reaccion: "vista",
+      }),
+    });
   };
 
-  // ===============================
-  // ⭐ GUSTO
-  // ===============================
-  const changeGusto = (index, value) => {
-    const updated = [...savedActivities];
-    updated[index].gusto = value;
-
-    setSavedActivities(updated);
-    localStorage.setItem("actividades", JSON.stringify(updated));
-  };
-
-  // ===============================
-  // 🗑 ELIMINAR
-  // ===============================
-  const deleteActivity = (index) => {
-    const confirmDelete = window.confirm(
-      "⚠️ Las actividades son parte de tu progreso.\n¿Seguro que quieres eliminarla?"
-    );
-
-    if (!confirmDelete) return;
-
-    const updated = savedActivities.filter((_, i) => i !== index);
-
-    setSavedActivities(updated);
-    localStorage.setItem("actividades", JSON.stringify(updated));
-  };
-
-  // ===============================
-  // ➕ RUTINA
-  // ===============================
-  const addToRoutine = (index) => {
-    const updated = [...savedActivities];
-    updated[index].enRutina = true;
-
-    setSavedActivities(updated);
-    localStorage.setItem("actividades", JSON.stringify(updated));
-  };
-
-  // ===============================
+  // =========================
   // UI
-  // ===============================
+  // =========================
   return (
     <div style={styles.page}>
 
+      {/* HEADER */}
       <div style={styles.header}>
-        <div>
-          <h1>🎯 Actividades</h1>
-          <p style={{ opacity: 0.7 }}>
-            Haz click en una actividad para ver cómo realizarla
-          </p>
-        </div>
+        <h2>🎯 Actividades</h2>
 
-        <button onClick={() => navigate("/user")} style={styles.backBtn}>
+        <button
+          style={styles.back}
+          onClick={() => navigate("/user")}
+        >
           ⬅ Volver
         </button>
       </div>
 
-      <div style={styles.grid}>
+      <div style={styles.container}>
 
         {/* CHAT */}
-        <div style={styles.left}>
-          <h3>💬 Acompañamiento</h3>
+        <div style={styles.chat}>
+          <h3>💬 IA</h3>
 
-          <div style={styles.chatBox}>
+          <div style={styles.box}>
             {messages.map((m, i) => (
               <div key={i} style={styles.msg}>
                 {m.role === "ai" ? "🤖 " : "👤 "}
@@ -173,95 +146,39 @@ export default function Actividades() {
             ))}
           </div>
 
-          <div style={styles.inputRow}>
+          <div style={styles.row}>
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               style={styles.input}
               placeholder="Escribe..."
             />
-            <button onClick={sendMessage} style={styles.send}>
+
+            <button onClick={sendMessage} style={styles.btn}>
               Enviar
             </button>
           </div>
         </div>
 
-        {/* ACTIVIDADES */}
-        <div style={styles.center}>
-          <h3>📌 Tus actividades</h3>
+        {/* LISTA ACTIVIDADES */}
+        <div style={styles.list}>
+          <h3>📌 Catálogo</h3>
 
-          {savedActivities.length === 0 && (
-            <p style={{ opacity: 0.6 }}>No tienes actividades aún</p>
-          )}
-
-          {savedActivities.map((a, i) => (
-            <div key={i} style={styles.card} onClick={() => openActivity(a)}>
-
-              <h4>{a.texto}</h4>
-              <p style={{ fontSize: 12 }}>⭐ Gusto: {a.gusto}/10</p>
-
-              <div style={styles.barContainer}>
-                {Array.from({ length: 10 }, (_, idx) => {
-                  const val = idx + 1;
-
-                  return (
-                    <div
-                      key={idx}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        changeGusto(i, val);
-                      }}
-                      style={{
-                        ...styles.bar,
-                        background: val <= a.gusto ? "#22c55e" : "#374151",
-                      }}
-                    />
-                  );
-                })}
-              </div>
-
-              {a.enRutina && (
-                <p style={{ color: "#22c55e", fontSize: 12 }}>✔ En rutina</p>
-              )}
-
-              <div style={{ display: "flex", gap: 8 }}>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    addToRoutine(i);
-                  }}
-                  style={styles.routineBtn}
-                >
-                  ➕ Rutina
-                </button>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteActivity(i);
-                  }}
-                  style={styles.deleteBtn}
-                >
-                  🗑 Eliminar
-                </button>
-
-              </div>
+          {actividades.map((a) => (
+            <div
+              key={a.id_actividad}
+              style={styles.card}
+              onClick={() => openActivity(a)}
+            >
+              <h4>{a.nombre}</h4>
+              <p style={{ fontSize: 12, opacity: 0.7 }}>
+                {a.categoria}
+              </p>
+              <p style={{ fontSize: 12 }}>
+                {a.descripcion}
+              </p>
             </div>
           ))}
-        </div>
-
-        {/* INFO */}
-        <div style={styles.right}>
-          <h3>🧠 Ayuda</h3>
-
-          <div style={styles.tip}>
-            Haz click en una actividad y la IA te explicará cómo hacerla
-          </div>
-
-          <div style={styles.tip}>
-            El acompañamiento se adapta a lo que seleccionas
-          </div>
         </div>
 
       </div>
@@ -269,8 +186,9 @@ export default function Actividades() {
   );
 }
 
-/* ================= STYLES ================= */
-
+// =========================
+// ESTILOS
+// =========================
 const styles = {
   page: {
     height: "100vh",
@@ -278,110 +196,74 @@ const styles = {
     color: "white",
     display: "flex",
     flexDirection: "column",
-    fontFamily: "Arial",
   },
   header: {
+    padding: 15,
     display: "flex",
     justifyContent: "space-between",
-    padding: 20,
-    borderBottom: "1px solid #1f2a37",
+    borderBottom: "1px solid #1f2937",
   },
-  backBtn: {
-    padding: "8px 12px",
-    borderRadius: 8,
-    border: "none",
+  back: {
     background: "#1f2937",
     color: "white",
+    border: "none",
+    padding: 8,
+    borderRadius: 8,
   },
-  grid: {
-    flex: 1,
+  container: {
     display: "flex",
-    gap: 15,
-    padding: 15,
-  },
-  left: {
-    width: "30%",
-    background: "#0f1620",
-    padding: 15,
-    borderRadius: 12,
-  },
-  center: {
     flex: 1,
-    background: "#0f1620",
-    padding: 15,
-    borderRadius: 12,
+    gap: 10,
+    padding: 10,
   },
-  right: {
-    width: "25%",
-    background: "#0f1620",
-    padding: 15,
-    borderRadius: 12,
+  chat: {
+    width: "30%",
+    background: "#111827",
+    padding: 10,
+    borderRadius: 10,
   },
-  chatBox: {
+  list: {
+    flex: 1,
+    background: "#111827",
+    padding: 10,
+    borderRadius: 10,
+  },
+  box: {
     height: "60%",
     overflowY: "auto",
-    display: "flex",
-    flexDirection: "column",
-    gap: 8,
+    marginBottom: 10,
   },
   msg: {
     padding: 8,
-    background: "#111827",
+    marginBottom: 5,
+    background: "#0f172a",
     borderRadius: 8,
     fontSize: 13,
   },
-  inputRow: { display: "flex", gap: 8, marginTop: 10 },
+  row: {
+    display: "flex",
+    gap: 8,
+  },
   input: {
     flex: 1,
-    padding: 10,
+    padding: 8,
     borderRadius: 8,
-    background: "#111827",
+    border: "none",
+    background: "#0f172a",
     color: "white",
-    border: "none",
   },
-  send: {
-    padding: 10,
+  btn: {
+    padding: 8,
     background: "#1d9bf0",
-    borderRadius: 8,
     border: "none",
+    borderRadius: 8,
     color: "white",
   },
   card: {
-    background: "#111827",
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 10,
-    cursor: "pointer",
-  },
-  barContainer: {
-    display: "flex",
-    gap: 3,
-    marginBottom: 8,
-  },
-  bar: {
-    width: 18,
-    height: 8,
-    borderRadius: 3,
-  },
-  routineBtn: {
-    background: "#22c55e",
-    border: "none",
-    padding: "6px 10px",
-    borderRadius: 6,
-    color: "white",
-  },
-  deleteBtn: {
-    background: "#ef4444",
-    border: "none",
-    padding: "6px 10px",
-    borderRadius: 6,
-    color: "white",
-  },
-  tip: {
-    background: "#111827",
     padding: 10,
+    background: "#0f172a",
+    marginBottom: 10,
     borderRadius: 10,
-    marginTop: 10,
-    fontSize: 13,
+    cursor: "pointer",
   },
 };
