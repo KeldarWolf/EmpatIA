@@ -3,31 +3,80 @@ import { useNavigate } from "react-router-dom";
 
 export default function Admin() {
   const API = "https://empatia-backend.onrender.com/api/users";
+
   const navigate = useNavigate();
 
+  // =========================
+  // STATES
+  // =========================
   const [users, setUsers] = useState([]);
   const [edit, setEdit] = useState(null);
 
-  // =========================
-  // DASHBOARD STATES
-  // =========================
-  const [serverStatus, setServerStatus] = useState("OFFLINE");
-  const [iaStatus, setIaStatus] = useState("ONLINE");
-  const [activeUsers, setActiveUsers] = useState(0);
-  const [totalChats, setTotalChats] = useState(124);
+  const [checkingAuth, setCheckingAuth] =
+    useState(true);
+
+  const [loadingUsers, setLoadingUsers] =
+    useState(false);
+
+  const [error, setError] = useState("");
+
+  // dashboard
+  const [serverStatus, setServerStatus] =
+    useState("OFFLINE");
+
+  const [iaStatus] = useState("ONLINE");
+
+  const [activeUsers, setActiveUsers] =
+    useState(0);
+
+  const [totalChats] = useState(124);
 
   const [logs, setLogs] = useState([
-    "🟢 Sistema iniciado correctamente",
-    "🤖 IA funcionando correctamente",
-    "👤 Admin inició sesión",
+    "🟢 Sistema iniciado",
+    "🤖 IA funcionando",
+    "👤 Admin autenticado",
   ]);
+
+  // =========================
+  // AUTH CHECK
+  // =========================
+  useEffect(() => {
+    const token =
+      localStorage.getItem("token");
+
+    const role =
+      localStorage.getItem("role");
+
+    if (!token || role !== "admin") {
+      navigate("/login", {
+        replace: true,
+      });
+
+      return;
+    }
+
+    setCheckingAuth(false);
+
+    loadUsers();
+
+    checkServer();
+
+    const interval = setInterval(() => {
+      checkServer();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // =========================
   // LOAD USERS
   // =========================
   const loadUsers = async () => {
     try {
-      const token = localStorage.getItem("token");
+      setLoadingUsers(true);
+
+      const token =
+        localStorage.getItem("token");
 
       const res = await fetch(API, {
         headers: {
@@ -40,17 +89,35 @@ export default function Admin() {
         return;
       }
 
+      if (!res.ok) {
+        throw new Error(
+          "Error obteniendo usuarios"
+        );
+      }
+
       const data = await res.json();
 
-      setUsers(data);
+      if (Array.isArray(data)) {
+        setUsers(data);
 
-      // usuarios activos simulados
-      setActiveUsers(
-        data.filter((u) => u.online === true).length || 3
-      );
+        setActiveUsers(
+          data.filter(
+            (u) => u.online === true
+          ).length || 3
+        );
+      } else {
+        setUsers([]);
+      }
 
     } catch (err) {
-      console.error("Error loading users", err);
+      console.error(err);
+
+      setError(
+        "No se pudieron cargar usuarios"
+      );
+
+    } finally {
+      setLoadingUsers(false);
     }
   };
 
@@ -68,41 +135,26 @@ export default function Admin() {
       } else {
         setServerStatus("OFFLINE");
       }
+
     } catch {
       setServerStatus("OFFLINE");
     }
   };
 
   // =========================
-  // PROTECT ROUTE
-  // =========================
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const role = localStorage.getItem("role");
-
-    if (!token || role !== "admin") {
-      navigate("/login", { replace: true });
-      return;
-    }
-
-    loadUsers();
-    checkServer();
-
-    const interval = setInterval(() => {
-      checkServer();
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // =========================
   // DELETE USER
   // =========================
   const deleteUser = async (id) => {
-    if (!window.confirm("¿Eliminar usuario?")) return;
+    const confirmDelete =
+      window.confirm(
+        "¿Eliminar usuario?"
+      );
+
+    if (!confirmDelete) return;
 
     try {
-      const token = localStorage.getItem("token");
+      const token =
+        localStorage.getItem("token");
 
       await fetch(`${API}/${id}`, {
         method: "DELETE",
@@ -128,23 +180,31 @@ export default function Admin() {
   // =========================
   const saveUser = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token =
+        localStorage.getItem("token");
 
-      await fetch(`${API}/${edit.id_usuario}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          nombre: edit.nombre,
-          email: edit.email,
-          role: edit.role,
-        }),
-      });
+      await fetch(
+        `${API}/${edit.id_usuario}`,
+        {
+          method: "PUT",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+
+            Authorization: `Bearer ${token}`,
+          },
+
+          body: JSON.stringify({
+            nombre: edit.nombre,
+            email: edit.email,
+            role: edit.role,
+          }),
+        }
+      );
 
       setLogs((prev) => [
-        `✏ Usuario actualizado: ${edit.nombre}`,
+        `✏ Usuario actualizado ${edit.nombre}`,
         ...prev,
       ]);
 
@@ -164,13 +224,13 @@ export default function Admin() {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
 
-    navigate("/login", { replace: true });
-
-    window.location.reload();
+    navigate("/login", {
+      replace: true,
+    });
   };
 
   // =========================
-  // EXPORT REPORT
+  // REPORT
   // =========================
   const exportReport = () => {
     const report = {
@@ -183,24 +243,44 @@ export default function Admin() {
 
     const blob = new Blob(
       [JSON.stringify(report, null, 2)],
-      { type: "application/json" }
+      {
+        type: "application/json",
+      }
     );
 
-    const url = URL.createObjectURL(blob);
+    const url =
+      URL.createObjectURL(blob);
 
-    const a = document.createElement("a");
+    const a =
+      document.createElement("a");
 
     a.href = url;
-    a.download = "reporte-admin.json";
+
+    a.download =
+      "reporte-admin.json";
 
     a.click();
 
     setLogs((prev) => [
-      "📄 Reporte descargado",
+      "📄 Reporte exportado",
       ...prev,
     ]);
   };
 
+  // =========================
+  // LOADING AUTH
+  // =========================
+  if (checkingAuth) {
+    return (
+      <div style={styles.loadingScreen}>
+        Verificando sesión...
+      </div>
+    );
+  }
+
+  // =========================
+  // UI
+  // =========================
   return (
     <div style={styles.page}>
       <div style={styles.container}>
@@ -208,7 +288,7 @@ export default function Admin() {
         {/* HEADER */}
         <div style={styles.header}>
           <h1 style={styles.title}>
-            ⚡ EMPATIA ADMIN PANEL
+            ⚡ EMPATIA ADMIN
           </h1>
 
           <button
@@ -224,12 +304,12 @@ export default function Admin() {
 
           <div style={styles.statCard}>
             <h2>{users.length}</h2>
-            <p>Usuarios Totales</p>
+            <p>Usuarios</p>
           </div>
 
           <div style={styles.statCard}>
             <h2>{activeUsers}</h2>
-            <p>Usuarios Activos</p>
+            <p>Activos</p>
           </div>
 
           <div style={styles.statCard}>
@@ -244,72 +324,100 @@ export default function Admin() {
 
           <div style={styles.statCard}>
             <h2>{totalChats}</h2>
-            <p>Chats Hoy</p>
+            <p>Chats</p>
           </div>
 
         </div>
 
         {/* ACTIONS */}
-        <div style={styles.topActions}>
+        <div style={styles.actionsTop}>
           <button
             style={styles.reportBtn}
             onClick={exportReport}
           >
-            Descargar Reporte
+            Descargar reporte
           </button>
         </div>
 
+        {/* ERROR */}
+        {error && (
+          <div style={styles.errorBox}>
+            {error}
+          </div>
+        )}
+
+        {/* LOADING */}
+        {loadingUsers && (
+          <div style={styles.loading}>
+            Cargando usuarios...
+          </div>
+        )}
+
         {/* USERS */}
         <div style={styles.list}>
-          {users.map((u) => (
-            <div key={u.id_usuario} style={styles.card}>
 
-              <div>
-                <h3 style={styles.name}>
-                  {u.nombre}
-                </h3>
+          {Array.isArray(users) &&
+            users.map((u) => (
+              <div
+                key={u.id_usuario}
+                style={styles.card}
+              >
 
-                <p style={styles.text}>
-                  {u.email}
-                </p>
+                <div>
+                  <h3 style={styles.name}>
+                    {u.nombre}
+                  </h3>
 
-                <span style={styles.role}>
-                  {u.role}
-                </span>
+                  <p style={styles.text}>
+                    {u.email}
+                  </p>
+
+                  <span style={styles.role}>
+                    {u.role}
+                  </span>
+                </div>
+
+                <div style={styles.actions}>
+
+                  <button
+                    style={styles.editBtn}
+                    onClick={() =>
+                      setEdit(u)
+                    }
+                  >
+                    Editar
+                  </button>
+
+                  <button
+                    style={styles.deleteBtn}
+                    onClick={() =>
+                      deleteUser(
+                        u.id_usuario
+                      )
+                    }
+                  >
+                    Eliminar
+                  </button>
+
+                </div>
+
               </div>
+            ))}
 
-              <div style={styles.actions}>
-
-                <button
-                  style={styles.editBtn}
-                  onClick={() => setEdit(u)}
-                >
-                  Editar
-                </button>
-
-                <button
-                  style={styles.deleteBtn}
-                  onClick={() => deleteUser(u.id_usuario)}
-                >
-                  Eliminar
-                </button>
-
-              </div>
-            </div>
-          ))}
         </div>
 
         {/* LOGS */}
         <div style={styles.logsBox}>
 
-          <div style={styles.logsHeader}>
-            <h2 style={styles.logsTitle}>
-              📡 Logs del Sistema
-            </h2>
-          </div>
+          <h2 style={styles.logsTitle}>
+            📡 Logs del sistema
+          </h2>
 
-          {logs.map((log, index) => (
-            <div key={index} style={styles.logItem}>
+          {logs.map((log, i) => (
+            <div
+              key={i}
+              style={styles.logItem}
+            >
               {log}
             </div>
           ))}
@@ -319,10 +427,11 @@ export default function Admin() {
         {/* MODAL */}
         {edit && (
           <div style={styles.modal}>
+
             <div style={styles.modalBox}>
 
               <h2 style={styles.modalTitle}>
-                Editar Usuario
+                Editar usuario
               </h2>
 
               <input
@@ -331,7 +440,8 @@ export default function Admin() {
                 onChange={(e) =>
                   setEdit({
                     ...edit,
-                    nombre: e.target.value,
+                    nombre:
+                      e.target.value,
                   })
                 }
               />
@@ -342,7 +452,8 @@ export default function Admin() {
                 onChange={(e) =>
                   setEdit({
                     ...edit,
-                    email: e.target.value,
+                    email:
+                      e.target.value,
                   })
                 }
               />
@@ -353,7 +464,8 @@ export default function Admin() {
                 onChange={(e) =>
                   setEdit({
                     ...edit,
-                    role: e.target.value,
+                    role:
+                      e.target.value,
                   })
                 }
               >
@@ -366,7 +478,11 @@ export default function Admin() {
                 </option>
               </select>
 
-              <div style={styles.modalActions}>
+              <div
+                style={
+                  styles.modalActions
+                }
+              >
 
                 <button
                   style={styles.saveBtn}
@@ -376,8 +492,12 @@ export default function Admin() {
                 </button>
 
                 <button
-                  style={styles.cancelBtn}
-                  onClick={() => setEdit(null)}
+                  style={
+                    styles.cancelBtn
+                  }
+                  onClick={() =>
+                    setEdit(null)
+                  }
                 >
                   Cancelar
                 </button>
@@ -385,6 +505,7 @@ export default function Admin() {
               </div>
 
             </div>
+
           </div>
         )}
 
@@ -393,48 +514,62 @@ export default function Admin() {
   );
 }
 
-/* =========================
-   CYBERPUNK STYLE
-========================= */
+// =========================
+// STYLES
+// =========================
 
 const styles = {
   page: {
     minHeight: "100vh",
+    padding: 20,
     background:
       "radial-gradient(circle at top, #08111f, #020305)",
-    padding: 20,
     fontFamily: "Arial",
     color: "#fff",
+  },
+
+  loadingScreen: {
+    height: "100vh",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    background: "#020305",
+    color: "#00e5ff",
+    fontSize: 22,
   },
 
   container: {
     maxWidth: 1200,
     margin: "0 auto",
-    background: "rgba(12,18,28,0.92)",
-    borderRadius: 22,
+    background:
+      "rgba(12,18,28,0.95)",
+    borderRadius: 20,
     padding: 24,
-    border: "1px solid rgba(0,229,255,0.15)",
-    boxShadow: "0 0 60px rgba(0,229,255,0.08)",
-    backdropFilter: "blur(10px)",
+    border:
+      "1px solid rgba(0,229,255,0.15)",
+    boxShadow:
+      "0 0 60px rgba(0,229,255,0.08)",
   },
 
   header: {
     display: "flex",
-    justifyContent: "space-between",
+    justifyContent:
+      "space-between",
     alignItems: "center",
     marginBottom: 25,
   },
 
   title: {
     color: "#00e5ff",
-    textShadow: "0 0 15px rgba(0,229,255,0.6)",
+    textShadow:
+      "0 0 15px rgba(0,229,255,0.5)",
   },
 
   logoutBtn: {
     background: "#ff3b3b",
-    border: "none",
     color: "#fff",
-    padding: "10px 16px",
+    border: "none",
+    padding: "10px 15px",
     borderRadius: 10,
     cursor: "pointer",
     fontWeight: "bold",
@@ -443,21 +578,22 @@ const styles = {
   statsGrid: {
     display: "grid",
     gridTemplateColumns:
-      "repeat(auto-fit, minmax(180px,1fr))",
+      "repeat(auto-fit,minmax(180px,1fr))",
     gap: 15,
     marginBottom: 25,
   },
 
   statCard: {
-    background: "rgba(0,0,0,0.35)",
+    background:
+      "rgba(0,0,0,0.3)",
+    borderRadius: 15,
     padding: 20,
-    borderRadius: 16,
-    border: "1px solid rgba(0,229,255,0.2)",
     textAlign: "center",
-    boxShadow: "0 0 20px rgba(0,229,255,0.08)",
+    border:
+      "1px solid rgba(0,229,255,0.12)",
   },
 
-  topActions: {
+  actionsTop: {
     display: "flex",
     justifyContent: "flex-end",
     marginBottom: 20,
@@ -466,10 +602,25 @@ const styles = {
   reportBtn: {
     background: "#00e5ff",
     border: "none",
-    padding: "10px 16px",
+    padding: "10px 15px",
     borderRadius: 10,
     cursor: "pointer",
     fontWeight: "bold",
+  },
+
+  errorBox: {
+    background:
+      "rgba(255,0,0,0.15)",
+    border:
+      "1px solid rgba(255,0,0,0.3)",
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 15,
+  },
+
+  loading: {
+    marginBottom: 15,
+    color: "#00e5ff",
   },
 
   list: {
@@ -479,13 +630,16 @@ const styles = {
   },
 
   card: {
-    background: "rgba(0,0,0,0.35)",
-    border: "1px solid rgba(0,229,255,0.12)",
-    borderRadius: 15,
-    padding: 18,
     display: "flex",
-    justifyContent: "space-between",
+    justifyContent:
+      "space-between",
     alignItems: "center",
+    padding: 18,
+    borderRadius: 14,
+    background:
+      "rgba(0,0,0,0.35)",
+    border:
+      "1px solid rgba(0,229,255,0.1)",
   },
 
   name: {
@@ -494,7 +648,7 @@ const styles = {
 
   text: {
     color: "#aaa",
-    margin: "5px 0",
+    margin: "4px 0",
   },
 
   role: {
@@ -511,7 +665,7 @@ const styles = {
   editBtn: {
     background: "#00e5ff",
     border: "none",
-    padding: "8px 14px",
+    padding: "8px 12px",
     borderRadius: 8,
     cursor: "pointer",
     fontWeight: "bold",
@@ -520,7 +674,7 @@ const styles = {
   deleteBtn: {
     background: "#ff3b3b",
     border: "none",
-    padding: "8px 14px",
+    padding: "8px 12px",
     borderRadius: 8,
     color: "#fff",
     cursor: "pointer",
@@ -529,23 +683,23 @@ const styles = {
 
   logsBox: {
     marginTop: 30,
-    background: "rgba(0,0,0,0.35)",
+    background:
+      "rgba(0,0,0,0.3)",
     borderRadius: 16,
     padding: 20,
-    border: "1px solid rgba(0,229,255,0.15)",
-  },
-
-  logsHeader: {
-    marginBottom: 15,
+    border:
+      "1px solid rgba(0,229,255,0.12)",
   },
 
   logsTitle: {
     color: "#00e5ff",
+    marginBottom: 15,
   },
 
   logItem: {
     padding: 10,
-    borderBottom: "1px solid rgba(255,255,255,0.05)",
+    borderBottom:
+      "1px solid rgba(255,255,255,0.05)",
     color: "#ccc",
     fontSize: 14,
   },
@@ -553,34 +707,36 @@ const styles = {
   modal: {
     position: "fixed",
     inset: 0,
-    background: "rgba(0,0,0,0.8)",
+    background:
+      "rgba(0,0,0,0.8)",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    backdropFilter: "blur(6px)",
   },
 
   modalBox: {
     width: 380,
     background: "#0b1018",
     padding: 22,
-    borderRadius: 16,
-    border: "1px solid rgba(0,229,255,0.2)",
+    borderRadius: 15,
+    border:
+      "1px solid rgba(0,229,255,0.2)",
   },
 
   modalTitle: {
     color: "#00e5ff",
-    textAlign: "center",
     marginBottom: 15,
+    textAlign: "center",
   },
 
   input: {
     width: "100%",
-    marginTop: 10,
     padding: 10,
+    marginTop: 10,
     borderRadius: 10,
+    border:
+      "1px solid rgba(0,229,255,0.15)",
     background: "#05070c",
-    border: "1px solid rgba(0,229,255,0.2)",
     color: "#fff",
     outline: "none",
     boxSizing: "border-box",
@@ -598,8 +754,8 @@ const styles = {
     border: "none",
     padding: 10,
     borderRadius: 10,
-    fontWeight: "bold",
     cursor: "pointer",
+    fontWeight: "bold",
   },
 
   cancelBtn: {
