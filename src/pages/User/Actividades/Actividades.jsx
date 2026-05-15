@@ -1,143 +1,164 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API = "https://empatia-backend.onrender.com";
-
 export default function Actividades() {
   const navigate = useNavigate();
 
-  const user = JSON.parse(localStorage.getItem("usuario"));
-
-  const [actividades, setActividades] = useState([]);
-  const [selected, setSelected] = useState(null);
-  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [savedActivities, setSavedActivities] = useState([]);
+  const [selected, setSelected] = useState(null);
 
-  // =========================
-  // CARGAR ACTIVIDADES BD
-  // =========================
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await fetch(`${API}/actividades`);
-        const data = await res.json();
+  const API_URLS = [
+    "http://localhost:3001",
+    "https://empatia-backend.onrender.com"
+  ];
 
-        setActividades(data || []);
-
-        setMessages([
-          { role: "ai", text: "Aquí están tus actividades 🤍" },
-          { role: "ai", text: "Haz click en una para ver detalles" },
-        ]);
-      } catch (err) {
-        setMessages([
-          { role: "ai", text: "Error cargando actividades 😢" },
-        ]);
-      }
-    };
-
-    load();
-  }, []);
-
-  // =========================
-  // IA (fallback backend)
-  // =========================
+  // ===============================
+  // IA
+  // ===============================
   const askAI = async (message) => {
-    try {
-      const res = await fetch(`${API}/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
-      });
+    for (const url of API_URLS) {
+      try {
+        const res = await fetch(`${url}/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message }),
+        });
 
-      const data = await res.json();
-      return data.reply || "No pude responder";
-    } catch {
-      return "Error de conexión 😢";
+        if (!res.ok) continue;
+
+        const data = await res.json();
+        if (data?.reply) return data.reply;
+
+      } catch {
+        console.warn("Error conexión:", url);
+      }
     }
+
+    return "Error de conexión 😢";
   };
 
-  // =========================
-  // ENVIAR MENSAJE
-  // =========================
+  // ===============================
+  // CARGA LOCALSTORAGE
+  // ===============================
+  useEffect(() => {
+    const data = JSON.parse(localStorage.getItem("actividades") || "[]");
+
+    const normalized = data.map((a) => ({
+      ...a,
+      gusto: a.gusto ?? 5,
+      pasos: a.pasos ?? "Respira profundo y realiza la actividad a tu ritmo.",
+      enRutina: a.enRutina ?? false,
+    }));
+
+    setSavedActivities(normalized);
+
+    setMessages([
+      { role: "ai", text: "Aquí puedes ver tus actividades 🤍" },
+      { role: "ai", text: "Haz click en una para ver cómo hacerlo" },
+    ]);
+  }, []);
+
+  // ===============================
+  // CHAT
+  // ===============================
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    const text = input;
+    const userText = input;
 
-    setMessages((prev) => [...prev, { role: "user", text }]);
+    setMessages((prev) => [...prev, { role: "user", text: userText }]);
     setInput("");
-    setLoading(true);
 
-    const reply = await askAI(text);
+    const reply = await askAI(userText);
 
     setMessages((prev) => [...prev, { role: "ai", text: reply }]);
-
-    setLoading(false);
   };
 
-  // =========================
+  // ===============================
   // CLICK ACTIVIDAD
-  // =========================
-  const openActivity = async (act) => {
-    setSelected(act);
+  // ===============================
+  const openActivity = async (activity) => {
+    if (selected && selected.texto === activity.texto) return;
+
+    setSelected(activity);
 
     setMessages([
-      { role: "ai", text: `🧠 ${act.nombre}` },
-      { role: "ai", text: "Preparando guía..." },
+      { role: "ai", text: `🧠 Actividad: ${activity.texto}` },
+      { role: "ai", text: "Estoy preparando cómo ayudarte..." },
     ]);
 
     const reply = await askAI(
-      `Explícame paso a paso cómo hacer: ${act.nombre}. ${act.descripcion || ""}`
+      `Explícame paso a paso cómo hacer esta actividad: ${activity.texto}`
     );
 
     setMessages((prev) => [
       ...prev,
-      { role: "ai", text: "👉 Guía:" },
+      { role: "ai", text: "👉 Cómo hacerlo:" },
       { role: "ai", text: reply },
     ]);
-
-    // =========================
-    // GUARDAR EN BD
-    // =========================
-    await fetch(`${API}/registro-actividad`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        id_usuario: user.id_usuario,
-        id_actividad: act.id_actividad,
-        puntaje_agrado: 5,
-        frecuencia_deseada: "media",
-        reaccion: "vista",
-      }),
-    });
   };
 
-  // =========================
+  // ===============================
+  // GUSTO
+  // ===============================
+  const changeGusto = (index, value) => {
+    const updated = [...savedActivities];
+    updated[index].gusto = value;
+
+    setSavedActivities(updated);
+    localStorage.setItem("actividades", JSON.stringify(updated));
+  };
+
+  // ===============================
+  // ELIMINAR
+  // ===============================
+  const deleteActivity = (index) => {
+    const confirmDelete = window.confirm(
+      "⚠️ ¿Seguro que quieres eliminarla?"
+    );
+
+    if (!confirmDelete) return;
+
+    const updated = savedActivities.filter((_, i) => i !== index);
+
+    setSavedActivities(updated);
+    localStorage.setItem("actividades", JSON.stringify(updated));
+  };
+
+  // ===============================
+  // RUTINA
+  // ===============================
+  const addToRoutine = (index) => {
+    const updated = [...savedActivities];
+    updated[index].enRutina = true;
+
+    setSavedActivities(updated);
+    localStorage.setItem("actividades", JSON.stringify(updated));
+  };
+
+  // ===============================
   // UI
-  // =========================
+  // ===============================
   return (
     <div style={styles.page}>
 
-      {/* HEADER */}
       <div style={styles.header}>
-        <h2>🎯 Actividades</h2>
+        <h1>🎯 Actividades</h1>
 
-        <button
-          style={styles.back}
-          onClick={() => navigate("/user")}
-        >
+        <button onClick={() => navigate("/user")} style={styles.backBtn}>
           ⬅ Volver
         </button>
       </div>
 
-      <div style={styles.container}>
+      <div style={styles.grid}>
 
         {/* CHAT */}
-        <div style={styles.chat}>
+        <div style={styles.left}>
           <h3>💬 IA</h3>
 
-          <div style={styles.box}>
+          <div style={styles.chatBox}>
             {messages.map((m, i) => (
               <div key={i} style={styles.msg}>
                 {m.role === "ai" ? "🤖 " : "👤 "}
@@ -146,7 +167,7 @@ export default function Actividades() {
             ))}
           </div>
 
-          <div style={styles.row}>
+          <div style={styles.inputRow}>
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -154,31 +175,79 @@ export default function Actividades() {
               placeholder="Escribe..."
             />
 
-            <button onClick={sendMessage} style={styles.btn}>
+            <button onClick={sendMessage} style={styles.send}>
               Enviar
             </button>
           </div>
         </div>
 
-        {/* LISTA ACTIVIDADES */}
-        <div style={styles.list}>
-          <h3>📌 Catálogo</h3>
+        {/* ACTIVIDADES */}
+        <div style={styles.center}>
+          <h3>📌 Actividades</h3>
 
-          {actividades.map((a) => (
-            <div
-              key={a.id_actividad}
-              style={styles.card}
-              onClick={() => openActivity(a)}
-            >
-              <h4>{a.nombre}</h4>
-              <p style={{ fontSize: 12, opacity: 0.7 }}>
-                {a.categoria}
-              </p>
-              <p style={{ fontSize: 12 }}>
-                {a.descripcion}
-              </p>
+          {savedActivities.map((a, i) => (
+            <div key={i} style={styles.card} onClick={() => openActivity(a)}>
+              <h4>{a.texto}</h4>
+
+              <div style={styles.barContainer}>
+                {Array.from({ length: 10 }, (_, idx) => (
+                  <div
+                    key={idx}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      changeGusto(i, idx + 1);
+                    }}
+                    style={{
+                      ...styles.bar,
+                      background:
+                        idx + 1 <= a.gusto ? "#22c55e" : "#374151",
+                    }}
+                  />
+                ))}
+              </div>
+
+              {a.enRutina && (
+                <p style={{ color: "#22c55e", fontSize: 12 }}>
+                  ✔ En rutina
+                </p>
+              )}
+
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    addToRoutine(i);
+                  }}
+                  style={styles.routineBtn}
+                >
+                  ➕ Rutina
+                </button>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteActivity(i);
+                  }}
+                  style={styles.deleteBtn}
+                >
+                  🗑 Eliminar
+                </button>
+              </div>
             </div>
           ))}
+        </div>
+
+        {/* INFO */}
+        <div style={styles.right}>
+          <h3>🧠 Ayuda</h3>
+
+          <div style={styles.tip}>
+            Haz click en una actividad para ver cómo realizarla
+          </div>
+
+          <div style={styles.tip}>
+            La IA te acompaña mientras exploras
+          </div>
         </div>
 
       </div>
@@ -186,84 +255,39 @@ export default function Actividades() {
   );
 }
 
-// =========================
-// ESTILOS
-// =========================
+/* estilos igual que tu versión original */
 const styles = {
-  page: {
-    height: "100vh",
-    background: "#0b0f14",
-    color: "white",
-    display: "flex",
-    flexDirection: "column",
-  },
+  page: { height: "100vh", background: "#0b0f14", color: "white" },
   header: {
-    padding: 15,
     display: "flex",
     justifyContent: "space-between",
-    borderBottom: "1px solid #1f2937",
+    padding: 20,
   },
-  back: {
+  backBtn: {
+    padding: 8,
+    borderRadius: 8,
+    border: "none",
     background: "#1f2937",
     color: "white",
-    border: "none",
-    padding: 8,
-    borderRadius: 8,
   },
-  container: {
-    display: "flex",
-    flex: 1,
-    gap: 10,
-    padding: 10,
-  },
-  chat: {
-    width: "30%",
-    background: "#111827",
-    padding: 10,
-    borderRadius: 10,
-  },
-  list: {
-    flex: 1,
-    background: "#111827",
-    padding: 10,
-    borderRadius: 10,
-  },
-  box: {
-    height: "60%",
-    overflowY: "auto",
-    marginBottom: 10,
-  },
-  msg: {
-    padding: 8,
-    marginBottom: 5,
-    background: "#0f172a",
-    borderRadius: 8,
-    fontSize: 13,
-  },
-  row: {
-    display: "flex",
-    gap: 8,
-  },
-  input: {
-    flex: 1,
-    padding: 8,
-    borderRadius: 8,
-    border: "none",
-    background: "#0f172a",
-    color: "white",
-  },
-  btn: {
-    padding: 8,
-    background: "#1d9bf0",
-    border: "none",
-    borderRadius: 8,
-    color: "white",
-  },
-  card: {
-    padding: 10,
-    background: "#0f172a",
-    marginBottom: 10,
-    borderRadius: 10,
-    cursor: "pointer",
-  },
+  grid: { display: "flex", gap: 15, padding: 15 },
+  left: { width: "30%", background: "#0f1620", padding: 15 },
+  center: { flex: 1, background: "#0f1620", padding: 15 },
+  right: { width: "25%", background: "#0f1620", padding: 15 },
+
+  chatBox: { height: "60%", overflowY: "auto" },
+  msg: { padding: 8, background: "#111827", marginBottom: 6 },
+
+  inputRow: { display: "flex", gap: 8 },
+  input: { flex: 1, padding: 10, background: "#111827", color: "white" },
+  send: { background: "#1d9bf0", padding: 10 },
+
+  card: { background: "#111827", padding: 12, marginBottom: 10 },
+  barContainer: { display: "flex", gap: 3 },
+  bar: { width: 18, height: 8 },
+
+  routineBtn: { background: "#22c55e", padding: 6 },
+  deleteBtn: { background: "#ef4444", padding: 6 },
+
+  tip: { background: "#111827", padding: 10, marginTop: 10 },
 };
