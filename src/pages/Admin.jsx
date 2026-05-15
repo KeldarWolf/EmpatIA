@@ -1,448 +1,160 @@
+
+Comentarios de criterio
+El sistema incorpora autenticación, diferenciación de perfiles y un panel administrativo funcional básico, permitiendo:
+
+visualización de usuarios,
+edición de registros,
+eliminación de cuentas,
+y navegación administrativa general.
+Además, sí se evidencia un CRUD funcional básico asociado a la gestión de usuarios, considerando:
+
+creación mediante registro autónomo,
+visualización,
+edición,
+y eliminación.
+Sin embargo, existe una diferencia importante entre las funcionalidades efectivamente implementadas y el alcance funcional declarado en el propio informe para el perfil administrador.
+
+En el documento se establece explícitamente que el panel administrativo:
+
+“Muestra el estado en tiempo real de los servicios (servidor, usuarios activos, funcionamiento de la IA) y permite ejecutar acciones clave como gestión de usuarios, revisión de logs y control del sistema.”
+
+Asimismo, en los casos de uso se indica que el administrador debe:
+
+supervisar el sistema,
+visualizar estadísticas generales,
+revisar interacciones anonimizadas,
+y generar reportes de uso.
+No obstante, durante la validación funcional  estas funcionalidades no lograron evidenciarse de manera operativa dentro del panel administrador.
+
+Actualmente, el módulo administrativo se limita principalmente a:
+
+visualización básica de usuarios,
+edición simple,
+y eliminación de registros.
+No se observaron funcionalidades reales relacionadas con:
+
+monitoreo en tiempo real,
+estado operativo del servidor,
+métricas del sistema,
+funcionamiento de la IA,
+revisión de logs,
+reportes,
+auditoría,
+ni herramientas concretas de supervisión administrativa.
+Por lo tanto, aunque el perfil administrador sí posee funcionalidad parcial y CRUD básico sobre usuarios, todavía no evidencia completamente el nivel de gestión y supervisión definido dentro de los requerimientos, casos de uso y descripción funcional del propio proyecto.
+
+Adicionalmente, durante la validación funcional se detectó un problema de manejo de sesión, ya que después de cerrar sesión fue posible volver a acceder a páginas administrativas utilizando navegación del navegador sin volver a solicitar autenticación, lo que evidencia:
+
+invalidación incompleta de sesión,
+ausencia de control adecuado de caché,
+y debilidad en protección de rutas administrativas.
+Se recomienda fortalecer significativamente el perfil administrador incorporando:
+
+monitoreo real del sistema,
+métricas operativas,
+logs funcionales,
+reportes,
+trazabilidad,
+herramientas de supervisión,
+y mejoras de seguridad asociadas al manejo de sesiones y control de acceso
+
+
+
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function Admin() {
   const API = "https://empatia-backend.onrender.com/api/users";
-
   const navigate = useNavigate();
 
-  // =========================
-  // STATES
-  // =========================
   const [users, setUsers] = useState([]);
   const [edit, setEdit] = useState(null);
 
-  const [checkingAuth, setCheckingAuth] =
-    useState(true);
-
-  const [loadingUsers, setLoadingUsers] =
-    useState(false);
-
-  const [error, setError] = useState("");
-
-  // dashboard
-  const [serverStatus, setServerStatus] =
-    useState("OFFLINE");
-
-  const [iaStatus] = useState("ONLINE");
-
-  const [activeUsers, setActiveUsers] =
-    useState(0);
-
-  const [totalChats] = useState(124);
-
-  const [logs, setLogs] = useState([
-    "🟢 Sistema iniciado",
-    "🤖 IA funcionando",
-    "👤 Admin autenticado",
-  ]);
-
-  // =========================
-  // AUTH CHECK
-  // =========================
-  useEffect(() => {
-    const token =
-      localStorage.getItem("token");
-
-    const role =
-      localStorage.getItem("role");
-
-    if (!token || role !== "admin") {
-      navigate("/login", {
-        replace: true,
-      });
-
-      return;
-    }
-
-    setCheckingAuth(false);
-
-    loadUsers();
-
-    checkServer();
-
-    const interval = setInterval(() => {
-      checkServer();
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // =========================
-  // LOAD USERS
-  // =========================
   const loadUsers = async () => {
     try {
-      setLoadingUsers(true);
-
-      const token =
-        localStorage.getItem("token");
-
-      const res = await fetch(API, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (res.status === 401) {
-        logout();
-        return;
-      }
-
-      if (!res.ok) {
-        throw new Error(
-          "Error obteniendo usuarios"
-        );
-      }
-
+      const res = await fetch(API);
       const data = await res.json();
-
-      if (Array.isArray(data)) {
-        setUsers(data);
-
-        setActiveUsers(
-          data.filter(
-            (u) => u.online === true
-          ).length || 3
-        );
-      } else {
-        setUsers([]);
-      }
-
+      setUsers(data);
     } catch (err) {
-      console.error(err);
-
-      setError(
-        "No se pudieron cargar usuarios"
-      );
-
-    } finally {
-      setLoadingUsers(false);
+      console.error("Error loading users", err);
     }
   };
 
-  // =========================
-  // CHECK SERVER
-  // =========================
-  const checkServer = async () => {
-    try {
-      const res = await fetch(
-        "https://empatia-backend.onrender.com/health"
-      );
+  useEffect(() => {
+    loadUsers();
+  }, []);
 
-      if (res.ok) {
-        setServerStatus("ONLINE");
-      } else {
-        setServerStatus("OFFLINE");
-      }
-
-    } catch {
-      setServerStatus("OFFLINE");
-    }
-  };
-
-  // =========================
-  // DELETE USER
-  // =========================
   const deleteUser = async (id) => {
-    const confirmDelete =
-      window.confirm(
-        "¿Eliminar usuario?"
-      );
+    if (!confirm("¿Eliminar usuario?")) return;
 
-    if (!confirmDelete) return;
-
-    try {
-      const token =
-        localStorage.getItem("token");
-
-      await fetch(`${API}/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      setLogs((prev) => [
-        `🗑 Usuario eliminado ID ${id}`,
-        ...prev,
-      ]);
-
-      loadUsers();
-
-    } catch (err) {
-      console.error(err);
-    }
+    await fetch(`${API}/${id}`, { method: "DELETE" });
+    loadUsers();
   };
 
-  // =========================
-  // SAVE USER
-  // =========================
   const saveUser = async () => {
-    try {
-      const token =
-        localStorage.getItem("token");
-
-      await fetch(
-        `${API}/${edit.id_usuario}`,
-        {
-          method: "PUT",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-
-            Authorization: `Bearer ${token}`,
-          },
-
-          body: JSON.stringify({
-            nombre: edit.nombre,
-            email: edit.email,
-            role: edit.role,
-          }),
-        }
-      );
-
-      setLogs((prev) => [
-        `✏ Usuario actualizado ${edit.nombre}`,
-        ...prev,
-      ]);
-
-      setEdit(null);
-
-      loadUsers();
-
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  // =========================
-  // LOGOUT
-  // =========================
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-
-    navigate("/login", {
-      replace: true,
+    await fetch(`${API}/${edit.id_usuario}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nombre: edit.nombre,
+        email: edit.email,
+        role: edit.role,
+      }),
     });
+
+    setEdit(null);
+    loadUsers();
   };
 
-  // =========================
-  // REPORT
-  // =========================
-  const exportReport = () => {
-    const report = {
-      fecha: new Date(),
-      usuarios: users,
-      logs,
-      serverStatus,
-      iaStatus,
-    };
-
-    const blob = new Blob(
-      [JSON.stringify(report, null, 2)],
-      {
-        type: "application/json",
-      }
-    );
-
-    const url =
-      URL.createObjectURL(blob);
-
-    const a =
-      document.createElement("a");
-
-    a.href = url;
-
-    a.download =
-      "reporte-admin.json";
-
-    a.click();
-
-    setLogs((prev) => [
-      "📄 Reporte exportado",
-      ...prev,
-    ]);
-  };
-
-  // =========================
-  // LOADING AUTH
-  // =========================
-  if (checkingAuth) {
-    return (
-      <div style={styles.loadingScreen}>
-        Verificando sesión...
-      </div>
-    );
-  }
-
-  // =========================
-  // UI
-  // =========================
   return (
     <div style={styles.page}>
       <div style={styles.container}>
 
-        {/* HEADER */}
         <div style={styles.header}>
-          <h1 style={styles.title}>
-            ⚡ EMPATIA ADMIN
-          </h1>
-
-          <button
-            style={styles.logoutBtn}
-            onClick={logout}
-          >
-            Cerrar sesión
-          </button>
+          <h1 style={styles.title}>🛠 Admin Panel</h1>
         </div>
 
-        {/* STATS */}
-        <div style={styles.statsGrid}>
-
-          <div style={styles.statCard}>
-            <h2>{users.length}</h2>
-            <p>Usuarios</p>
-          </div>
-
-          <div style={styles.statCard}>
-            <h2>{activeUsers}</h2>
-            <p>Activos</p>
-          </div>
-
-          <div style={styles.statCard}>
-            <h2>{serverStatus}</h2>
-            <p>Servidor</p>
-          </div>
-
-          <div style={styles.statCard}>
-            <h2>{iaStatus}</h2>
-            <p>IA</p>
-          </div>
-
-          <div style={styles.statCard}>
-            <h2>{totalChats}</h2>
-            <p>Chats</p>
-          </div>
-
-        </div>
-
-        {/* ACTIONS */}
-        <div style={styles.actionsTop}>
-          <button
-            style={styles.reportBtn}
-            onClick={exportReport}
-          >
-            Descargar reporte
-          </button>
-        </div>
-
-        {/* ERROR */}
-        {error && (
-          <div style={styles.errorBox}>
-            {error}
-          </div>
-        )}
-
-        {/* LOADING */}
-        {loadingUsers && (
-          <div style={styles.loading}>
-            Cargando usuarios...
-          </div>
-        )}
-
-        {/* USERS */}
+        {/* LIST */}
         <div style={styles.list}>
-
-          {Array.isArray(users) &&
-            users.map((u) => (
-              <div
-                key={u.id_usuario}
-                style={styles.card}
-              >
-
-                <div>
-                  <h3 style={styles.name}>
-                    {u.nombre}
-                  </h3>
-
-                  <p style={styles.text}>
-                    {u.email}
-                  </p>
-
-                  <span style={styles.role}>
-                    {u.role}
-                  </span>
-                </div>
-
-                <div style={styles.actions}>
-
-                  <button
-                    style={styles.editBtn}
-                    onClick={() =>
-                      setEdit(u)
-                    }
-                  >
-                    Editar
-                  </button>
-
-                  <button
-                    style={styles.deleteBtn}
-                    onClick={() =>
-                      deleteUser(
-                        u.id_usuario
-                      )
-                    }
-                  >
-                    Eliminar
-                  </button>
-
-                </div>
-
+          {users.map((u) => (
+            <div key={u.id_usuario} style={styles.card}>
+              <div>
+                <h3 style={styles.name}>{u.nombre}</h3>
+                <p style={styles.text}>{u.email}</p>
+                <span style={styles.role}>{u.role}</span>
               </div>
-            ))}
 
-        </div>
+              <div style={styles.actions}>
+                <button
+                  style={styles.editBtn}
+                  onClick={() => setEdit(u)}
+                >
+                  Editar
+                </button>
 
-        {/* LOGS */}
-        <div style={styles.logsBox}>
-
-          <h2 style={styles.logsTitle}>
-            📡 Logs del sistema
-          </h2>
-
-          {logs.map((log, i) => (
-            <div
-              key={i}
-              style={styles.logItem}
-            >
-              {log}
+                <button
+                  style={styles.deleteBtn}
+                  onClick={() => deleteUser(u.id_usuario)}
+                >
+                  Eliminar
+                </button>
+              </div>
             </div>
           ))}
-
         </div>
 
         {/* MODAL */}
         {edit && (
           <div style={styles.modal}>
-
             <div style={styles.modalBox}>
-
-              <h2 style={styles.modalTitle}>
-                Editar usuario
-              </h2>
+              <h2 style={styles.modalTitle}>Editar usuario</h2>
 
               <input
                 style={styles.input}
                 value={edit.nombre}
                 onChange={(e) =>
-                  setEdit({
-                    ...edit,
-                    nombre:
-                      e.target.value,
-                  })
+                  setEdit({ ...edit, nombre: e.target.value })
                 }
               />
 
@@ -450,11 +162,7 @@ export default function Admin() {
                 style={styles.input}
                 value={edit.email || ""}
                 onChange={(e) =>
-                  setEdit({
-                    ...edit,
-                    email:
-                      e.target.value,
-                  })
+                  setEdit({ ...edit, email: e.target.value })
                 }
               />
 
@@ -462,50 +170,26 @@ export default function Admin() {
                 style={styles.input}
                 value={edit.role}
                 onChange={(e) =>
-                  setEdit({
-                    ...edit,
-                    role:
-                      e.target.value,
-                  })
+                  setEdit({ ...edit, role: e.target.value })
                 }
               >
-                <option value="user">
-                  user
-                </option>
-
-                <option value="admin">
-                  admin
-                </option>
+                <option value="user">user</option>
+                <option value="admin">admin</option>
               </select>
 
-              <div
-                style={
-                  styles.modalActions
-                }
-              >
-
-                <button
-                  style={styles.saveBtn}
-                  onClick={saveUser}
-                >
+              <div style={styles.modalActions}>
+                <button style={styles.saveBtn} onClick={saveUser}>
                   Guardar
                 </button>
 
                 <button
-                  style={
-                    styles.cancelBtn
-                  }
-                  onClick={() =>
-                    setEdit(null)
-                  }
+                  style={styles.cancelBtn}
+                  onClick={() => setEdit(null)}
                 >
                   Cancelar
                 </button>
-
               </div>
-
             </div>
-
           </div>
         )}
 
@@ -514,113 +198,41 @@ export default function Admin() {
   );
 }
 
-// =========================
-// STYLES
-// =========================
-
+/* =========================
+   EMPATIA CYBERPUNK STYLE
+========================= */
 const styles = {
   page: {
     minHeight: "100vh",
-    padding: 20,
-    background:
-      "radial-gradient(circle at top, #08111f, #020305)",
-    fontFamily: "Arial",
-    color: "#fff",
-  },
-
-  loadingScreen: {
-    height: "100vh",
+    background: "radial-gradient(circle at top, #0b0f14, #05070a)",
     display: "flex",
     justifyContent: "center",
-    alignItems: "center",
-    background: "#020305",
-    color: "#00e5ff",
-    fontSize: 22,
+    padding: 20,
+    fontFamily: "Arial",
   },
 
   container: {
-    maxWidth: 1200,
-    margin: "0 auto",
-    background:
-      "rgba(12,18,28,0.95)",
+    width: "100%",
+    maxWidth: 1000,
+    background: "rgba(15, 22, 32, 0.85)",
     borderRadius: 20,
-    padding: 24,
-    border:
-      "1px solid rgba(0,229,255,0.15)",
-    boxShadow:
-      "0 0 60px rgba(0,229,255,0.08)",
+    border: "1px solid rgba(0,229,255,0.15)",
+    boxShadow: "0 0 50px rgba(0,229,255,0.08)",
+    padding: 20,
+    backdropFilter: "blur(10px)",
   },
 
   header: {
     display: "flex",
-    justifyContent:
-      "space-between",
-    alignItems: "center",
-    marginBottom: 25,
+    justifyContent: "center",
+    marginBottom: 20,
   },
 
   title: {
     color: "#00e5ff",
-    textShadow:
-      "0 0 15px rgba(0,229,255,0.5)",
-  },
-
-  logoutBtn: {
-    background: "#ff3b3b",
-    color: "#fff",
-    border: "none",
-    padding: "10px 15px",
-    borderRadius: 10,
-    cursor: "pointer",
-    fontWeight: "bold",
-  },
-
-  statsGrid: {
-    display: "grid",
-    gridTemplateColumns:
-      "repeat(auto-fit,minmax(180px,1fr))",
-    gap: 15,
-    marginBottom: 25,
-  },
-
-  statCard: {
-    background:
-      "rgba(0,0,0,0.3)",
-    borderRadius: 15,
-    padding: 20,
-    textAlign: "center",
-    border:
-      "1px solid rgba(0,229,255,0.12)",
-  },
-
-  actionsTop: {
-    display: "flex",
-    justifyContent: "flex-end",
-    marginBottom: 20,
-  },
-
-  reportBtn: {
-    background: "#00e5ff",
-    border: "none",
-    padding: "10px 15px",
-    borderRadius: 10,
-    cursor: "pointer",
-    fontWeight: "bold",
-  },
-
-  errorBox: {
-    background:
-      "rgba(255,0,0,0.15)",
-    border:
-      "1px solid rgba(255,0,0,0.3)",
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 15,
-  },
-
-  loading: {
-    marginBottom: 15,
-    color: "#00e5ff",
+    textShadow: "0 0 12px rgba(0,229,255,0.6)",
+    fontSize: 26,
+    letterSpacing: 1,
   },
 
   list: {
@@ -631,23 +243,24 @@ const styles = {
 
   card: {
     display: "flex",
-    justifyContent:
-      "space-between",
+    justifyContent: "space-between",
     alignItems: "center",
-    padding: 18,
+    padding: 16,
     borderRadius: 14,
-    background:
-      "rgba(0,0,0,0.35)",
-    border:
-      "1px solid rgba(0,229,255,0.1)",
+    background: "rgba(10, 15, 22, 0.9)",
+    border: "1px solid rgba(0,229,255,0.12)",
+    boxShadow: "0 0 15px rgba(0,229,255,0.05)",
+    transition: "0.2s",
   },
 
   name: {
+    color: "#fff",
     margin: 0,
   },
 
   text: {
     color: "#aaa",
+    fontSize: 13,
     margin: "4px 0",
   },
 
@@ -655,6 +268,7 @@ const styles = {
     color: "#00e5ff",
     fontSize: 12,
     textTransform: "uppercase",
+    letterSpacing: 1,
   },
 
   actions: {
@@ -665,87 +279,69 @@ const styles = {
   editBtn: {
     background: "#00e5ff",
     border: "none",
-    padding: "8px 12px",
+    padding: "7px 12px",
     borderRadius: 8,
     cursor: "pointer",
     fontWeight: "bold",
+    boxShadow: "0 0 10px rgba(0,229,255,0.3)",
+    transition: "0.2s",
   },
 
   deleteBtn: {
     background: "#ff3b3b",
     border: "none",
-    padding: "8px 12px",
+    padding: "7px 12px",
     borderRadius: 8,
     color: "#fff",
     cursor: "pointer",
     fontWeight: "bold",
-  },
-
-  logsBox: {
-    marginTop: 30,
-    background:
-      "rgba(0,0,0,0.3)",
-    borderRadius: 16,
-    padding: 20,
-    border:
-      "1px solid rgba(0,229,255,0.12)",
-  },
-
-  logsTitle: {
-    color: "#00e5ff",
-    marginBottom: 15,
-  },
-
-  logItem: {
-    padding: 10,
-    borderBottom:
-      "1px solid rgba(255,255,255,0.05)",
-    color: "#ccc",
-    fontSize: 14,
+    boxShadow: "0 0 10px rgba(255,59,59,0.2)",
   },
 
   modal: {
     position: "fixed",
-    inset: 0,
-    background:
-      "rgba(0,0,0,0.8)",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    background: "rgba(0,0,0,0.75)",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
+    backdropFilter: "blur(6px)",
   },
 
   modalBox: {
     width: 380,
-    background: "#0b1018",
+    background: "rgba(15, 22, 32, 0.95)",
     padding: 22,
-    borderRadius: 15,
-    border:
-      "1px solid rgba(0,229,255,0.2)",
+    borderRadius: 14,
+    border: "1px solid rgba(0,229,255,0.25)",
+    boxShadow: "0 0 40px rgba(0,229,255,0.15)",
   },
 
   modalTitle: {
     color: "#00e5ff",
-    marginBottom: 15,
+    marginBottom: 12,
     textAlign: "center",
   },
 
   input: {
     width: "100%",
-    padding: 10,
     marginTop: 10,
-    borderRadius: 10,
-    border:
-      "1px solid rgba(0,229,255,0.15)",
-    background: "#05070c",
+    padding: 10,
+    borderRadius: 8,
+    background: "#0b0f14",
+    border: "1px solid rgba(0,229,255,0.25)",
     color: "#fff",
     outline: "none",
-    boxSizing: "border-box",
   },
 
   modalActions: {
     display: "flex",
-    gap: 10,
+    justifyContent: "space-between",
     marginTop: 15,
+    gap: 10,
   },
 
   saveBtn: {
@@ -753,9 +349,10 @@ const styles = {
     background: "#00e5ff",
     border: "none",
     padding: 10,
-    borderRadius: 10,
-    cursor: "pointer",
+    borderRadius: 8,
     fontWeight: "bold",
+    cursor: "pointer",
+    boxShadow: "0 0 12px rgba(0,229,255,0.3)",
   },
 
   cancelBtn: {
@@ -764,7 +361,7 @@ const styles = {
     border: "1px solid #ff3b3b",
     color: "#ff3b3b",
     padding: 10,
-    borderRadius: 10,
+    borderRadius: 8,
     cursor: "pointer",
   },
 };
