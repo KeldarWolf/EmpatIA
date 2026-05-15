@@ -21,7 +21,7 @@ const activityTriggers = [
   "aburrimiento",
 ];
 
-// 🎯 opciones base
+// 🎯 menú principal
 const mainOptions = [
   "🎵 Música",
   "🧘 Relajación",
@@ -30,9 +30,6 @@ const mainOptions = [
   "❓ No sé qué hacer",
   "🔄 Cambiar respuestas rápidas",
 ];
-
-// Sí / No
-const yesNoOptions = ["Sí", "No"];
 
 // 🧠 actividades
 const activityGroups = {
@@ -44,36 +41,27 @@ const activityGroups = {
     "Piano",
     "Jazz",
     "Música feliz",
-    "Música triste",
     "Descubrir música nueva",
     "Cantar",
-    "Música energética",
   ],
   relajacion: [
     "Respirar profundo",
     "Ducha relajante",
-    "Cerrar los ojos",
     "Meditar",
-    "Estiramientos",
+    "Estiramientos suaves",
     "Tomar agua",
     "Escuchar lluvia",
     "Descansar",
-    "Relajar hombros",
     "Escribir lo que siento",
-    "Pausar mente",
   ],
   fisica: [
     "Caminar",
     "Ejercicio ligero",
-    "Estiramientos",
     "Bailar",
-    "Mover brazos",
-    "Mover piernas",
+    "Estiramientos",
     "Salir a tomar aire",
-    "Subir escaleras",
     "Yoga",
-    "Trotar suave",
-    "Mover cuello",
+    "Mover el cuerpo",
   ],
 };
 
@@ -87,12 +75,11 @@ export default function User() {
   const [frase, setFrase] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const [waitingForYes, setWaitingForYes] = useState(false);
-  const [writingActivity, setWritingActivity] = useState(false);
-
   const [currentCategory, setCurrentCategory] = useState(null);
 
+  // =====================
   // INIT
+  // =====================
   useEffect(() => {
     setMessages([
       { role: "ai", text: `Hola ${user?.nombre || "🤍"}, estoy aquí.` },
@@ -106,12 +93,24 @@ export default function User() {
     return () => clearInterval(interval);
   }, [user?.nombre]);
 
-  const shouldTriggerActivity = (text) =>
-    activityTriggers.some((w) => text.toLowerCase().includes(w));
+  // =====================
+  // MENU ACTIVIDADES (CLAVE)
+  // =====================
+  const showActivityMenu = () => {
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "ai",
+        text:
+          "🤍 Ahora mismo la IA no está disponible. Pero puedo ayudarte con una actividad.",
+        options: mainOptions,
+      },
+    ]);
+  };
 
-  // ======================
+  // =====================
   // IA
-  // ======================
+  // =====================
   const askAI = async (message) => {
     try {
       const res = await fetch(`${API_URL}/chat`, {
@@ -129,9 +128,9 @@ export default function User() {
     }
   };
 
-  // ======================
+  // =====================
   // SEND MESSAGE
-  // ======================
+  // =====================
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
 
@@ -141,73 +140,9 @@ export default function User() {
     setInput("");
     setLoading(true);
 
-    // ✍️ escribir actividad
-    if (writingActivity) {
-      const data = JSON.parse(localStorage.getItem("actividades") || "[]");
-
-      const nueva = {
-        texto: text,
-        tipo: "Personalizada",
-        fecha: new Date().toISOString(),
-      };
-
-      localStorage.setItem("actividades", JSON.stringify([...data, nueva]));
-
-      setMessages((prev) => [
-        ...prev,
-        { role: "ai", text: `✅ Actividad guardada: ${text}` },
-      ]);
-
-      setWritingActivity(false);
-      setLoading(false);
-
-      setTimeout(() => navigate("/actividades"), 1200);
-      return;
-    }
-
-    // SI / NO por texto (fallback)
-    if (waitingForYes) {
-      const lower = text.toLowerCase();
-
-      if (lower.includes("si") || lower.includes("sí")) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "ai",
-            text: "¿Qué te gustaría hacer?",
-            options: mainOptions,
-          },
-        ]);
-
-        setWaitingForYes(false);
-        setLoading(false);
-        return;
-      }
-
-      if (lower.includes("no")) {
-        setMessages((prev) => [
-          ...prev,
-          { role: "ai", text: "🤍 Está bien, aquí estoy." },
-        ]);
-
-        setWaitingForYes(false);
-        setLoading(false);
-        return;
-      }
-    }
-
-    // trigger actividad
-    if (shouldTriggerActivity(text)) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text: "🤍 ¿Quieres que te ayude con una actividad?",
-          options: yesNoOptions,
-        },
-      ]);
-
-      setWaitingForYes(true);
+    // detectar actividad
+    if (activityTriggers.some((w) => text.toLowerCase().includes(w))) {
+      showActivityMenu();
       setLoading(false);
       return;
     }
@@ -216,17 +151,7 @@ export default function User() {
     const reply = await askAI(text);
 
     if (!reply) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text:
-            "🤍 Ahora mismo no puedo responder, pero puedo ayudarte con una actividad.",
-          options: yesNoOptions,
-        },
-      ]);
-
-      setWaitingForYes(true);
+      showActivityMenu(); // 🔥 AQUÍ ESTÁ EL CAMBIO CLAVE
       setLoading(false);
       return;
     }
@@ -235,71 +160,73 @@ export default function User() {
     setLoading(false);
   };
 
-  // ======================
-  // BOTONES
-  // ======================
+  // =====================
+  // CLICK BOTONES
+  // =====================
   const handleOptionClick = (opt) => {
     setMessages((prev) => [...prev, { role: "user", text: opt }]);
 
-    // Sí
-    if (opt === "Sí") {
-      setMessages((prev) => [
-        ...prev,
-        { role: "ai", text: "¿Qué te gustaría hacer?", options: mainOptions },
-      ]);
-
-      setWaitingForYes(false);
-      return;
-    }
-
-    // No
-    if (opt === "No") {
-      setMessages((prev) => [
-        ...prev,
-        { role: "ai", text: "🤍 Está bien, aquí estoy contigo." },
-      ]);
-
-      setWaitingForYes(false);
-      return;
-    }
-
-    // escribir actividad
-    if (opt.includes("Escribir")) {
-      setWritingActivity(true);
-
+    // HABLAR
+    if (opt.includes("Hablar")) {
       setMessages((prev) => [
         ...prev,
         {
           role: "ai",
-          text: "✍️ Escribe tu actividad:",
+          text: "🤍 Estoy aquí contigo, cuéntame.",
         },
       ]);
-
       return;
     }
 
-    // categorías
-    const groupKey =
-      opt.includes("Música")
-        ? "musica"
-        : opt.includes("Relajación")
-        ? "relajacion"
-        : opt.includes("Actividad física")
-        ? "fisica"
-        : null;
-
-    if (groupKey) {
-      setCurrentCategory(groupKey);
-
+    // NO SÉ
+    if (opt.includes("No sé")) {
       setMessages((prev) => [
         ...prev,
         {
           role: "ai",
-          text: "🤍 Opciones:",
-          options: activityGroups[groupKey],
+          text: "🤍 Elige lo primero que te llame la atención.",
         },
       ]);
+      return;
+    }
 
+    // CATEGORÍAS
+    if (opt.includes("Música")) {
+      setCurrentCategory("musica");
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: "🎵 Opciones de música:",
+          options: activityGroups.musica,
+        },
+      ]);
+      return;
+    }
+
+    if (opt.includes("Relajación")) {
+      setCurrentCategory("relajacion");
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: "🧘 Opciones de relajación:",
+          options: activityGroups.relajacion,
+        },
+      ]);
+      return;
+    }
+
+    if (opt.includes("Actividad física")) {
+      setCurrentCategory("fisica");
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: "🏃 Opciones físicas:",
+          options: activityGroups.fisica,
+        },
+      ]);
       return;
     }
 
@@ -322,18 +249,21 @@ export default function User() {
     setTimeout(() => navigate("/actividades"), 1200);
   };
 
+  // =====================
+  // UI
+  // =====================
   return (
     <div className="app-layout">
       <div className="left-panel">
         <h4>💡 Acompañamiento</h4>
         <div className="quote-box">{frase}</div>
-        <div style={{ marginTop: 20, color: "#00e5ff" }}>
-          👤 {user?.nombre || "Usuario"}
-        </div>
       </div>
 
       <div className="center-panel">
-        <ChatBox messages={messages} onOptionClick={handleOptionClick} />
+        <ChatBox
+          messages={messages}
+          onOptionClick={handleOptionClick}
+        />
 
         <InputBox
           input={input}
