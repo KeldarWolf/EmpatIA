@@ -1,7 +1,3 @@
-// =========================
-// User.jsx
-// =========================
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./user.css";
@@ -53,7 +49,6 @@ const activityGroups = {
     "Cantar",
     "Música energética",
   ],
-
   relajacion: [
     "Respirar profundo",
     "Ducha relajante",
@@ -67,7 +62,6 @@ const activityGroups = {
     "Escribir lo que siento",
     "Pausar mente",
   ],
-
   fisica: [
     "Caminar",
     "Ejercicio ligero",
@@ -96,17 +90,13 @@ export default function User() {
   const [waitingForYes, setWaitingForYes] = useState(false);
   const [writingActivity, setWritingActivity] = useState(false);
 
+  const [currentCategory, setCurrentCategory] = useState(null);
+
   // INIT
   useEffect(() => {
     setMessages([
-      {
-        role: "ai",
-        text: `Hola ${user?.nombre || "🤍"}, estoy aquí.`,
-      },
-      {
-        role: "ai",
-        text: "Cuéntame cómo te sientes...",
-      },
+      { role: "ai", text: `Hola ${user?.nombre || "🤍"}, estoy aquí.` },
+      { role: "ai", text: "Cuéntame cómo te sientes..." },
     ]);
 
     const interval = setInterval(() => {
@@ -117,9 +107,7 @@ export default function User() {
   }, [user?.nombre]);
 
   const shouldTriggerActivity = (text) =>
-    activityTriggers.some((w) =>
-      text.toLowerCase().includes(w)
-    );
+    activityTriggers.some((w) => text.toLowerCase().includes(w));
 
   // ======================
   // IA
@@ -128,16 +116,13 @@ export default function User() {
     try {
       const res = await fetch(`${API_URL}/chat`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message }),
       });
 
       if (!res.ok) return null;
 
       const data = await res.json();
-
       return data?.reply || null;
     } catch {
       return null;
@@ -145,25 +130,39 @@ export default function User() {
   };
 
   // ======================
-  // GUARDAR EN BD
+  // GUARDAR ACTIVIDAD EN BD
   // ======================
   const saveActivityToDB = async (activityName) => {
     try {
       if (!user?.id_usuario) return;
 
-      // buscar actividad
+      // 1️⃣ buscar actividad en catálogo
       const res = await fetch(`${API_URL}/actividades`);
       const actividades = await res.json();
 
-      const actividad = actividades.find(
+      let actividad = actividades.find(
         (a) =>
-          a.nombre.toLowerCase() ===
-          activityName.toLowerCase()
+          a.nombre.toLowerCase() === activityName.toLowerCase()
       );
 
-      if (!actividad) return;
+      // 2️⃣ si no existe → crear
+      if (!actividad) {
+        const createRes = await fetch(`${API_URL}/crear-actividad`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            nombre: activityName,
+            descripcion: activityName,
+            categoria: currentCategory || "general",
+          }),
+        });
 
-      // guardar relación usuario-actividad
+        actividad = await createRes.json();
+      }
+
+      // 3️⃣ registrar actividad al usuario
       await fetch(`${API_URL}/registro-actividad`, {
         method: "POST",
         headers: {
@@ -178,7 +177,7 @@ export default function User() {
         }),
       });
     } catch (err) {
-      console.log(err);
+      console.log("ERROR BD:", err);
     }
   };
 
@@ -190,37 +189,27 @@ export default function User() {
 
     const text = input.trim();
 
-    setMessages((prev) => [
-      ...prev,
-      { role: "user", text },
-    ]);
-
+    setMessages((prev) => [...prev, { role: "user", text }]);
     setInput("");
     setLoading(true);
 
-    // escribir actividad
+    // ✍️ escribir actividad
     if (writingActivity) {
+      await saveActivityToDB(text);
+
       setMessages((prev) => [
         ...prev,
-        {
-          role: "ai",
-          text: `✅ Actividad guardada: ${text}`,
-        },
+        { role: "ai", text: `✅ Actividad guardada: ${text}` },
       ]);
-
-      await saveActivityToDB(text);
 
       setWritingActivity(false);
       setLoading(false);
 
-      setTimeout(() => {
-        navigate("/actividades");
-      }, 1200);
-
+      setTimeout(() => navigate("/actividades"), 1200);
       return;
     }
 
-    // SI / NO texto
+    // SI / NO
     if (waitingForYes) {
       const lower = text.toLowerCase();
 
@@ -236,27 +225,22 @@ export default function User() {
 
         setWaitingForYes(false);
         setLoading(false);
-
         return;
       }
 
       if (lower.includes("no")) {
         setMessages((prev) => [
           ...prev,
-          {
-            role: "ai",
-            text: "🤍 Está bien, aquí estoy.",
-          },
+          { role: "ai", text: "🤍 Está bien, aquí estoy." },
         ]);
 
         setWaitingForYes(false);
         setLoading(false);
-
         return;
       }
     }
 
-    // trigger actividades
+    // trigger actividad
     if (shouldTriggerActivity(text)) {
       setMessages((prev) => [
         ...prev,
@@ -269,7 +253,6 @@ export default function User() {
 
       setWaitingForYes(true);
       setLoading(false);
-
       return;
     }
 
@@ -289,55 +272,38 @@ export default function User() {
 
       setWaitingForYes(true);
       setLoading(false);
-
       return;
     }
 
-    setMessages((prev) => [
-      ...prev,
-      { role: "ai", text: reply },
-    ]);
-
+    setMessages((prev) => [...prev, { role: "ai", text: reply }]);
     setLoading(false);
   };
 
   // ======================
-  // OPCIONES
+  // BOTONES
   // ======================
   const handleOptionClick = async (opt) => {
-    setMessages((prev) => [
-      ...prev,
-      { role: "user", text: opt },
-    ]);
+    setMessages((prev) => [...prev, { role: "user", text: opt }]);
 
-    // SI
+    // Sí
     if (opt === "Sí") {
       setMessages((prev) => [
         ...prev,
-        {
-          role: "ai",
-          text: "¿Qué te gustaría hacer?",
-          options: mainOptions,
-        },
+        { role: "ai", text: "¿Qué te gustaría hacer?", options: mainOptions },
       ]);
 
       setWaitingForYes(false);
-
       return;
     }
 
-    // NO
+    // No
     if (opt === "No") {
       setMessages((prev) => [
         ...prev,
-        {
-          role: "ai",
-          text: "🤍 Está bien, aquí estoy contigo.",
-        },
+        { role: "ai", text: "🤍 Está bien, aquí estoy contigo." },
       ]);
 
       setWaitingForYes(false);
-
       return;
     }
 
@@ -352,6 +318,8 @@ export default function User() {
         : null;
 
     if (groupKey) {
+      setCurrentCategory(groupKey);
+
       setMessages((prev) => [
         ...prev,
         {
@@ -364,35 +332,15 @@ export default function User() {
       return;
     }
 
-    // guardar actividad personalizada
-    if (opt.includes("Cambiar")) {
-      setWritingActivity(true);
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text: "✍️ Escribe la actividad:",
-        },
-      ]);
-
-      return;
-    }
-
-    // guardar actividad REAL
+    // guardar actividad BD
     await saveActivityToDB(opt);
 
     setMessages((prev) => [
       ...prev,
-      {
-        role: "ai",
-        text: `✅ Guardado: ${opt}`,
-      },
+      { role: "ai", text: `✅ Guardado: ${opt}` },
     ]);
 
-    setTimeout(() => {
-      navigate("/actividades");
-    }, 1200);
+    setTimeout(() => navigate("/actividades"), 1200);
   };
 
   return (
@@ -402,12 +350,7 @@ export default function User() {
 
         <div className="quote-box">{frase}</div>
 
-        <div
-          style={{
-            marginTop: 20,
-            color: "#00e5ff",
-          }}
-        >
+        <div style={{ marginTop: 20, color: "#00e5ff" }}>
           👤 {user?.nombre || "Usuario"}
         </div>
       </div>
@@ -427,9 +370,7 @@ export default function User() {
       </div>
 
       <div className="right-panel">
-        <button onClick={() => navigate("/rutina")}>
-          🧘 Rutina
-        </button>
+        <button onClick={() => navigate("/rutina")}>🧘 Rutina</button>
 
         <button onClick={() => navigate("/actividades")}>
           🎯 Actividades
