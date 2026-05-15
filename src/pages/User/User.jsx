@@ -1,161 +1,232 @@
-import express from "express";
-import cors from "cors";
-import dotenv from "dotenv";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "./user.css";
 
-import authRoutes from "./routers/authRoutes.js";
-import usersRoutes from "./routers/usersRoutes.js";
+import ChatBox from "./ChatBox";
+import InputBox from "./InputBox";
+import frases from "./frases";
 
-dotenv.config();
+const API_URL = "https://empatia-backend.onrender.com";
 
-const app = express();
+const mainOptions = [
+  "🎵 Música",
+  "🧘 Relajación",
+  "🏃 Actividad física",
+  "🤍 Hablar un poco",
+  "❓ No sé qué hacer",
+  "✍️ Escribir actividad",
+];
 
-app.use(cors());
-app.use(express.json());
+export default function User() {
+  const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("usuario") || "null");
 
-// LOG REQUESTS
-app.use((req, res, next) => {
-  console.log("➡️", req.method, req.url);
-  next();
-});
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [waitingYesNo, setWaitingYesNo] = useState(false);
+  const [writingActivity, setWritingActivity] = useState(false);
+  const [frase, setFrase] = useState("");
 
-// ROUTES
-app.use("/api/auth", authRoutes);
-app.use("/api/users", usersRoutes);
+  useEffect(() => {
+    setMessages([
+      { role: "ai", text: `Hola ${user?.nombre || "🤍"}, estoy aquí.` },
+      { role: "ai", text: "Cuéntame cómo te sientes..." },
+    ]);
 
-app.get("/", (req, res) => {
-  res.send("🚀 EmpatIA Backend activo");
-});
+    const interval = setInterval(() => {
+      setFrase(frases[Math.floor(Math.random() * frases.length)]);
+    }, 8000);
 
-// =========================
-// DETECTORES IA
-// =========================
-const detectQuotaError = (r, data) => {
-  const msg = data?.error?.message?.toLowerCase?.() || "";
+    return () => clearInterval(interval);
+  }, []);
 
-  return (
-    r.status === 429 ||
-    msg.includes("quota") ||
-    msg.includes("resource_exhausted") ||
-    msg.includes("limit")
-  );
-};
-
-// =========================
-// CHAT IA
-// =========================
-app.post("/chat", async (req, res) => {
-  const { message } = req.body;
-
-  if (!message || !message.trim()) {
-    return res.json({
-      reply: "🤍 Cuéntame cómo te sientes.",
-      errorType: "EMPTY_MESSAGE",
-    });
-  }
-
-  try {
-    const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
+  // =========================
+  // IA CALL
+  // =========================
+  const askAI = async (message) => {
+    try {
+      const res = await fetch(`${API_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: `
-Eres EmpatIA:
-- Responde corto
-- Empático
-- Humano
-                  `,
-                },
-              ],
-            },
-          ],
-        }),
-      }
-    );
-
-    const data = await r.json();
-
-    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    const msg = data?.error?.message?.toLowerCase?.() || "";
-
-    const isQuota =
-      r.status === 429 ||
-      msg.includes("quota") ||
-      msg.includes("resource_exhausted") ||
-      msg.includes("limit");
-
-    const isNetwork = !r.ok && !reply && !isQuota;
-
-    // =========================
-    // DEBUG REAL (IMPORTANTE)
-    // =========================
-    console.log("=== GEMINI DEBUG ===");
-    console.log("STATUS:", r.status);
-    console.log("OK:", r.ok);
-    console.log("REPLY:", reply);
-    console.log("ERROR MSG:", msg);
-    console.log("FULL DATA:", JSON.stringify(data, null, 2));
-    console.log("====================");
-
-    // =========================
-    // ERROR: QUOTA / TOKEN
-    // =========================
-    if (isQuota) {
-      return res.json({
-        reply: "🤍 La IA está temporalmente saturada.",
-        errorType: "QUOTA_LIMIT",
+        body: JSON.stringify({ message }),
       });
+
+      return await res.json();
+    } catch {
+      return null;
+    }
+  };
+
+  // =========================
+  // ERROR HANDLER
+  // =========================
+  const handleAIError = (response) => {
+    setMessages((prev) => [
+      ...prev,
+      { role: "ai", text: response.reply },
+      {
+        role: "ai",
+        text: "¿Quieres iniciar una actividad para sentirte mejor?",
+        options: ["Sí", "No"],
+      },
+    ]);
+
+    setWaitingYesNo(true);
+  };
+
+  // =========================
+  // SEND MESSAGE
+  // =========================
+  const sendMessage = async () => {
+    if (!input.trim() || loading) return;
+
+    const text = input.trim();
+    const lower = text.toLowerCase();
+
+    setMessages((prev) => [...prev, { role: "user", text }]);
+    setInput("");
+    setLoading(true);
+
+    // ACTIVIDAD DETECTADA
+    if (lower.includes("actividad") || lower.includes("actividades")) {
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: "Elige una actividad:", options: mainOptions },
+      ]);
+      setLoading(false);
+      return;
     }
 
-    // =========================
-    // ERROR: NETWORK
-    // =========================
-    if (isNetwork) {
-      return res.json({
+    // ESCRIBIR ACTIVIDAD
+    if (writingActivity) {
+      const data = JSON.parse(localStorage.getItem("actividades") || "[]");
+
+      const nueva = {
+        texto: text,
+        fecha: new Date().toISOString(),
+        tipo: "personalizada",
+      };
+
+      localStorage.setItem("actividades", JSON.stringify([...data, nueva]));
+
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: `✅ Guardado: ${text}` },
+      ]);
+
+      setWritingActivity(false);
+      setTimeout(() => navigate("/actividades"), 1200);
+
+      setLoading(false);
+      return;
+    }
+
+    const response = await askAI(text);
+
+    if (!response) {
+      handleAIError({
         reply: "🤍 Problema de conexión con la IA.",
-        errorType: "NETWORK_ERROR",
       });
+      setLoading(false);
+      return;
     }
 
-    // =========================
-    // ERROR: GENERIC
-    // =========================
-    if (!reply) {
-      return res.json({
-        reply: "🤍 No pude generar respuesta.",
-        errorType: "GENERIC_ERROR",
-      });
+    if (response.errorType) {
+      handleAIError(response);
+      setLoading(false);
+      return;
     }
 
-    // =========================
-    // OK
-    // =========================
-    return res.json({
-      reply,
-      errorType: null,
-    });
+    setMessages((prev) => [
+      ...prev,
+      { role: "ai", text: response.reply },
+    ]);
 
-  } catch (error) {
-    console.error("❌ SERVER ERROR:", error);
+    setLoading(false);
+  };
 
-    return res.json({
-      reply: "🤍 Error del servidor.",
-      errorType: "SERVER_ERROR",
-    });
-  }
-});
+  // =========================
+  // OPTIONS FLOW
+  // =========================
+  const handleOptionClick = (opt) => {
+    setMessages((prev) => [...prev, { role: "user", text: opt }]);
 
-// =========================
-// START
-// =========================
-const PORT = process.env.PORT || 3001;
+    if (opt === "Sí") {
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: "Elige una actividad:", options: mainOptions },
+      ]);
+      setWaitingYesNo(false);
+      return;
+    }
 
-app.listen(PORT, () => {
-  console.log(`🚀 EmpatIA backend en puerto ${PORT}`);
-});
+    if (opt === "No") {
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: "🤍 Está bien, sigo contigo." },
+      ]);
+      setWaitingYesNo(false);
+      return;
+    }
+
+    if (opt.includes("Escribir")) {
+      setWritingActivity(true);
+
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: "✍️ Escribe la actividad:" },
+      ]);
+      return;
+    }
+
+    const data = JSON.parse(localStorage.getItem("actividades") || "[]");
+
+    const nueva = {
+      texto: opt,
+      fecha: new Date().toISOString(),
+      tipo: "actividad",
+    };
+
+    localStorage.setItem("actividades", JSON.stringify([...data, nueva]));
+
+    setMessages((prev) => [
+      ...prev,
+      { role: "ai", text: `✅ Actividad: ${opt}` },
+    ]);
+
+    setTimeout(() => navigate("/actividades"), 1200);
+  };
+
+  return (
+    <div className="app-layout">
+
+      <div className="left-panel">
+        <h4>💡 Acompañamiento</h4>
+        <div className="quote-box">{frase}</div>
+        <div style={{ marginTop: 20, color: "#00e5ff" }}>
+          👤 {user?.nombre || "Usuario"}
+        </div>
+      </div>
+
+      <div className="center-panel">
+        <ChatBox messages={messages} onOptionClick={handleOptionClick} />
+
+        <InputBox
+          input={input}
+          setInput={setInput}
+          sendMessage={sendMessage}
+          loading={loading}
+        />
+      </div>
+
+      <div className="right-panel">
+        <button onClick={() => navigate("/rutina")}>🧘 Rutina</button>
+        <button onClick={() => navigate("/actividades")}>🎯 Actividades</button>
+        <button onClick={() => navigate("/estadisticas")}>📊 Estadísticas</button>
+        <button onClick={() => navigate("/diario")}>📓 Diario</button>
+      </div>
+
+    </div>
+  );
+}
