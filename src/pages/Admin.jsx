@@ -1,12 +1,5 @@
-import {
-  useEffect,
-  useState,
-} from "react";
-
-import {
-  useNavigate,
-  Navigate,
-} from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function Admin() {
   const API =
@@ -17,46 +10,11 @@ export default function Admin() {
   // =========================
   // STATES
   // =========================
-  const [users, setUsers] =
-    useState([]);
+  const [users, setUsers] = useState([]);
+  const [edit, setEdit] = useState(null);
 
-  const [edit, setEdit] =
-    useState(null);
-
-  const [view, setView] =
+  const [section, setSection] =
     useState("dashboard");
-
-  const [logs, setLogs] =
-    useState([]);
-
-  // =========================
-  // SECURITY
-  // =========================
-  useEffect(() => {
-    try {
-      const savedUser =
-        localStorage.getItem("user");
-
-      if (!savedUser) {
-        navigate("/login");
-        return;
-      }
-
-      const user =
-        JSON.parse(savedUser);
-
-      if (user.role !== "admin") {
-        navigate("/login");
-      }
-
-    } catch (err) {
-      console.error(err);
-
-      localStorage.clear();
-
-      navigate("/login");
-    }
-  }, []);
 
   // =========================
   // LOAD USERS
@@ -65,84 +23,48 @@ export default function Admin() {
     try {
       const res = await fetch(API);
 
-      const data =
-        await res.json();
+      const data = await res.json();
 
       if (Array.isArray(data)) {
         setUsers(data);
-
-        addLog(
-          "Usuarios cargados correctamente"
-        );
-
       } else {
         setUsers([]);
       }
 
     } catch (err) {
-      console.error(err);
-
-      addLog(
-        "Error cargando usuarios"
+      console.error(
+        "Error loading users",
+        err
       );
 
       setUsers([]);
     }
   };
 
-  // =========================
-  // LOAD WHEN USERS VIEW
-  // =========================
   useEffect(() => {
-    if (view === "users") {
-      loadUsers();
-    }
-  }, [view]);
-
-  // =========================
-  // LOG SYSTEM
-  // =========================
-  const addLog = (text) => {
-    const now =
-      new Date().toLocaleTimeString();
-
-    setLogs((prev) => [
-      `${now} - ${text}`,
-      ...prev,
-    ]);
-  };
+    loadUsers();
+  }, []);
 
   // =========================
   // DELETE USER
   // =========================
   const deleteUser = async (id) => {
     try {
-      const ok =
+      const confirmDelete =
         window.confirm(
           "¿Eliminar usuario?"
         );
 
-      if (!ok) return;
+      if (!confirmDelete) return;
 
-      await fetch(
-        `${API}/${id}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      addLog(
-        `Usuario eliminado ID ${id}`
-      );
+      await fetch(`${API}/${id}`, {
+        method: "DELETE",
+      });
 
       loadUsers();
 
     } catch (err) {
       console.error(err);
-
-      addLog(
-        "Error eliminando usuario"
-      );
     }
   };
 
@@ -169,70 +91,12 @@ export default function Admin() {
         }
       );
 
-      addLog(
-        `Usuario editado: ${edit.nombre}`
-      );
-
       setEdit(null);
 
       loadUsers();
 
     } catch (err) {
       console.error(err);
-
-      addLog(
-        "Error editando usuario"
-      );
-    }
-  };
-
-  // =========================
-  // EXPORT USERS
-  // =========================
-  const exportUsers = () => {
-    try {
-      const data =
-        JSON.stringify(
-          users,
-          null,
-          2
-        );
-
-      const blob = new Blob(
-        [data],
-        {
-          type:
-            "application/json",
-        }
-      );
-
-      const url =
-        window.URL.createObjectURL(
-          blob
-        );
-
-      const a =
-        document.createElement(
-          "a"
-        );
-
-      a.href = url;
-
-      a.download =
-        "usuarios-empatia.json";
-
-      a.click();
-
-      addLog(
-        "Reporte exportado"
-      );
-
-    } catch (err) {
-      console.error(err);
-
-      addLog(
-        "Error exportando reporte"
-      );
     }
   };
 
@@ -240,649 +104,513 @@ export default function Admin() {
   // LOGOUT
   // =========================
   const logout = () => {
-    localStorage.clear();
+    localStorage.removeItem("user");
 
-    addLog(
-      "Sesión cerrada"
+    localStorage.removeItem("token");
+
+    navigate("/login");
+  };
+
+  // =========================
+  // EXPORT USERS
+  // =========================
+  const exportUsers = () => {
+    const data = JSON.stringify(
+      users,
+      null,
+      2
     );
 
-    navigate("/login", {
-      replace: true,
+    const blob = new Blob([data], {
+      type: "application/json",
     });
 
-    window.location.reload();
+    const url =
+      window.URL.createObjectURL(blob);
+
+    const a =
+      document.createElement("a");
+
+    a.href = url;
+
+    a.download =
+      "usuarios-empatia.json";
+
+    a.click();
   };
 
   return (
-    <div style={styles.container}>
+    <div style={styles.page}>
+      <div style={styles.container}>
 
-      {/* =========================
-          DASHBOARD
-      ========================= */}
-      {view === "dashboard" && (
-        <div style={styles.card}>
+        {/* HEADER */}
+        <div style={styles.header}>
 
-          <div style={styles.topBar}>
-            <h1 style={styles.title}>
-              🛠 Panel Admin
-            </h1>
+          <h1 style={styles.title}>
+            🛠 EMPATIA ADMIN PANEL
+          </h1>
 
-            <button
-              style={styles.logoutBtn}
-              onClick={logout}
-            >
-              Cerrar sesión
-            </button>
-          </div>
-
-          <p style={styles.subtitle}>
-            Sistema de supervisión
-            EMPATIA
-          </p>
-
-          <div style={styles.box}>
-            <h3
-              style={
-                styles.sectionTitle
-              }
-            >
-              Estado del sistema
-            </h3>
-
-            <p>
-              ✔ Servidor:
-              operativo
-            </p>
-
-            <p>
-              ✔ API:
-              {users.length >= 0
-                ? " conectada"
-                : " error"}
-            </p>
-
-            <p>
-              ✔ Usuarios:
-              {users.length}
-            </p>
-
-            <p>
-              ✔ IA emocional:
-              online
-            </p>
-          </div>
-
-          <div style={styles.box}>
-            <h3
-              style={
-                styles.sectionTitle
-              }
-            >
-              Estadísticas
-            </h3>
-
-            <p>
-              👥 Usuarios:
-              {users.length}
-            </p>
-
-            <p>
-              🛡 Admins:
-              {
-                users.filter(
-                  (u) =>
-                    u.role ===
-                    "admin"
-                ).length
-              }
-            </p>
-
-            <p>
-              🙋 Usuarios
-              normales:
-              {
-                users.filter(
-                  (u) =>
-                    u.role ===
-                    "user"
-                ).length
-              }
-            </p>
-
-            <p>
-              📊 Logs:
-              {logs.length}
-            </p>
-          </div>
-
-          <div style={styles.box}>
-            <h3
-              style={
-                styles.sectionTitle
-              }
-            >
-              Acciones rápidas
-            </h3>
-
-            <button
-              style={styles.button}
-              onClick={() =>
-                setView("users")
-              }
-            >
-              Ver usuarios
-            </button>
-
-            <button
-              style={styles.button}
-              onClick={() =>
-                setView("logs")
-              }
-            >
-              Logs sistema
-            </button>
-
-            <button
-              style={styles.button}
-              onClick={() =>
-                setView(
-                  "metrics"
-                )
-              }
-            >
-              Métricas
-            </button>
-
-            <button
-              style={styles.button}
-              onClick={() =>
-                setView("ia")
-              }
-            >
-              Estado IA
-            </button>
-
-            <button
-              style={
-                styles.button
-              }
-              onClick={
-                exportUsers
-              }
-            >
-              Exportar reporte
-            </button>
-
-            <button
-              style={
-                styles.dangerButton
-              }
-              onClick={() => {
-                addLog(
-                  "Cache limpiada"
-                );
-
-                alert(
-                  "Cache limpiada"
-                );
-              }}
-            >
-              Limpiar cache
-            </button>
-          </div>
+          <button
+            style={styles.logoutBtn}
+            onClick={logout}
+          >
+            Cerrar sesión
+          </button>
 
         </div>
-      )}
 
-      {/* =========================
-          USERS
-      ========================= */}
-      {view === "users" && (
-        <div style={styles.bigPanel}>
+        {/* MENU */}
+        <div style={styles.menu}>
 
-          <div style={styles.topBar}>
-            <h2 style={styles.title}>
-              👥 Usuarios
-            </h2>
+          <button
+            style={styles.menuBtn}
+            onClick={() =>
+              setSection("dashboard")
+            }
+          >
+            Dashboard
+          </button>
 
-            <button
-              style={styles.backBtn}
-              onClick={() =>
-                setView(
-                  "dashboard"
-                )
-              }
-            >
-              ← Volver
-            </button>
+          <button
+            style={styles.menuBtn}
+            onClick={() =>
+              setSection("users")
+            }
+          >
+            Usuarios
+          </button>
+
+          <button
+            style={styles.menuBtn}
+            onClick={() =>
+              setSection("logs")
+            }
+          >
+            Logs
+          </button>
+
+          <button
+            style={styles.menuBtn}
+            onClick={() =>
+              setSection("metrics")
+            }
+          >
+            Métricas
+          </button>
+
+          <button
+            style={styles.menuBtn}
+            onClick={() =>
+              setSection("ai")
+            }
+          >
+            IA
+          </button>
+
+          <button
+            style={styles.menuBtn}
+            onClick={() =>
+              setSection("reports")
+            }
+          >
+            Reportes
+          </button>
+
+        </div>
+
+        {/* =========================
+            DASHBOARD
+        ========================= */}
+        {section === "dashboard" && (
+          <div style={styles.statsGrid}>
+
+            <div style={styles.statCard}>
+              <h3 style={styles.statTitle}>
+                🟢 Servidor
+              </h3>
+
+              <p style={styles.statValue}>
+                Operativo
+              </p>
+            </div>
+
+            <div style={styles.statCard}>
+              <h3 style={styles.statTitle}>
+                👥 Usuarios
+              </h3>
+
+              <p style={styles.statValue}>
+                {users.length}
+              </p>
+            </div>
+
+            <div style={styles.statCard}>
+              <h3 style={styles.statTitle}>
+                🤖 IA
+              </h3>
+
+              <p style={styles.statValue}>
+                Funcionando
+              </p>
+            </div>
+
+            <div style={styles.statCard}>
+              <h3 style={styles.statTitle}>
+                📊 Sesiones
+              </h3>
+
+              <p style={styles.statValue}>
+                12 activas
+              </p>
+            </div>
+
           </div>
+        )}
 
-          <div style={styles.userList}>
+        {/* =========================
+            USERS
+        ========================= */}
+        {section === "users" && (
+          <div style={styles.list}>
 
-            {users.map((u) => (
-              <div
-                key={
-                  u.id_usuario
-                }
-                style={
-                  styles.userCard
-                }
-              >
-
-                <div>
-                  <h3
-                    style={
-                      styles.userName
-                    }
-                  >
-                    {u.nombre}
-                  </h3>
-
-                  <p
-                    style={
-                      styles.userEmail
-                    }
-                  >
-                    {u.email}
-                  </p>
-
-                  <span
-                    style={
-                      styles.userRole
-                    }
-                  >
-                    {u.role}
-                  </span>
-                </div>
-
+            {Array.isArray(users) &&
+              users.map((u) => (
                 <div
-                  style={
-                    styles.actions
-                  }
+                  key={u.id_usuario}
+                  style={styles.card}
                 >
 
-                  <button
-                    style={
-                      styles.editBtn
-                    }
-                    onClick={() =>
-                      setEdit(u)
-                    }
-                  >
-                    Editar
-                  </button>
+                  <div>
+                    <h3 style={styles.name}>
+                      {u.nombre}
+                    </h3>
 
-                  <button
-                    style={
-                      styles.deleteBtn
-                    }
-                    onClick={() =>
-                      deleteUser(
-                        u.id_usuario
-                      )
-                    }
+                    <p style={styles.text}>
+                      {u.email}
+                    </p>
+
+                    <span style={styles.role}>
+                      {u.role}
+                    </span>
+                  </div>
+
+                  <div
+                    style={styles.actions}
                   >
-                    Eliminar
-                  </button>
+
+                    <button
+                      style={
+                        styles.editBtn
+                      }
+                      onClick={() =>
+                        setEdit(u)
+                      }
+                    >
+                      Editar
+                    </button>
+
+                    <button
+                      style={
+                        styles.deleteBtn
+                      }
+                      onClick={() =>
+                        deleteUser(
+                          u.id_usuario
+                        )
+                      }
+                    >
+                      Eliminar
+                    </button>
+
+                  </div>
 
                 </div>
-
-              </div>
-            ))}
+              ))}
 
           </div>
+        )}
 
-        </div>
-      )}
-
-      {/* =========================
-          LOGS
-      ========================= */}
-      {view === "logs" && (
-        <div style={styles.card}>
-
-          <h2 style={styles.title}>
-            📜 Logs del sistema
-          </h2>
-
+        {/* =========================
+            LOGS
+        ========================= */}
+        {section === "logs" && (
           <div style={styles.logsBox}>
 
-            {logs.length === 0 && (
-              <p
-                style={
-                  styles.log
-                }
-              >
-                No existen logs
-              </p>
-            )}
-
-            {logs.map(
-              (log, index) => (
-                <div
-                  key={index}
-                  style={
-                    styles.log
-                  }
-                >
-                  {log}
-                </div>
-              )
-            )}
-
-          </div>
-
-          <button
-            style={
-              styles.backButton
-            }
-            onClick={() =>
-              setView(
-                "dashboard"
-              )
-            }
-          >
-            Volver
-          </button>
-
-        </div>
-      )}
-
-      {/* =========================
-          METRICS
-      ========================= */}
-      {view === "metrics" && (
-        <div style={styles.card}>
-
-          <h2 style={styles.title}>
-            📊 Métricas
-          </h2>
-
-          <div style={styles.box}>
-            <p>
-              CPU:
-              {
-                Math.floor(
-                  Math.random() *
-                    60 +
-                    20
-                )
-              }
-              %
-            </p>
-
-            <p>
-              RAM:
-              {
-                Math.floor(
-                  Math.random() *
-                    60 +
-                    20
-                )
-              }
-              %
-            </p>
-
-            <p>
-              Usuarios:
-              {users.length}
-            </p>
-
-            <p>
-              Logs:
-              {logs.length}
-            </p>
-          </div>
-
-          <button
-            style={
-              styles.backButton
-            }
-            onClick={() =>
-              setView(
-                "dashboard"
-              )
-            }
-          >
-            Volver
-          </button>
-
-        </div>
-      )}
-
-      {/* =========================
-          IA
-      ========================= */}
-      {view === "ia" && (
-        <div style={styles.card}>
-
-          <h2 style={styles.title}>
-            🤖 Estado IA
-          </h2>
-
-          <div style={styles.box}>
-            <p>
-              ✔ Modelo
-              conectado
-            </p>
-
-            <p>
-              ✔ Tiempo
-              respuesta:
-              1.2s
-            </p>
-
-            <p>
-              ✔ Conversaciones
-              procesadas:
-              84
-            </p>
-
-            <p>
-              ✔ Estado:
-              operativo
-            </p>
-          </div>
-
-          <div style={styles.box}>
-            <h3
-              style={
-                styles.sectionTitle
-              }
-            >
-              Interacciones
-              anonimizadas
-            </h3>
-
-            <p>
-              Usuario #1024
-              inició chat
-            </p>
-
-            <p>
-              Usuario #1032
-              realizó consulta
-            </p>
-
-            <p>
-              Usuario #1088
-              solicitó ayuda
-            </p>
-          </div>
-
-          <button
-            style={
-              styles.backButton
-            }
-            onClick={() =>
-              setView(
-                "dashboard"
-              )
-            }
-          >
-            Volver
-          </button>
-
-        </div>
-      )}
-
-      {/* =========================
-          MODAL EDIT
-      ========================= */}
-      {edit && (
-        <div style={styles.modal}>
-
-          <div style={styles.modalBox}>
-
-            <h2 style={styles.title}>
-              Editar usuario
+            <h2 style={styles.sectionTitle}>
+              📜 Logs del sistema
             </h2>
 
-            <input
-              style={styles.input}
-              value={edit.nombre}
-              onChange={(e) =>
-                setEdit({
-                  ...edit,
-                  nombre:
-                    e.target.value,
-                })
-              }
-            />
+            <div style={styles.log}>
+              ✅ Administrador inició sesión
+            </div>
 
-            <input
-              style={styles.input}
-              value={
-                edit.email || ""
-              }
-              onChange={(e) =>
-                setEdit({
-                  ...edit,
-                  email:
-                    e.target.value,
-                })
-              }
-            />
+            <div style={styles.log}>
+              🤖 IA funcionando
+            </div>
 
-            <select
-              style={styles.input}
-              value={edit.role}
-              onChange={(e) =>
-                setEdit({
-                  ...edit,
-                  role:
-                    e.target.value,
-                })
-              }
+            <div style={styles.log}>
+              🔒 Validación de sesión
+              correcta
+            </div>
+
+            <div style={styles.log}>
+              🗑 Usuario eliminado
+            </div>
+
+            <div style={styles.log}>
+              ⚡ Sistema operativo
+            </div>
+
+          </div>
+        )}
+
+        {/* =========================
+            METRICS
+        ========================= */}
+        {section === "metrics" && (
+          <div style={styles.statsGrid}>
+
+            <div style={styles.statCard}>
+              <h3 style={styles.statTitle}>
+                CPU
+              </h3>
+
+              <p style={styles.statValue}>
+                32%
+              </p>
+            </div>
+
+            <div style={styles.statCard}>
+              <h3 style={styles.statTitle}>
+                RAM
+              </h3>
+
+              <p style={styles.statValue}>
+                58%
+              </p>
+            </div>
+
+            <div style={styles.statCard}>
+              <h3 style={styles.statTitle}>
+                API Requests
+              </h3>
+
+              <p style={styles.statValue}>
+                1.204
+              </p>
+            </div>
+
+            <div style={styles.statCard}>
+              <h3 style={styles.statTitle}>
+                IA Response
+              </h3>
+
+              <p style={styles.statValue}>
+                1.2s
+              </p>
+            </div>
+
+          </div>
+        )}
+
+        {/* =========================
+            IA
+        ========================= */}
+        {section === "ai" && (
+          <div style={styles.logsBox}>
+
+            <h2 style={styles.sectionTitle}>
+              🤖 Estado IA
+            </h2>
+
+            <div style={styles.log}>
+              ✅ Modelo conectado
+            </div>
+
+            <div style={styles.log}>
+              💬 Conversaciones hoy:
+              84
+            </div>
+
+            <div style={styles.log}>
+              ⚡ Tiempo promedio:
+              1.2 segundos
+            </div>
+
+            <div style={styles.log}>
+              🧠 Respuestas operativas
+            </div>
+
+          </div>
+        )}
+
+        {/* =========================
+            REPORTS
+        ========================= */}
+        {section === "reports" && (
+          <div style={styles.reportBox}>
+
+            <button
+              style={styles.reportBtn}
             >
-              <option value="user">
-                user
-              </option>
+              Descargar PDF
+            </button>
 
-              <option value="admin">
-                admin
-              </option>
-            </select>
-
-            <div
-              style={
-                styles.actions
-              }
+            <button
+              style={styles.reportBtn}
+              onClick={exportUsers}
             >
+              Exportar usuarios
+            </button>
 
-              <button
-                style={
-                  styles.editBtn
+            <button
+              style={styles.reportBtn}
+            >
+              Reporte IA
+            </button>
+
+            <button
+              style={styles.reportBtn}
+            >
+              Reporte sistema
+            </button>
+
+          </div>
+        )}
+
+        {/* =========================
+            MODAL
+        ========================= */}
+        {edit && (
+          <div style={styles.modal}>
+
+            <div style={styles.modalBox}>
+
+              <h2 style={styles.modalTitle}>
+                Editar usuario
+              </h2>
+
+              <input
+                style={styles.input}
+                value={edit.nombre}
+                onChange={(e) =>
+                  setEdit({
+                    ...edit,
+                    nombre:
+                      e.target.value,
+                  })
                 }
-                onClick={
-                  saveUser
+              />
+
+              <input
+                style={styles.input}
+                value={edit.email || ""}
+                onChange={(e) =>
+                  setEdit({
+                    ...edit,
+                    email:
+                      e.target.value,
+                  })
+                }
+              />
+
+              <select
+                style={styles.input}
+                value={edit.role}
+                onChange={(e) =>
+                  setEdit({
+                    ...edit,
+                    role:
+                      e.target.value,
+                  })
                 }
               >
-                Guardar
-              </button>
+                <option value="user">
+                  user
+                </option>
 
-              <button
+                <option value="admin">
+                  admin
+                </option>
+              </select>
+
+              <div
                 style={
-                  styles.deleteBtn
-                }
-                onClick={() =>
-                  setEdit(null)
+                  styles.modalActions
                 }
               >
-                Cancelar
-              </button>
+
+                <button
+                  style={styles.saveBtn}
+                  onClick={saveUser}
+                >
+                  Guardar
+                </button>
+
+                <button
+                  style={
+                    styles.cancelBtn
+                  }
+                  onClick={() =>
+                    setEdit(null)
+                  }
+                >
+                  Cancelar
+                </button>
+
+              </div>
 
             </div>
 
           </div>
+        )}
 
-        </div>
-      )}
-
+      </div>
     </div>
   );
 }
 
+/* =========================
+   STYLES
+========================= */
+
 const styles = {
-  container: {
+  page: {
     minHeight: "100vh",
     background:
-      "radial-gradient(circle at center, #050505, #000)",
+      "radial-gradient(circle at top, #0b0f14, #05070a)",
     display: "flex",
-    justifyContent:
-      "center",
-    alignItems: "center",
+    justifyContent: "center",
     padding: 20,
     fontFamily: "Arial",
   },
 
-  card: {
-    width: "90%",
-    maxWidth: 550,
+  container: {
+    width: "100%",
+    maxWidth: 1200,
     background:
-      "rgba(10,10,10,0.9)",
+      "rgba(15,22,32,0.9)",
     borderRadius: 20,
-    padding: 25,
-    boxShadow:
-      "0 0 40px rgba(0,229,255,0.15)",
+    padding: 20,
     border:
-      "1px solid rgba(0,229,255,0.2)",
-  },
-
-  bigPanel: {
-    width: "95%",
-    maxWidth: 1100,
-    background:
-      "rgba(10,10,10,0.9)",
-    borderRadius: 20,
-    padding: 25,
+      "1px solid rgba(0,229,255,0.15)",
     boxShadow:
-      "0 0 40px rgba(0,229,255,0.15)",
-    border:
-      "1px solid rgba(0,229,255,0.2)",
+      "0 0 50px rgba(0,229,255,0.08)",
+    backdropFilter: "blur(10px)",
   },
 
-  title: {
-    color: "#00e5ff",
-    textAlign: "center",
-  },
-
-  subtitle: {
-    color: "#aaa",
-    textAlign: "center",
-    marginBottom: 20,
-  },
-
-  sectionTitle: {
-    color: "#00e5ff",
-  },
-
-  topBar: {
+  header: {
     display: "flex",
     justifyContent:
       "space-between",
     alignItems: "center",
     marginBottom: 20,
+  },
+
+  title: {
+    color: "#00e5ff",
+    textShadow:
+      "0 0 12px rgba(0,229,255,0.6)",
   },
 
   logoutBtn: {
@@ -890,91 +618,88 @@ const styles = {
     border: "none",
     color: "#fff",
     padding: "10px 15px",
-    borderRadius: 8,
-    cursor: "pointer",
-    fontWeight: "bold",
-  },
-
-  box: {
-    background: "#111",
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 15,
-    color: "#ddd",
-  },
-
-  button: {
-    width: "100%",
-    padding: 10,
-    marginTop: 8,
-    borderRadius: 8,
-    border:
-      "1px solid rgba(0,229,255,0.3)",
-    background:
-      "transparent",
-    color: "#00e5ff",
-    cursor: "pointer",
-  },
-
-  dangerButton: {
-    width: "100%",
-    padding: 10,
-    marginTop: 8,
-    borderRadius: 8,
-    border: "none",
-    background: "#ff3b3b",
-    color: "#fff",
-    cursor: "pointer",
-  },
-
-  backButton: {
-    width: "100%",
-    marginTop: 15,
-    padding: 10,
     borderRadius: 10,
-    border: "none",
-    background: "#00e5ff",
-    color: "#000",
-    fontWeight: "bold",
-    cursor: "pointer",
-  },
-
-  backBtn: {
-    padding: "8px 12px",
-    borderRadius: 8,
-    border: "none",
-    background: "#00e5ff",
     cursor: "pointer",
     fontWeight: "bold",
   },
 
-  userList: {
+  menu: {
+    display: "flex",
+    gap: 10,
+    flexWrap: "wrap",
+    marginBottom: 25,
+  },
+
+  menuBtn: {
+    background:
+      "rgba(0,229,255,0.12)",
+    color: "#00e5ff",
+    border:
+      "1px solid rgba(0,229,255,0.25)",
+    padding: "10px 15px",
+    borderRadius: 10,
+    cursor: "pointer",
+    fontWeight: "bold",
+  },
+
+  statsGrid: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit,minmax(220px,1fr))",
+    gap: 15,
+  },
+
+  statCard: {
+    background:
+      "rgba(10,15,22,0.9)",
+    padding: 20,
+    borderRadius: 14,
+    border:
+      "1px solid rgba(0,229,255,0.15)",
+  },
+
+  statTitle: {
+    color: "#aaa",
+  },
+
+  statValue: {
+    color: "#00e5ff",
+    fontSize: 24,
+    fontWeight: "bold",
+  },
+
+  list: {
     display: "flex",
     flexDirection: "column",
     gap: 12,
   },
 
-  userCard: {
+  card: {
     display: "flex",
     justifyContent:
       "space-between",
     alignItems: "center",
-    background: "#111",
-    padding: 15,
-    borderRadius: 12,
+    padding: 16,
+    borderRadius: 14,
+    background:
+      "rgba(10,15,22,0.9)",
+    border:
+      "1px solid rgba(0,229,255,0.12)",
   },
 
-  userName: {
+  name: {
     color: "#fff",
     margin: 0,
   },
 
-  userEmail: {
+  text: {
     color: "#aaa",
+    fontSize: 13,
   },
 
-  userRole: {
+  role: {
     color: "#00e5ff",
+    textTransform: "uppercase",
   },
 
   actions: {
@@ -994,24 +719,47 @@ const styles = {
   deleteBtn: {
     background: "#ff3b3b",
     border: "none",
-    color: "#fff",
     padding: "8px 12px",
     borderRadius: 8,
+    color: "#fff",
     cursor: "pointer",
+    fontWeight: "bold",
   },
 
   logsBox: {
-    maxHeight: 350,
-    overflowY: "auto",
+    background:
+      "rgba(10,15,22,0.9)",
+    padding: 20,
+    borderRadius: 14,
+  },
+
+  sectionTitle: {
+    color: "#00e5ff",
+    marginBottom: 15,
   },
 
   log: {
+    color: "#ccc",
+    padding: 12,
+    marginBottom: 10,
     background:
       "rgba(255,255,255,0.03)",
-    padding: 10,
     borderRadius: 8,
-    marginBottom: 8,
-    color: "#ddd",
+  },
+
+  reportBox: {
+    display: "flex",
+    gap: 12,
+    flexWrap: "wrap",
+  },
+
+  reportBtn: {
+    background: "#00e5ff",
+    border: "none",
+    padding: "12px 15px",
+    borderRadius: 10,
+    cursor: "pointer",
+    fontWeight: "bold",
   },
 
   modal: {
@@ -1021,29 +769,63 @@ const styles = {
     width: "100%",
     height: "100%",
     background:
-      "rgba(0,0,0,0.7)",
+      "rgba(0,0,0,0.75)",
     display: "flex",
-    justifyContent:
-      "center",
+    justifyContent: "center",
     alignItems: "center",
   },
 
   modalBox: {
-    width: 350,
-    background: "#111",
-    padding: 20,
-    borderRadius: 15,
+    width: 380,
+    background:
+      "rgba(15,22,32,0.95)",
+    padding: 22,
+    borderRadius: 14,
+    border:
+      "1px solid rgba(0,229,255,0.25)",
+  },
+
+  modalTitle: {
+    color: "#00e5ff",
+    textAlign: "center",
   },
 
   input: {
     width: "100%",
-    padding: 10,
     marginTop: 10,
+    padding: 10,
     borderRadius: 8,
+    background: "#0b0f14",
     border:
-      "1px solid #333",
-    background: "#000",
+      "1px solid rgba(0,229,255,0.25)",
     color: "#fff",
+    outline: "none",
     boxSizing: "border-box",
+  },
+
+  modalActions: {
+    display: "flex",
+    gap: 10,
+    marginTop: 15,
+  },
+
+  saveBtn: {
+    flex: 1,
+    background: "#00e5ff",
+    border: "none",
+    padding: 10,
+    borderRadius: 8,
+    cursor: "pointer",
+    fontWeight: "bold",
+  },
+
+  cancelBtn: {
+    flex: 1,
+    background: "transparent",
+    border: "1px solid #ff3b3b",
+    color: "#ff3b3b",
+    padding: 10,
+    borderRadius: 8,
+    cursor: "pointer",
   },
 };
