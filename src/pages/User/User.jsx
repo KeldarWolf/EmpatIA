@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "./user.css";
+
 
 const API = "https://empatia-backend.onrender.com";
 
@@ -263,3 +265,5 @@ const styles = {
     color: "white",
   },
 };
+
+
