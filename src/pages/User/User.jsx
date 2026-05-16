@@ -8,9 +8,30 @@ import frases from "./frases";
 
 const API_URL = "https://empatia-backend.onrender.com";
 
-// =========================
-// ACTIVIDADES
-// =========================
+// 🔎 triggers
+const activityTriggers = [
+  "aburrido",
+  "aburrida",
+  "no sé qué hacer",
+  "no se que hacer",
+  "qué hago",
+  "que hago",
+  "actividad",
+  "actividades",
+  "aburrimiento",
+];
+
+// 🎯 opciones base
+const mainOptions = [
+  "🎵 Música",
+  "🧘 Relajación",
+  "🏃 Actividad física",
+];
+
+// Sí / No
+const yesNoOptions = ["Sí", "No"];
+
+// 🧠 actividades
 const activityGroups = {
   musica: [
     "Playlist relajante",
@@ -37,9 +58,6 @@ const activityGroups = {
   ],
 };
 
-const mainOptions = ["🎵 Música", "🧘 Relajación", "🏃 Actividad física"];
-const yesNoOptions = ["Sí", "No"];
-
 export default function User() {
   const navigate = useNavigate();
 
@@ -50,12 +68,9 @@ export default function User() {
   const [frase, setFrase] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const [step, setStep] = useState("normal"); 
-  const [currentGroup, setCurrentGroup] = useState(null);
+  const [step, setStep] = useState("normal");
 
-  // =========================
   // INIT
-  // =========================
   useEffect(() => {
     setMessages([
       { role: "ai", text: `Hola ${user?.nombre || "🤍"}, estoy aquí.` },
@@ -69,9 +84,7 @@ export default function User() {
     return () => clearInterval(interval);
   }, [user?.nombre]);
 
-  // =========================
   // IA
-  // =========================
   const askAI = async (message) => {
     const res = await fetch(`${API_URL}/chat`, {
       method: "POST",
@@ -83,37 +96,27 @@ export default function User() {
     return data?.reply;
   };
 
-  // =========================
-  // GUARDAR EN BD (FIX REAL)
-  // =========================
+  // GUARDAR BD (FIX REAL)
   const saveActivityToDB = async (nombreActividad) => {
-    try {
-      if (!user?.id_usuario) {
-        console.log("❌ SIN id_usuario");
-        return;
-      }
-
-      await fetch(`${API_URL}/registro-actividad`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id_usuario: user.id_usuario,
-          nombre_actividad: nombreActividad,
-          puntaje_agrado: 7,
-          frecuencia_deseada: "media",
-          reaccion: "positiva",
-        }),
-      });
-
-      console.log("✅ GUARDADO OK");
-    } catch (err) {
-      console.log("❌ ERROR SAVE:", err);
+    if (!user?.id_usuario) {
+      console.log("❌ no id_usuario");
+      return;
     }
+
+    await fetch(`${API_URL}/registro-actividad`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id_usuario: user.id_usuario,
+        nombre_actividad: nombreActividad,
+        puntaje_agrado: 7,
+        frecuencia_deseada: "media",
+        reaccion: "positiva",
+      }),
+    });
   };
 
-  // =========================
-  // SEND MESSAGE
-  // =========================
+  // SEND
   const sendMessage = async () => {
     if (!input.trim()) return;
 
@@ -123,12 +126,15 @@ export default function User() {
     setMessages((prev) => [...prev, { role: "user", text }]);
     setLoading(true);
 
-    // SI está en selección Sí/No
     if (step === "confirm") {
       if (text.toLowerCase().includes("si")) {
         setMessages((prev) => [
           ...prev,
-          { role: "ai", text: "¿Qué te gustaría hacer?", options: mainOptions },
+          {
+            role: "ai",
+            text: "¿Qué te gustaría hacer?",
+            options: mainOptions,
+          },
         ]);
         setStep("menu");
       } else {
@@ -143,8 +149,7 @@ export default function User() {
       return;
     }
 
-    // detectar aburrimiento
-    if (text.toLowerCase().includes("aburr")) {
+    if (activityTriggers.some((w) => text.toLowerCase().includes(w))) {
       setMessages((prev) => [
         ...prev,
         {
@@ -166,9 +171,7 @@ export default function User() {
     setLoading(false);
   };
 
-  // =========================
-  // CLICK OPCIONES CHAT
-  // =========================
+  // CLICK OPCIONES
   const handleOptionClick = async (opt) => {
     setMessages((prev) => [...prev, { role: "user", text: opt }]);
 
@@ -200,7 +203,6 @@ export default function User() {
         : null;
 
     if (group) {
-      setCurrentGroup(group);
       setMessages((prev) => [
         ...prev,
         {
@@ -212,7 +214,6 @@ export default function User() {
       return;
     }
 
-    // ===== GUARDAR EN BD =====
     await saveActivityToDB(opt);
 
     setMessages((prev) => [
@@ -226,14 +227,12 @@ export default function User() {
   return (
     <div className="app-layout">
 
-      {/* LEFT */}
       <div className="left-panel">
         <h4>💡 Acompañamiento</h4>
         <div className="quote-box">{frase}</div>
         <div style={{ marginTop: 20 }}>👤 {user?.nombre}</div>
       </div>
 
-      {/* CENTER */}
       <div className="center-panel">
 
         <ChatBox
@@ -247,15 +246,16 @@ export default function User() {
           sendMessage={sendMessage}
           loading={loading}
         />
+
       </div>
 
-      {/* RIGHT */}
       <div className="right-panel">
         <button onClick={() => navigate("/rutina")}>🧘 Rutina</button>
         <button onClick={() => navigate("/actividades")}>🎯 Actividades</button>
         <button onClick={() => navigate("/estadisticas")}>📊 Estadísticas</button>
         <button onClick={() => navigate("/diario")}>📓 Diario</button>
       </div>
+
     </div>
   );
 }
