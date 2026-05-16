@@ -1,4 +1,4 @@
-// ============================================
+// ============================================ 
 // src/pages/Login/Login.jsx
 // ============================================
 
@@ -21,6 +21,7 @@ export default function Login() {
   // ============================================
   // LOGIN
   // ============================================
+
   const handleLogin = async () => {
     if (!form.nombre || !form.password) {
       alert("Completa usuario y contraseña");
@@ -45,38 +46,26 @@ export default function Login() {
 
       if (!response.ok) {
         alert(data.error || "Credenciales incorrectas");
+        setLoading(false);
         return;
       }
 
       const user = data.user;
 
-      // =========================
-      // 🔥 VALIDACIÓN CRÍTICA
-      // =========================
-      if (!user) {
-        alert("Error: usuario no recibido del servidor");
-        return;
-      }
-
-      if (!user.id_usuario) {
-        console.log("USER SIN ID:", user);
-        alert("Error: el usuario no tiene id_usuario");
-        return;
-      }
-
       const userData = {
         id_usuario: user.id_usuario,
-        nombre: user.nombre || "",
-        email: user.email || "",
-        role: (user.role || "user").toLowerCase().trim(),
+        nombre: user.nombre,
+        email: user.email,
+        role: (user.role || "user")
+          .toLowerCase()
+          .trim(),
       };
 
-      // Guardar sesión
-      localStorage.setItem("usuario", JSON.stringify(userData));
+      localStorage.setItem(
+        "usuario",
+        JSON.stringify(userData)
+      );
 
-      console.log("LOGIN OK →", userData);
-
-      // Redirección
       if (userData.role === "admin") {
         navigate("/admin");
       } else {
@@ -84,7 +73,7 @@ export default function Login() {
       }
 
     } catch (err) {
-      console.log("LOGIN ERROR:", err);
+      console.log(err);
       alert("Error conectando con servidor");
     } finally {
       setLoading(false);
@@ -94,19 +83,26 @@ export default function Login() {
   // ============================================
   // UI
   // ============================================
+
   return (
     <div style={styles.container}>
+
       <LoginMatrix />
 
       <div style={styles.centerBlock}>
+
         <div style={styles.card}>
-          <h1 style={styles.title}>EmpatIA</h1>
+
+          <h1 style={styles.title}>
+            EmpatIA
+          </h1>
 
           <p style={styles.subtitle}>
             IA emocional en tiempo real
           </p>
 
           <div style={styles.formBox}>
+
             <input
               placeholder="Usuario"
               value={form.nombre}
@@ -137,7 +133,9 @@ export default function Login() {
               onClick={handleLogin}
               disabled={loading}
             >
-              {loading ? "Entrando..." : "Iniciar sesión"}
+              {loading
+                ? "Entrando..."
+                : "Iniciar sesión"}
             </button>
 
             <button
@@ -146,9 +144,13 @@ export default function Login() {
             >
               Registrarse
             </button>
+
           </div>
+
         </div>
+
       </div>
+
     </div>
   );
 }
