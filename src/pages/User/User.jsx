@@ -1,128 +1,334 @@
+// ============================================
+// src/pages/User/User.jsx
+// ============================================
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-export default function Actividades() {
+import "./user.css";
+
+import ChatBox from "./ChatBox";
+import InputBox from "./InputBox";
+import frases from "./frases";
+
+const API_URL =
+  "https://empatia-backend.onrender.com";
+
+const mainOptions = [
+  "🎵 Música",
+  "🧘 Relajación",
+  "🏃 Actividad física",
+  "🤍 Hablar un poco",
+  "❓ No sé qué hacer",
+  "✍️ Escribir actividad",
+];
+
+export default function User() {
   const navigate = useNavigate();
 
-  const [savedActivities, setSavedActivities] = useState([]);
+  const user = JSON.parse(
+    localStorage.getItem("usuario") || "null"
+  );
+
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [writingActivity, setWritingActivity] =
+    useState(false);
+
+  const [frase, setFrase] = useState("");
+
+  // ============================================
+  // INIT
+  // ============================================
 
   useEffect(() => {
-    const data = JSON.parse(
-      localStorage.getItem("actividades") || "[]"
+    setMessages([
+      {
+        role: "ai",
+        text: `Hola ${user?.nombre || "🤍"} estoy aquí contigo.`,
+      },
+      {
+        role: "ai",
+        text: "Cuéntame cómo te sientes...",
+      },
+    ]);
+
+    setFrase(
+      frases[Math.floor(Math.random() * frases.length)]
     );
 
-    setSavedActivities(data);
+    const interval = setInterval(() => {
+      setFrase(
+        frases[Math.floor(Math.random() * frases.length)]
+      );
+    }, 8000);
+
+    return () => clearInterval(interval);
   }, []);
 
-  const deleteActivity = (index) => {
-    const updated = savedActivities.filter(
-      (_, i) => i !== index
-    );
+  // ============================================
+  // IA
+  // ============================================
 
-    setSavedActivities(updated);
+  const askAI = async (message) => {
+    try {
+      const res = await fetch(
+        `${API_URL}/chat`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            message,
+          }),
+        }
+      );
 
-    localStorage.setItem(
-      "actividades",
-      JSON.stringify(updated)
-    );
+      return await res.json();
+
+    } catch (err) {
+      console.log(err);
+
+      return {
+        reply: "🤍 Error de conexión.",
+      };
+    }
   };
 
+  // ============================================
+  // SAVE ACTIVITY
+  // ============================================
+
+  const saveActivity = async (
+    activityName
+  ) => {
+    try {
+      const data = JSON.parse(
+        localStorage.getItem("actividades") ||
+          "[]"
+      );
+
+      const nueva = {
+        texto: activityName,
+        fecha: new Date().toISOString(),
+      };
+
+      localStorage.setItem(
+        "actividades",
+        JSON.stringify([...data, nueva])
+      );
+
+    } catch (err) {
+      console.log(
+        "Error guardando actividad"
+      );
+    }
+  };
+
+  // ============================================
+  // SEND MESSAGE
+  // ============================================
+
+  const sendMessage = async () => {
+    if (!input.trim() || loading) return;
+
+    const text = input.trim();
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "user",
+        text,
+      },
+    ]);
+
+    setInput("");
+    setLoading(true);
+
+    // ACTIVIDADES
+    if (
+      text
+        .toLowerCase()
+        .includes("actividad") ||
+      text
+        .toLowerCase()
+        .includes("actividades")
+    ) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: "✨ Elige una actividad:",
+          options: mainOptions,
+        },
+      ]);
+
+      setLoading(false);
+      return;
+    }
+
+    // WRITE ACTIVITY
+    if (writingActivity) {
+      await saveActivity(text);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: `✅ Actividad guardada: ${text}`,
+        },
+      ]);
+
+      setWritingActivity(false);
+      setLoading(false);
+
+      return;
+    }
+
+    // IA RESPONSE
+    const response = await askAI(text);
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "ai",
+        text:
+          response.reply ||
+          "🤍 No pude responder.",
+      },
+    ]);
+
+    setLoading(false);
+  };
+
+  // ============================================
+  // OPTIONS
+  // ============================================
+
+  const handleOptionClick = async (
+    opt
+  ) => {
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "user",
+        text: opt,
+      },
+    ]);
+
+    // ESCRIBIR
+    if (opt.includes("Escribir")) {
+      setWritingActivity(true);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: "✍️ Escribe tu actividad:",
+        },
+      ]);
+
+      return;
+    }
+
+    // SAVE
+    await saveActivity(opt);
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "ai",
+        text: `✅ Actividad guardada: ${opt}`,
+      },
+    ]);
+  };
+
+  // ============================================
+  // UI
+  // ============================================
+
   return (
-    <div style={styles.page}>
+    <div className="app-layout">
 
-      <div style={styles.header}>
-        <h1>🎯 Actividades</h1>
+      {/* LEFT */}
+      <div className="left-panel">
 
-        <button
-          onClick={() => navigate("/user")}
-          style={styles.backBtn}
+        <h4>💡 Acompañamiento</h4>
+
+        <div className="quote-box">
+          {frase}
+        </div>
+
+        <div
+          style={{
+            marginTop: 20,
+            color: "#00e5ff",
+          }}
         >
-          ⬅ Volver
-        </button>
+          👤 {user?.nombre || "Usuario"}
+        </div>
+
       </div>
 
-      {savedActivities.length === 0 ? (
-        <div style={styles.empty}>
-          No tienes actividades aún
-        </div>
-      ) : (
-        savedActivities.map((a, i) => (
-          <div key={i} style={styles.card}>
+      {/* CENTER */}
+      <div className="center-panel">
 
-            <div>
-              <h3>{a.texto}</h3>
+        <ChatBox
+          messages={messages}
+          onOptionClick={
+            handleOptionClick
+          }
+        />
 
-              <p style={styles.date}>
-                {new Date(a.fecha).toLocaleString()}
-              </p>
-            </div>
+        <InputBox
+          input={input}
+          setInput={setInput}
+          sendMessage={sendMessage}
+          loading={loading}
+        />
 
-            <button
-              style={styles.deleteBtn}
-              onClick={() => deleteActivity(i)}
-            >
-              ❌
-            </button>
+      </div>
 
-          </div>
-        ))
-      )}
+      {/* RIGHT */}
+      <div className="right-panel">
+
+        <button
+          onClick={() =>
+            navigate("/rutina")
+          }
+        >
+          🧘 Rutina
+        </button>
+
+        <button
+          onClick={() =>
+            navigate("/actividades")
+          }
+        >
+          🎯 Actividades
+        </button>
+
+        <button
+          onClick={() =>
+            navigate("/estadisticas")
+          }
+        >
+          📊 Estadísticas
+        </button>
+
+        <button
+          onClick={() =>
+            navigate("/diario")
+          }
+        >
+          📓 Diario
+        </button>
+
+      </div>
 
     </div>
   );
 }
-
-const styles = {
-  page: {
-    minHeight: "100vh",
-    background: "#0b0f14",
-    color: "white",
-    padding: 20,
-  },
-
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-
-  backBtn: {
-    background: "#1f2937",
-    border: "none",
-    color: "white",
-    padding: "10px 15px",
-    borderRadius: 10,
-    cursor: "pointer",
-  },
-
-  card: {
-    background: "#111827",
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 12,
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  date: {
-    opacity: 0.6,
-    fontSize: 12,
-  },
-
-  deleteBtn: {
-    background: "#dc2626",
-    border: "none",
-    color: "white",
-    padding: "8px 12px",
-    borderRadius: 8,
-    cursor: "pointer",
-  },
-
-  empty: {
-    opacity: 0.7,
-    textAlign: "center",
-    marginTop: 50,
-  },
-};
