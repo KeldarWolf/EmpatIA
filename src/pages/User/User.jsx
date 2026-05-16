@@ -1,344 +1,257 @@
-// =========================
-// Actividades.jsx
-// =========================
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const API = "https://empatia-backend.onrender.com";
 
-export default function Actividades() {
-  const navigate = useNavigate();
+// =========================
+// OPCIONES PRINCIPALES (6)
+// =========================
+const mainOptions = [
+  "🎵 Música",
+  "🧘 Relajación",
+  "🏃 Actividad física",
+  "🤍 Hablar un poco",
+  "⚙️ Cambiar preguntas fáciles",
+  "❓ No sé qué hacer",
+];
 
-  const user = JSON.parse(
-    localStorage.getItem("usuario") || "null"
-  );
+// =========================
+// SUB OPCIONES
+// =========================
+const subOptions = {
+  musica: ["Lo-fi", "Piano", "Jazz", "Música feliz", "Naturaleza"],
+  relajacion: ["Respirar profundo", "Meditar", "Cerrar ojos", "Tomar agua"],
+  fisico: ["Caminar", "Yoga", "Estiramientos", "Bailar", "Mover cuerpo"],
+};
+
+export default function User() {
+  const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("usuario") || "null");
 
   const [messages, setMessages] = useState([]);
-  const [savedActivities, setSavedActivities] = useState([]);
-  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // ===============================
-  // IA
-  // ===============================
+  const [mode, setMode] = useState("main");
+  const [category, setCategory] = useState(null);
+
+  // =========================
+  // INIT CHAT
+  // =========================
+  useEffect(() => {
+    setMessages([
+      { role: "ai", text: `Hola ${user?.nombre || "🤍"}, estoy contigo.` },
+      { role: "ai", text: "Elige una opción:" },
+      { role: "ai", options: mainOptions },
+    ]);
+  }, []);
+
+  // =========================
+  // IA CALL
+  // =========================
   const askAI = async (message) => {
     try {
       const res = await fetch(`${API}/chat`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message }),
       });
 
-      const data = await res.json();
-
-      return data.reply;
+      return await res.json();
     } catch {
-      return "Error de conexión 😢";
+      return null;
     }
   };
 
-  // ===============================
-  // CARGAR ACTIVIDADES DEL USUARIO
-  // ===============================
-  const loadActivities = async () => {
+  // =========================
+  // SUPABASE SAVE
+  // =========================
+  const saveActivity = async (text) => {
+    if (!user?.id_usuario) return;
+
     try {
-      const res = await fetch(
-        `${API}/mis-actividades/${user.id_usuario}`
-      );
-
-      const data = await res.json();
-
-      setSavedActivities(data || []);
-    } catch (err) {
-      console.log(err);
+      await fetch(`${API}/registro-actividad`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_usuario: user.id_usuario,
+          id_actividad: null,
+          puntaje_agrado: 6,
+          frecuencia_deseada: "media",
+          reaccion: text,
+        }),
+      });
+    } catch (e) {
+      console.log("Error guardando actividad");
     }
   };
 
-  // ===============================
-  // INIT
-  // ===============================
-  useEffect(() => {
-    loadActivities();
+  // =========================
+  // HANDLER PRINCIPAL
+  // =========================
+  const handleOption = async (opt) => {
+    setMessages((prev) => [...prev, { role: "user", text: opt }]);
 
-    setMessages([
-      {
-        role: "ai",
-        text: "Aquí puedes ver tus actividades 🤍",
-      },
-      {
-        role: "ai",
-        text: "Haz click en una para ver cómo hacerla",
-      },
-    ]);
-  }, []);
+    // =========================
+    // MENÚ PRINCIPAL
+    // =========================
+    if (opt === "🎵 Música") {
+      setMode("sub");
+      setCategory("musica");
 
-  // ===============================
-  // CHAT
-  // ===============================
-  const sendMessage = async () => {
-    if (!input.trim()) return;
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: "Elige música:" },
+        { role: "ai", options: subOptions.musica },
+      ]);
+      return;
+    }
 
-    const userText = input;
+    if (opt === "🧘 Relajación") {
+      setMode("sub");
+      setCategory("relajacion");
 
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: "Elige relajación:" },
+        { role: "ai", options: subOptions.relajacion },
+      ]);
+      return;
+    }
+
+    if (opt === "🏃 Actividad física") {
+      setMode("sub");
+      setCategory("fisico");
+
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: "Elige actividad física:" },
+        { role: "ai", options: subOptions.fisico },
+      ]);
+      return;
+    }
+
+    // =========================
+    // CAMBIAR PREGUNTAS
+    // =========================
+    if (opt === "⚙️ Cambiar preguntas fáciles") {
+      setMode("main");
+      setCategory(null);
+
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: "🔄 Reiniciando menú..." },
+        { role: "ai", options: mainOptions },
+      ]);
+      return;
+    }
+
+    // =========================
+    // NO SÉ
+    // =========================
+    if (opt === "❓ No sé qué hacer") {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: "Te ayudo 🤍 elige una:",
+          options: mainOptions,
+        },
+      ]);
+      return;
+    }
+
+    // =========================
+    // HABLAR
+    // =========================
+    if (opt === "🤍 Hablar un poco") {
+      const response = await askAI("habla conmigo");
+
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: response?.reply || "Estoy contigo 🤍" },
+      ]);
+
+      await saveActivity("hablar");
+      return;
+    }
+
+    // =========================
+    // SUB OPCIONES (ACTIVIDAD FINAL)
+    // =========================
     setMessages((prev) => [
       ...prev,
       {
-        role: "user",
-        text: userText,
+        role: "ai",
+        text: `✔ Actividad seleccionada: ${opt}`,
       },
-    ]);
-
-    setInput("");
-
-    const reply = await askAI(userText);
-
-    setMessages((prev) => [
-      ...prev,
       {
         role: "ai",
-        text: reply,
+        text: "La he guardado para ti 🤍",
       },
     ]);
+
+    await saveActivity(opt);
+
+    setTimeout(() => navigate("/actividades"), 1000);
   };
 
-  // ===============================
-  // ABRIR ACTIVIDAD
-  // ===============================
-  const openActivity = async (activity) => {
-    setMessages([
-      {
-        role: "ai",
-        text: `🧠 Actividad: ${activity.actividad.nombre}`,
-      },
-      {
-        role: "ai",
-        text: "Estoy preparando cómo ayudarte...",
-      },
-    ]);
-
-    const reply = await askAI(
-      `Explícame paso a paso cómo hacer: ${activity.actividad.nombre}`
-    );
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "ai",
-        text: "👉 Cómo hacerlo:",
-      },
-      {
-        role: "ai",
-        text: reply,
-      },
-    ]);
-  };
-
+  // =========================
+  // UI
+  // =========================
   return (
-    <div style={styles.page}>
-      <div style={styles.header}>
-        <div>
-          <h1>🎯 Actividades</h1>
+    <div style={{ padding: 20, background: "#0b0f14", color: "white" }}>
 
-          <p style={{ opacity: 0.7 }}>
-            Tus actividades guardadas
-          </p>
-        </div>
+      <h2>🤍 EmpatIA</h2>
 
-        <button
-          onClick={() => navigate("/user")}
-          style={styles.backBtn}
-        >
-          ⬅ Volver
-        </button>
-      </div>
+      <div>
+        {messages.map((m, i) => (
+          <div key={i} style={{ marginBottom: 12 }}>
 
-      <div style={styles.grid}>
-        {/* CHAT */}
-        <div style={styles.left}>
-          <h3>💬 Acompañamiento</h3>
-
-          <div style={styles.chatBox}>
-            {messages.map((m, i) => (
-              <div key={i} style={styles.msg}>
-                {m.role === "ai" ? "🤖 " : "👤 "}
-                {m.text}
-              </div>
-            ))}
-          </div>
-
-          <div style={styles.inputRow}>
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              style={styles.input}
-              placeholder="Escribe..."
-            />
-
-            <button
-              onClick={sendMessage}
-              style={styles.send}
-            >
-              Enviar
-            </button>
-          </div>
-        </div>
-
-        {/* ACTIVIDADES */}
-        <div style={styles.center}>
-          <h3>📌 Tus actividades</h3>
-
-          {savedActivities.length === 0 && (
-            <p>No tienes actividades aún</p>
-          )}
-
-          {savedActivities.map((a, i) => (
-            <div
-              key={i}
-              style={styles.card}
-              onClick={() => openActivity(a)}
-            >
-              <h4>{a.actividad?.nombre}</h4>
-
-              <p>{a.actividad?.descripcion}</p>
-
-              <p
-                style={{
-                  opacity: 0.7,
-                  fontSize: 12,
-                }}
-              >
-                Categoría: {a.actividad?.categoria}
-              </p>
+            <div>
+              {m.role === "ai" ? "🤖 " : "👤 "}
+              {m.text}
             </div>
-          ))}
-        </div>
 
-        {/* INFO */}
-        <div style={styles.right}>
-          <h3>🧠 Ayuda</h3>
+            {m.options && (
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {m.options.map((opt, j) => (
+                  <button
+                    key={j}
+                    onClick={() => handleOption(opt)}
+                    style={{
+                      padding: 10,
+                      marginTop: 5,
+                      borderRadius: 8,
+                      border: "none",
+                      background: "#1f2937",
+                      color: "white",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            )}
 
-          <div style={styles.tip}>
-            Las actividades se guardan automáticamente
           </div>
-
-          <div style={styles.tip}>
-            Cada usuario tiene sus propias actividades
-          </div>
-        </div>
+        ))}
       </div>
+
+      <button
+        onClick={() => navigate("/actividades")}
+        style={{
+          marginTop: 20,
+          padding: 10,
+          background: "#1d9bf0",
+          border: "none",
+          color: "white",
+          borderRadius: 8,
+        }}
+      >
+        🎯 Ver actividades
+      </button>
+
     </div>
   );
 }
-
-// ===============================
-// STYLES
-// ===============================
-
-const styles = {
-  page: {
-    height: "100vh",
-    background: "#0b0f14",
-    color: "white",
-    display: "flex",
-    flexDirection: "column",
-  },
-
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    padding: 20,
-    borderBottom: "1px solid #1f2a37",
-  },
-
-  backBtn: {
-    padding: "8px 12px",
-    borderRadius: 8,
-    border: "none",
-    background: "#1f2937",
-    color: "white",
-  },
-
-  grid: {
-    flex: 1,
-    display: "flex",
-    gap: 15,
-    padding: 15,
-  },
-
-  left: {
-    width: "30%",
-    background: "#0f1620",
-    padding: 15,
-    borderRadius: 12,
-  },
-
-  center: {
-    flex: 1,
-    background: "#0f1620",
-    padding: 15,
-    borderRadius: 12,
-  },
-
-  right: {
-    width: "25%",
-    background: "#0f1620",
-    padding: 15,
-    borderRadius: 12,
-  },
-
-  chatBox: {
-    height: "60%",
-    overflowY: "auto",
-    display: "flex",
-    flexDirection: "column",
-    gap: 8,
-  },
-
-  msg: {
-    padding: 8,
-    background: "#111827",
-    borderRadius: 8,
-    fontSize: 13,
-  },
-
-  inputRow: {
-    display: "flex",
-    gap: 8,
-    marginTop: 10,
-  },
-
-  input: {
-    flex: 1,
-    padding: 10,
-    borderRadius: 8,
-    background: "#111827",
-    color: "white",
-    border: "none",
-  },
-
-  send: {
-    padding: 10,
-    background: "#1d9bf0",
-    borderRadius: 8,
-    border: "none",
-    color: "white",
-  },
-
-  card: {
-    background: "#111827",
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 10,
-    cursor: "pointer",
-  },
-
-  tip: {
-    background: "#111827",
-    padding: 10,
-    borderRadius: 10,
-    marginTop: 10,
-    fontSize: 13,
-  },
-};
