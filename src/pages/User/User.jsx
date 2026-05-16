@@ -6,196 +6,250 @@ import ChatBox from "./ChatBox";
 import InputBox from "./InputBox";
 import frases from "./frases";
 
-const API_URL = "https://empatia-backend.onrender.com";
+// 🌐 ENDPOINTS (LOCAL + ONLINE)
+const API_URLS = [
+  "http://localhost:3001",
+  import.meta.env.VITE_API_URL,
+].filter(url => typeof url === "string" && url.startsWith("http"));
 
-const mainOptions = [
-  "🎵 Música",
-  "🧘 Relajación",
-  "🏃 Actividad física",
-  "🤍 Hablar un poco",
-  "❓ No sé qué hacer",
-  "✍️ Escribir actividad",
-];
+// ⏱️ Fetch con timeout
+const fetchWithTimeout = (url, options, ms = 8000) => {
+  return Promise.race([
+    fetch(url, options),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("timeout")), ms)
+    ),
+  ]);
+};
 
-export default function User() {
-  const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem("usuario") || "null");
-
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [waitingYesNo, setWaitingYesNo] = useState(false);
-  const [writingActivity, setWritingActivity] = useState(false);
-  const [frase, setFrase] = useState("");
-
-  useEffect(() => {
-    setMessages([
-      { role: "ai", text: `Hola ${user?.nombre || "🤍"}, estoy aquí.` },
-      { role: "ai", text: "Cuéntame cómo te sientes..." },
-    ]);
-
-    const interval = setInterval(() => {
-      setFrase(frases[Math.floor(Math.random() * frases.length)]);
-    }, 8000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // =========================
-  // IA CALL
-  // =========================
-  const askAI = async (message) => {
+// 🤖 IA fallback
+const askAI = async (message) => {
+  for (const url of API_URLS) {
     try {
-      const res = await fetch(`${API_URL}/chat`, {
+      const res = await fetchWithTimeout(`${url}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message }),
       });
 
-      return await res.json();
-    } catch {
-      return null;
+      if (!res.ok) continue;
+
+      const data = await res.json();
+
+      if (data?.reply) return data.reply;
+    } catch (error) {
+      console.warn("Error endpoint:", url, error.message);
+    }
+  }
+
+  return "No pude conectar con la IA 😢";
+};
+
+export default function User() {
+  const navigate = useNavigate();
+
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [frase, setFrase] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const [step, setStep] = useState(null);
+  const [options, setOptions] = useState([]);
+
+  // 💬 Init chat
+  useEffect(() => {
+    setMessages([
+      { role: "ai", text: "Hola 🤍 estoy contigo" },
+      { role: "ai", text: "Cuéntame cómo te sientes o qué quieres hacer" },
+    ]);
+
+    const interval = setInterval(() => {
+      setFrase(frases[Math.floor(Math.random() * frases.length)]);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // 🧠 opciones base
+  const getOptions = () => [
+    "Caminar",
+    "Meditar",
+    "Música",
+    "Cambiar opciones",
+    "No sé cuál",
+  ];
+
+  const getOptionsAlt = () => [
+    "Respirar profundo",
+    "Estiramientos",
+    "Ducha relajante",
+    "Escribir lo que siento",
+    "Cambiar opciones",
+    "No sé cuál",
+  ];
+
+  const getSteps = (act) => {
+    const map = {
+      Caminar: "Camina 10 min sin distracciones.",
+      Meditar: "Respira profundo 5 min.",
+      Música: "Escucha música relajante o motivante.",
+      "Respirar profundo": "Inhala 4s, exhala 6s.",
+      Estiramientos: "Estira lentamente todo el cuerpo.",
+      "Ducha relajante": "Ducha consciente sin prisa.",
+      "Escribir lo que siento": "Escribe todo sin filtro.",
+    };
+    return map[act] || "Hazlo a tu ritmo 🤍";
+  };
+
+  // 🔁 reset flujo
+  const resetFlow = () => {
+    setStep(null);
+    setOptions([]);
+  };
+
+  // 🤍 flujo guiado
+  const startGuidedFlow = () => {
+    setStep("guided");
+
+    setMessages(prev => [
+      ...prev,
+      { role: "ai", text: "Está bien 🤍 te ayudo a elegir" },
+      {
+        role: "ai",
+        text: "¿Cómo te quieres sentir?",
+        options: ["Más tranquilo/a", "Con más energía", "Despejar la mente"],
+      },
+    ]);
+  };
+
+  const handleGuidedChoice = (opt) => {
+    setMessages(prev => [...prev, { role: "user", text: opt }]);
+
+    let suggestions = [];
+
+    if (opt === "Más tranquilo/a") {
+      suggestions = ["Meditar", "Respirar profundo", "Ducha relajante"];
+    }
+
+    if (opt === "Con más energía") {
+      suggestions = ["Caminar", "Estiramientos", "Música"];
+    }
+
+    if (opt === "Despejar la mente") {
+      suggestions = ["Escribir lo que siento", "Caminar", "Música"];
+    }
+
+    setStep("select_activity");
+    setOptions(suggestions);
+
+    setMessages(prev => [
+      ...prev,
+      {
+        role: "ai",
+        text: "Estas opciones pueden ayudarte:",
+        options: suggestions,
+      },
+    ]);
+  };
+
+  // 🔘 clicks opciones
+  const handleOptionClick = (opt) => {
+    setMessages(prev => [...prev, { role: "user", text: opt }]);
+
+    if (opt === "Cambiar opciones") {
+      const isMain = options[0] === "Caminar";
+      const newOpts = isMain ? getOptionsAlt() : getOptions();
+
+      setOptions(newOpts);
+
+      setMessages(prev => [
+        ...prev,
+        { role: "ai", text: "Otras opciones 👇", options: newOpts },
+      ]);
+      return;
+    }
+
+    if (opt === "No sé cuál") {
+      startGuidedFlow();
+      return;
+    }
+
+    if (step === "guided") {
+      handleGuidedChoice(opt);
+      return;
+    }
+
+    if (step === "select_activity") {
+      let data = [];
+
+      try {
+        data = JSON.parse(localStorage.getItem("actividades") || "[]");
+      } catch (e) {
+        data = [];
+      }
+
+      const nueva = {
+        texto: opt,
+        pasos: getSteps(opt),
+        fecha: new Date().toISOString(),
+      };
+
+      localStorage.setItem(
+        "actividades",
+        JSON.stringify([...data, nueva])
+      );
+
+      setMessages(prev => [
+        ...prev,
+        { role: "ai", text: `✅ Actividad creada: ${opt}` },
+      ]);
+
+      resetFlow();
+
+      setTimeout(() => navigate("/actividades"), 1500);
+      return;
     }
   };
 
-  // =========================
-  // ERROR HANDLER
-  // =========================
-  const handleAIError = (response) => {
-    setMessages((prev) => [
-      ...prev,
-      { role: "ai", text: response.reply },
-      {
-        role: "ai",
-        text: "¿Quieres iniciar una actividad para sentirte mejor?",
-        options: ["Sí", "No"],
-      },
-    ]);
-
-    setWaitingYesNo(true);
-  };
-
-  // =========================
-  // SEND MESSAGE
-  // =========================
+  // 💬 enviar mensaje
   const sendMessage = async () => {
-    if (!input.trim() || loading) return;
+    if (!input.trim()) return;
 
-    const text = input.trim();
-    const lower = text.toLowerCase();
+    const userText = input;
 
-    setMessages((prev) => [...prev, { role: "user", text }]);
+    setMessages(prev => [...prev, { role: "user", text: userText }]);
     setInput("");
     setLoading(true);
 
-    // 🔥 DETECCIÓN DIRECTA ACTIVIDAD
-    if (lower.includes("actividad") || lower.includes("actividades")) {
-      setMessages((prev) => [
+    try {
+      if (userText.toLowerCase().includes("actividad")) {
+        const base = getOptions();
+        setOptions(base);
+
+        setMessages(prev => [
+          ...prev,
+          { role: "ai", text: "¿Qué te gustaría hacer?", options: base },
+        ]);
+
+        setLoading(false);
+        return;
+      }
+
+      const reply = await askAI(userText);
+
+      setMessages(prev => [
         ...prev,
-        { role: "ai", text: "Elige una actividad:", options: mainOptions },
-      ]);
-      setLoading(false);
-      return;
-    }
-
-    // ESCRIBIR ACTIVIDAD
-    if (writingActivity) {
-      const data = JSON.parse(localStorage.getItem("actividades") || "[]");
-
-      const nueva = {
-        texto: text,
-        fecha: new Date().toISOString(),
-        tipo: "personalizada",
-      };
-
-      localStorage.setItem("actividades", JSON.stringify([...data, nueva]));
-
-      setMessages((prev) => [
-        ...prev,
-        { role: "ai", text: `✅ Guardado: ${text}` },
+        { role: "ai", text: reply },
       ]);
 
-      setWritingActivity(false);
-      setTimeout(() => navigate("/actividades"), 1200);
-
-      setLoading(false);
-      return;
+    } catch (e) {
+      setMessages(prev => [
+        ...prev,
+        { role: "ai", text: "Error conectando con la IA 😢" },
+      ]);
     }
-
-    const response = await askAI(text);
-
-    if (!response) {
-      handleAIError({
-        reply: "🤍 Problema de conexión con la IA.",
-      });
-      setLoading(false);
-      return;
-    }
-
-    if (response.errorType) {
-      handleAIError(response);
-      setLoading(false);
-      return;
-    }
-
-    setMessages((prev) => [
-      ...prev,
-      { role: "ai", text: response.reply },
-    ]);
 
     setLoading(false);
-  };
-
-  // =========================
-  // OPTIONS
-  // =========================
-  const handleOptionClick = (opt) => {
-    setMessages((prev) => [...prev, { role: "user", text: opt }]);
-
-    if (opt === "Sí") {
-      setMessages((prev) => [
-        ...prev,
-        { role: "ai", text: "Elige una actividad:", options: mainOptions },
-      ]);
-      setWaitingYesNo(false);
-      return;
-    }
-
-    if (opt === "No") {
-      setMessages((prev) => [
-        ...prev,
-        { role: "ai", text: "🤍 Está bien, sigo aquí contigo." },
-      ]);
-      setWaitingYesNo(false);
-      return;
-    }
-
-    if (opt.includes("Escribir")) {
-      setWritingActivity(true);
-
-      setMessages((prev) => [
-        ...prev,
-        { role: "ai", text: "✍️ Escribe la actividad:" },
-      ]);
-      return;
-    }
-
-    const data = JSON.parse(localStorage.getItem("actividades") || "[]");
-
-    const nueva = {
-      texto: opt,
-      fecha: new Date().toISOString(),
-      tipo: "actividad",
-    };
-
-    localStorage.setItem("actividades", JSON.stringify([...data, nueva]));
-
-    setMessages((prev) => [
-      ...prev,
-      { role: "ai", text: `✅ Actividad: ${opt}` },
-    ]);
-
-    setTimeout(() => navigate("/actividades"), 1200);
   };
 
   return (
@@ -204,13 +258,13 @@ export default function User() {
       <div className="left-panel">
         <h4>💡 Acompañamiento</h4>
         <div className="quote-box">{frase}</div>
-        <div style={{ marginTop: 20, color: "#00e5ff" }}>
-          👤 {user?.nombre || "Usuario"}
-        </div>
       </div>
 
       <div className="center-panel">
-        <ChatBox messages={messages} onOptionClick={handleOptionClick} />
+        <ChatBox
+          messages={messages}
+          onOptionClick={handleOptionClick}
+        />
 
         <InputBox
           input={input}
