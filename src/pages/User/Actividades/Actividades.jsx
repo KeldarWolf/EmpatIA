@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import "./actividades.css";
 
 const API_URL = "https://empatia-backend.onrender.com";
 
@@ -12,18 +11,20 @@ export default function Actividades() {
   const [loading, setLoading] = useState(false);
 
   // =========================
-  // CARGAR DESDE BD
+  // CARGAR ACTIVIDADES
   // =========================
   const loadActivities = async () => {
     try {
       if (!user?.id_usuario) return;
 
-      const res = await fetch(`${API_URL}/mis-actividades/${user.id_usuario}`);
-      const data = await res.json();
+      const res = await fetch(
+        `${API_URL}/api/registro-actividad/usuario/${user.id_usuario}`
+      );
 
+      const data = await res.json();
       setActividades(data || []);
     } catch (err) {
-      console.log(err);
+      console.log("ERROR LOAD:", err);
     }
   };
 
@@ -40,7 +41,7 @@ export default function Actividades() {
   };
 
   // =========================
-  // GUARDAR CAMBIO (PATCH BD)
+  // ACTUALIZAR
   // =========================
   const updateActivity = async () => {
     if (!selected) return;
@@ -48,17 +49,19 @@ export default function Actividades() {
     setLoading(true);
 
     try {
-      await fetch(`${API_URL}/registro-actividad/${selected.id_registro}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          puntaje_agrado: Number(gusto),
-        }),
-      });
+      await fetch(
+        `${API_URL}/api/registro-actividad/${selected.id_registro}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            puntaje_agrado: Number(gusto),
+          }),
+        }
+      );
 
-      // actualizar local
       setActividades((prev) =>
         prev.map((a) =>
           a.id_registro === selected.id_registro
@@ -69,7 +72,7 @@ export default function Actividades() {
 
       setSelected(null);
     } catch (err) {
-      console.log(err);
+      console.log("ERROR UPDATE:", err);
     }
 
     setLoading(false);
@@ -79,79 +82,54 @@ export default function Actividades() {
   // UI
   // =========================
   return (
-    <div className="layout">
+    <div style={styles.layout}>
 
-      {/* =========================
-          SIDEBAR IZQUIERDA
-      ========================= */}
-      <div className="sidebar">
+      {/* SIDEBAR */}
+      <div style={styles.sidebar}>
         <h2>🧠 Instrucciones</h2>
 
-        <p>
-          Aquí puedes ver y modificar tus actividades.
-        </p>
-
-        <ul>
-          <li>✔ Selecciona una actividad</li>
-          <li>✔ Ajusta cuánto te gustó</li>
-          <li>✔ Guarda cambios en BD</li>
-        </ul>
-
-        <hr />
+        <p>Selecciona una actividad y ajusta cómo te sentiste.</p>
 
         {selected && (
-          <div className="infoBox">
+          <div style={styles.infoBox}>
             <h3>📌 Seleccionada</h3>
             <p>{selected.nombre_actividad}</p>
-            <p>
-              ⭐ Gusto actual: {selected.puntaje_agrado}/10
-            </p>
+            <p>⭐ Gusto: {selected.puntaje_agrado}/10</p>
           </div>
         )}
       </div>
 
-      {/* =========================
-          CONTENIDO PRINCIPAL
-      ========================= */}
-      <div className="main">
-
+      {/* MAIN */}
+      <div style={styles.main}>
         <h1>🎯 Tus Actividades</h1>
 
         {actividades.length === 0 && (
           <p>No tienes actividades aún</p>
         )}
 
-        {/* LISTA */}
-        <div className="grid">
+        <div style={styles.grid}>
           {actividades.map((act) => (
             <div
               key={act.id_registro}
-              className="card"
+              style={styles.card}
               onClick={() => selectActivity(act)}
             >
               <h3>{act.nombre_actividad}</h3>
 
-              <p>
-                ⭐ Gusto: {act.puntaje_agrado}/10
-              </p>
+              <p>⭐ {act.puntaje_agrado}/10</p>
 
               <p>
                 📅{" "}
-                {new Date(act.created_at || Date.now()).toLocaleDateString()}
+                {new Date(act.fecha).toLocaleDateString()}
               </p>
             </div>
           ))}
         </div>
 
-        {/* =========================
-            EDITOR
-        ========================= */}
+        {/* EDITOR */}
         {selected && (
-          <div className="editor">
-
+          <div style={styles.editor}>
             <h2>✏️ Editar actividad</h2>
-
-            <p>{selected.nombre_actividad}</p>
 
             <input
               type="range"
@@ -159,97 +137,85 @@ export default function Actividades() {
               max="10"
               value={gusto}
               onChange={(e) => setGusto(e.target.value)}
+              style={{ width: "100%" }}
             />
 
-            <div>
-              ⭐ {gusto}/10
-            </div>
+            <div>⭐ {gusto}/10</div>
 
             <button
               onClick={updateActivity}
               disabled={loading}
+              style={styles.button}
             >
               💾 {loading ? "Guardando..." : "Guardar cambios"}
             </button>
-
           </div>
         )}
-
       </div>
-
-      {/* =========================
-          ESTILOS
-      ========================= */}
-      <style>{`
-        .layout {
-          display: flex;
-          height: 100vh;
-          background: #0f172a;
-          color: white;
-          font-family: Arial;
-        }
-
-        .sidebar {
-          width: 25%;
-          padding: 20px;
-          background: #111827;
-          border-right: 1px solid #1f2937;
-        }
-
-        .main {
-          flex: 1;
-          padding: 20px;
-          overflow-y: auto;
-        }
-
-        .grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-          gap: 10px;
-          margin-top: 20px;
-        }
-
-        .card {
-          background: #1f2937;
-          padding: 15px;
-          border-radius: 10px;
-          cursor: pointer;
-          transition: 0.2s;
-        }
-
-        .card:hover {
-          background: #374151;
-        }
-
-        .editor {
-          margin-top: 20px;
-          padding: 20px;
-          background: #111827;
-          border-radius: 10px;
-        }
-
-        button {
-          margin-top: 10px;
-          padding: 10px;
-          border: none;
-          border-radius: 8px;
-          background: #2563eb;
-          color: white;
-          cursor: pointer;
-        }
-
-        input[type="range"] {
-          width: 100%;
-        }
-
-        .infoBox {
-          margin-top: 20px;
-          padding: 10px;
-          background: #1f2937;
-          border-radius: 10px;
-        }
-      `}</style>
 
     </div>
   );
 }
+
+// =========================
+// ESTILOS INLINE
+// =========================
+const styles = {
+  layout: {
+    display: "flex",
+    height: "100vh",
+    background: "#0f172a",
+    color: "white",
+    fontFamily: "Arial",
+  },
+
+  sidebar: {
+    width: "25%",
+    padding: "20px",
+    background: "#111827",
+  },
+
+  main: {
+    flex: 1,
+    padding: "20px",
+    overflowY: "auto",
+  },
+
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+    gap: "10px",
+    marginTop: "20px",
+  },
+
+  card: {
+    background: "#1f2937",
+    padding: "15px",
+    borderRadius: "10px",
+    cursor: "pointer",
+  },
+
+  editor: {
+    marginTop: "20px",
+    padding: "20px",
+    background: "#111827",
+    borderRadius: "10px",
+  },
+
+  infoBox: {
+    marginTop: "15px",
+    padding: "10px",
+    background: "#1f2937",
+    borderRadius: "10px",
+  },
+
+  button: {
+    marginTop: "10px",
+    padding: "10px",
+    background: "#2563eb",
+    border: "none",
+    color: "white",
+    borderRadius: "8px",
+    cursor: "pointer",
+  },
+};
