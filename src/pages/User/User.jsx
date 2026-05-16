@@ -1,52 +1,47 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "./user.css";
+
+import ChatBox from "./ChatBox";
+import InputBox from "./InputBox";
+import frases from "./frases";
 
 const API = "https://empatia-backend.onrender.com";
 
-// =========================
-// OPCIONES PRINCIPALES (6)
-// =========================
 const mainOptions = [
   "🎵 Música",
   "🧘 Relajación",
   "🏃 Actividad física",
   "🤍 Hablar un poco",
-  "⚙️ Cambiar preguntas fáciles",
   "❓ No sé qué hacer",
+  "✍️ Escribir actividad",
 ];
-
-// =========================
-// SUB OPCIONES
-// =========================
-const subOptions = {
-  musica: ["Lo-fi", "Piano", "Jazz", "Música feliz", "Naturaleza"],
-  relajacion: ["Respirar profundo", "Meditar", "Cerrar ojos", "Tomar agua"],
-  fisico: ["Caminar", "Yoga", "Estiramientos", "Bailar", "Mover cuerpo"],
-};
 
 export default function User() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("usuario") || "null");
 
   const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [writingActivity, setWritingActivity] = useState(false);
+  const [frase, setFrase] = useState("");
 
-  const [mode, setMode] = useState("main");
-  const [category, setCategory] = useState(null);
-
-  // =========================
-  // INIT CHAT
-  // =========================
   useEffect(() => {
     setMessages([
-      { role: "ai", text: `Hola ${user?.nombre || "🤍"}, estoy contigo.` },
-      { role: "ai", text: "Elige una opción:" },
-      { role: "ai", options: mainOptions },
+      { role: "ai", text: `Hola ${user?.nombre || "🤍"}, estoy aquí.` },
+      { role: "ai", text: "Cuéntame cómo te sientes..." },
     ]);
+
+    const interval = setInterval(() => {
+      setFrase(frases[Math.floor(Math.random() * frases.length)]);
+    }, 8000);
+
+    return () => clearInterval(interval);
   }, []);
 
   // =========================
-  // IA CALL
+  // IA
   // =========================
   const askAI = async (message) => {
     try {
@@ -63,195 +58,149 @@ export default function User() {
   };
 
   // =========================
-  // SUPABASE SAVE
+  // CREAR ACTIVIDAD EN BD SI NO EXISTE
   // =========================
-  const saveActivity = async (text) => {
-    if (!user?.id_usuario) return;
-
+  const createActivityIfNeeded = async (nombre) => {
     try {
-      await fetch(`${API}/registro-actividad`, {
+      const res = await fetch(`${API}/actividades`);
+      const data = await res.json();
+
+      const exists = data.find((a) => a.nombre === nombre);
+      if (exists) return exists;
+
+      const create = await fetch(`${API}/actividades`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id_usuario: user.id_usuario,
-          id_actividad: null,
-          puntaje_agrado: 6,
-          frecuencia_deseada: "media",
-          reaccion: text,
+          nombre,
+          descripcion: "Actividad creada por usuario",
+          categoria: "personal",
         }),
       });
-    } catch (e) {
-      console.log("Error guardando actividad");
+
+      return await create.json();
+    } catch {
+      return null;
     }
   };
 
   // =========================
-  // HANDLER PRINCIPAL
+  // REGISTRAR ACTIVIDAD USUARIO
   // =========================
-  const handleOption = async (opt) => {
-    setMessages((prev) => [...prev, { role: "user", text: opt }]);
+  const registerActivity = async (actividad) => {
+    if (!user?.id_usuario || !actividad?.id_actividad) return;
 
-    // =========================
-    // MENÚ PRINCIPAL
-    // =========================
-    if (opt === "🎵 Música") {
-      setMode("sub");
-      setCategory("musica");
+    await fetch(`${API}/registro-actividad`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id_usuario: user.id_usuario,
+        id_actividad: actividad.id_actividad,
+        puntaje_agrado: 5,
+        frecuencia_deseada: "media",
+        reaccion: "creada",
+      }),
+    });
+  };
 
+  // =========================
+  // SEND
+  // =========================
+  const sendMessage = async () => {
+    if (!input.trim() || loading) return;
+
+    const text = input.trim();
+
+    setMessages((prev) => [...prev, { role: "user", text }]);
+    setInput("");
+    setLoading(true);
+
+    if (
+      text.toLowerCase().includes("actividad") ||
+      text.toLowerCase().includes("actividades")
+    ) {
       setMessages((prev) => [
         ...prev,
-        { role: "ai", text: "Elige música:" },
-        { role: "ai", options: subOptions.musica },
+        { role: "ai", text: "Elige una actividad:", options: mainOptions },
       ]);
+      setLoading(false);
       return;
     }
 
-    if (opt === "🧘 Relajación") {
-      setMode("sub");
-      setCategory("relajacion");
+    if (writingActivity) {
+      const actividad = await createActivityIfNeeded(text);
+      await registerActivity(actividad);
 
       setMessages((prev) => [
         ...prev,
-        { role: "ai", text: "Elige relajación:" },
-        { role: "ai", options: subOptions.relajacion },
+        { role: "ai", text: `✔ Guardado en BD: ${text}` },
       ]);
+
+      setWritingActivity(false);
+      setTimeout(() => navigate("/actividades"), 1000);
+
+      setLoading(false);
       return;
     }
 
-    if (opt === "🏃 Actividad física") {
-      setMode("sub");
-      setCategory("fisico");
+    const response = await askAI(text);
 
-      setMessages((prev) => [
-        ...prev,
-        { role: "ai", text: "Elige actividad física:" },
-        { role: "ai", options: subOptions.fisico },
-      ]);
-      return;
-    }
-
-    // =========================
-    // CAMBIAR PREGUNTAS
-    // =========================
-    if (opt === "⚙️ Cambiar preguntas fáciles") {
-      setMode("main");
-      setCategory(null);
-
-      setMessages((prev) => [
-        ...prev,
-        { role: "ai", text: "🔄 Reiniciando menú..." },
-        { role: "ai", options: mainOptions },
-      ]);
-      return;
-    }
-
-    // =========================
-    // NO SÉ
-    // =========================
-    if (opt === "❓ No sé qué hacer") {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text: "Te ayudo 🤍 elige una:",
-          options: mainOptions,
-        },
-      ]);
-      return;
-    }
-
-    // =========================
-    // HABLAR
-    // =========================
-    if (opt === "🤍 Hablar un poco") {
-      const response = await askAI("habla conmigo");
-
-      setMessages((prev) => [
-        ...prev,
-        { role: "ai", text: response?.reply || "Estoy contigo 🤍" },
-      ]);
-
-      await saveActivity("hablar");
-      return;
-    }
-
-    // =========================
-    // SUB OPCIONES (ACTIVIDAD FINAL)
-    // =========================
     setMessages((prev) => [
       ...prev,
-      {
-        role: "ai",
-        text: `✔ Actividad seleccionada: ${opt}`,
-      },
-      {
-        role: "ai",
-        text: "La he guardado para ti 🤍",
-      },
+      { role: "ai", text: response?.reply || "Error IA" },
     ]);
 
-    await saveActivity(opt);
+    setLoading(false);
+  };
+
+  // =========================
+  // OPTIONS
+  // =========================
+  const handleOptionClick = async (opt) => {
+    setMessages((prev) => [...prev, { role: "user", text: opt }]);
+
+    if (opt.includes("Escribir")) {
+      setWritingActivity(true);
+
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: "✍️ Escribe la actividad:" },
+      ]);
+      return;
+    }
+
+    const actividad = await createActivityIfNeeded(opt);
+    await registerActivity(actividad);
+
+    setMessages((prev) => [
+      ...prev,
+      { role: "ai", text: `✔ Guardado en BD: ${opt}` },
+    ]);
 
     setTimeout(() => navigate("/actividades"), 1000);
   };
 
-  // =========================
-  // UI
-  // =========================
   return (
-    <div style={{ padding: 20, background: "#0b0f14", color: "white" }}>
-
-      <h2>🤍 EmpatIA</h2>
-
-      <div>
-        {messages.map((m, i) => (
-          <div key={i} style={{ marginBottom: 12 }}>
-
-            <div>
-              {m.role === "ai" ? "🤖 " : "👤 "}
-              {m.text}
-            </div>
-
-            {m.options && (
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {m.options.map((opt, j) => (
-                  <button
-                    key={j}
-                    onClick={() => handleOption(opt)}
-                    style={{
-                      padding: 10,
-                      marginTop: 5,
-                      borderRadius: 8,
-                      border: "none",
-                      background: "#1f2937",
-                      color: "white",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {opt}
-                  </button>
-                ))}
-              </div>
-            )}
-
-          </div>
-        ))}
+    <div className="app-layout">
+      <div className="left-panel">
+        <h4>💡 Acompañamiento</h4>
+        <div className="quote-box">{frase}</div>
       </div>
 
-      <button
-        onClick={() => navigate("/actividades")}
-        style={{
-          marginTop: 20,
-          padding: 10,
-          background: "#1d9bf0",
-          border: "none",
-          color: "white",
-          borderRadius: 8,
-        }}
-      >
-        🎯 Ver actividades
-      </button>
+      <div className="center-panel">
+        <ChatBox messages={messages} onOptionClick={handleOptionClick} />
 
+        <InputBox
+          input={input}
+          setInput={setInput}
+          sendMessage={sendMessage}
+          loading={loading}
+        />
+      </div>
+
+      <div className="right-panel">
+        <button onClick={() => navigate("/actividades")}>🎯 Actividades</button>
+      </div>
     </div>
   );
 }
