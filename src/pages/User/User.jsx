@@ -1,16 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./user.css";
-
 import ChatBox from "./ChatBox";
 import InputBox from "./InputBox";
-import frases from "./frases";
 
 const API_URL = "https://empatia-backend.onrender.com";
 
-// =========================
-// MENÚ
-// =========================
 const mainOptions = [
   "🎵 Música",
   "🧘 Relajación",
@@ -19,26 +13,21 @@ const mainOptions = [
   "❓ No sé qué hacer",
 ];
 
-// =========================
-// SUBMENÚS
-// =========================
 const subOptions = {
-  "🎵 Música": ["Lo-fi", "Piano", "Jazz", "Lluvia"],
-  "🧘 Relajación": ["Respirar", "Meditar", "Ducha", "Cerrar ojos"],
-  "🏃 Actividad física": ["Caminar", "Bailar", "Yoga", "Trotar"],
+  "🎵 Música": ["Lo-fi", "Piano", "Jazz"],
+  "🧘 Relajación": ["Respirar", "Meditar", "Ducha"],
+  "🏃 Actividad física": ["Caminar", "Bailar", "Yoga"],
 };
 
 export default function User() {
   const navigate = useNavigate();
+
   const user = JSON.parse(localStorage.getItem("usuario") || "null");
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
+  const [step, setStep] = useState("chat");
   const [loading, setLoading] = useState(false);
-
-  const [step, setStep] = useState("chat"); 
-  const [category, setCategory] = useState(null);
-  const [frase, setFrase] = useState("");
 
   // =========================
   // INIT
@@ -47,25 +36,28 @@ export default function User() {
     setMessages([
       {
         role: "ai",
-        text: `Hola ${user?.nombre || "🤍"}, estoy aquí contigo.`,
+        text: `Hola ${user?.nombre || "Usuario"}`,
       },
       {
         role: "ai",
         text: "Cuéntame cómo te sientes...",
       },
     ]);
-
-    setFrase(frases[Math.floor(Math.random() * frases.length)]);
-
-    const interval = setInterval(() => {
-      setFrase(frases[Math.floor(Math.random() * frases.length)]);
-    }, 7000);
-
-    return () => clearInterval(interval);
   }, []);
 
   // =========================
-  // IA
+  // VALIDAR USER
+  // =========================
+  const ensureUser = () => {
+    if (!user?.id_usuario) {
+      console.log("❌ Usuario no logueado");
+      return false;
+    }
+    return true;
+  };
+
+  // =========================
+  // IA (backend)
   // =========================
   const askAI = async (message) => {
     try {
@@ -78,18 +70,19 @@ export default function User() {
       return await res.json();
     } catch {
       return {
-        reply:
-          "🤍 La IA no está disponible ahora. Pero puedo ayudarte con una actividad.",
+        reply: "🤍 La IA no está disponible ahora.",
       };
     }
   };
 
   // =========================
-  // GUARDAR BD
+  // GUARDAR ACTIVIDAD BD
   // =========================
   const saveActivity = async (name) => {
+    if (!ensureUser()) return;
+
     try {
-      await fetch(`${API_URL}/api/registro-actividad`, {
+      const res = await fetch(`${API_URL}/api/registro-actividad`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -101,11 +94,24 @@ export default function User() {
         }),
       });
 
-      setTimeout(() => {
-        navigate("/actividades");
-      }, 3000);
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.log("❌ Error backend:", data);
+        return;
+      }
+
+      console.log("✅ Guardado:", data);
+
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: "✅ Actividad guardada correctamente" },
+      ]);
+
+      navigate("/actividades");
+
     } catch (err) {
-      console.log("error BD", err);
+      console.log("❌ Error fetch:", err);
     }
   };
 
@@ -117,29 +123,22 @@ export default function User() {
 
     const text = input.trim().toLowerCase();
 
-    setMessages((prev) => [
-      ...prev,
-      { role: "user", text: input },
-    ]);
-
+    setMessages((p) => [...p, { role: "user", text: input }]);
     setInput("");
 
-    // =========================
-    // ACTIVIDADES TRIGGER
-    // =========================
+    // trigger actividad
     if (
       text.includes("actividad") ||
-      text.includes("actividades") ||
-      text.includes("no sé qué hacer")
+      text.includes("no sé") ||
+      text.includes("nose")
     ) {
       setStep("confirm");
 
-      setMessages((prev) => [
-        ...prev,
+      setMessages((p) => [
+        ...p,
         {
           role: "ai",
-          text:
-            "¿Deseas iniciar una actividad para sentirte mejor?",
+          text: "¿Deseas iniciar una actividad para sentirte mejor?",
           options: ["Sí", "No"],
         },
       ]);
@@ -147,17 +146,11 @@ export default function User() {
       return;
     }
 
-    // =========================
-    // IA NORMAL
-    // =========================
     setLoading(true);
 
     const res = await askAI(text);
 
-    setMessages((prev) => [
-      ...prev,
-      { role: "ai", text: res.reply },
-    ]);
+    setMessages((p) => [...p, { role: "ai", text: res.reply }]);
 
     setLoading(false);
   };
@@ -165,21 +158,18 @@ export default function User() {
   // =========================
   // OPTIONS CLICK
   // =========================
-  const handleOptionClick = async (opt) => {
-    setMessages((prev) => [
-      ...prev,
-      { role: "user", text: opt },
-    ]);
+  const handleOption = async (opt) => {
+    const clean = opt.trim();
 
-    // =========================
-    // CONFIRM
-    // =========================
+    setMessages((p) => [...p, { role: "user", text: clean }]);
+
+    // CONFIRM FLOW
     if (step === "confirm") {
-      if (opt === "Sí") {
+      if (clean === "Sí") {
         setStep("menu");
 
-        setMessages((prev) => [
-          ...prev,
+        setMessages((p) => [
+          ...p,
           {
             role: "ai",
             text: "Elige una categoría:",
@@ -189,47 +179,32 @@ export default function User() {
       } else {
         setStep("chat");
 
-        setMessages((prev) => [
-          ...prev,
+        setMessages((p) => [
+          ...p,
           {
             role: "ai",
-            text: "Está bien 🤍 estoy aquí si me necesitas.",
+            text: "Estoy aquí si me necesitas 🤍",
           },
         ]);
       }
       return;
     }
 
-    // =========================
-    // MENU PRINCIPAL
-    // =========================
-    if (subOptions[opt]) {
-      setCategory(opt);
-
-      setMessages((prev) => [
-        ...prev,
+    // SUBMENU
+    if (subOptions[clean]) {
+      setMessages((p) => [
+        ...p,
         {
           role: "ai",
-          text: `Elige una opción de ${opt}:`,
-          options: subOptions[opt],
+          text: "Elige una actividad:",
+          options: subOptions[clean],
         },
       ]);
-
       return;
     }
 
-    // =========================
-    // FINAL ACTIVITY
-    // =========================
-    await saveActivity(opt);
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "ai",
-        text: `✅ Actividad guardada: ${opt}`,
-      },
-    ]);
+    // FINAL SAVE
+    await saveActivity(clean);
   };
 
   // =========================
@@ -237,40 +212,14 @@ export default function User() {
   // =========================
   return (
     <div className="app-layout">
+      <ChatBox messages={messages} onOptionClick={handleOption} />
 
-      {/* LEFT */}
-      <div className="left-panel">
-        <h4>💡 Acompañamiento</h4>
-        <div className="quote-box">{frase}</div>
-
-        <div style={{ marginTop: 20 }}>
-          👤 {user?.nombre || "Usuario"}
-        </div>
-      </div>
-
-      {/* CENTER */}
-      <div className="center-panel">
-        <ChatBox
-          messages={messages}
-          onOptionClick={handleOptionClick}
-        />
-
-        <InputBox
-          input={input}
-          setInput={setInput}
-          sendMessage={sendMessage}
-          loading={loading}
-        />
-      </div>
-
-      {/* RIGHT */}
-      <div className="right-panel">
-        <button onClick={() => navigate("/rutina")}>🧘 Rutina</button>
-        <button onClick={() => navigate("/actividades")}>🎯 Actividades</button>
-        <button onClick={() => navigate("/estadisticas")}>📊 Estadísticas</button>
-        <button onClick={() => navigate("/diario")}>📓 Diario</button>
-      </div>
-
+      <InputBox
+        input={input}
+        setInput={setInput}
+        sendMessage={sendMessage}
+        loading={loading}
+      />
     </div>
   );
 }
