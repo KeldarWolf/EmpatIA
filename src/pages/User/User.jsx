@@ -14,9 +14,9 @@ import frases from "./frases";
 const API_URL =
   "https://empatia-backend.onrender.com";
 
-// =========================
+// ============================================
 // MENÚ PRINCIPAL
-// =========================
+// ============================================
 
 const mainOptions = [
   "🎵 Música",
@@ -26,11 +26,12 @@ const mainOptions = [
   "❓ No sé cuál",
 ];
 
-// =========================
+// ============================================
 // SUB MENÚS
-// =========================
+// ============================================
 
 const subOptions = {
+
   "🎵 Música": [
     "Cantar",
     "Lo-fi",
@@ -73,6 +74,9 @@ export default function User() {
   const [loading, setLoading] =
     useState(false);
 
+  const [writingActivity, setWritingActivity] =
+    useState(false);
+
   const [frase, setFrase] =
     useState("");
 
@@ -85,17 +89,18 @@ export default function User() {
     setMessages([
       {
         role: "ai",
-        text: `Hola ${
-          user?.nombre || "🤍"
-        }, estoy aquí contigo.`,
+
+        text:
+          `Hola ${
+            user?.nombre || "🤍"
+          }, estoy aquí contigo.`,
       },
 
       {
         role: "ai",
-        text:
-          "Cuéntame cómo te sientes o elige una actividad 👇",
 
-        options: mainOptions,
+        text:
+          "Cuéntame cómo te sientes...",
       },
     ]);
 
@@ -153,7 +158,6 @@ export default function User() {
       const data =
         await res.json();
 
-      // ERROR BACKEND
       if (
         !res.ok ||
         data?.errorType
@@ -177,7 +181,7 @@ export default function User() {
   };
 
   // ============================================
-  // SAVE ACTIVITY
+  // GUARDAR ACTIVIDAD
   // ============================================
 
   const saveActivity = async (
@@ -199,6 +203,7 @@ export default function User() {
 
       localStorage.setItem(
         "actividades",
+
         JSON.stringify([
           ...data,
           nueva,
@@ -214,7 +219,7 @@ export default function User() {
   };
 
   // ============================================
-  // HANDLE OPTION CLICK
+  // OPTIONS
   // ============================================
 
   const handleOptionClick =
@@ -222,15 +227,59 @@ export default function User() {
 
       setMessages((prev) => [
         ...prev,
+
         {
           role: "user",
           text: opt,
         },
       ]);
 
-      // ============================
-      // SUB MENUS
-      // ============================
+      // ============================================
+      // SI
+      // ============================================
+
+      if (opt === "Sí") {
+
+        setMessages((prev) => [
+          ...prev,
+
+          {
+            role: "ai",
+
+            text:
+              "✨ Elige una categoría:",
+
+            options:
+              mainOptions,
+          },
+        ]);
+
+        return;
+      }
+
+      // ============================================
+      // NO
+      // ============================================
+
+      if (opt === "No") {
+
+        setMessages((prev) => [
+          ...prev,
+
+          {
+            role: "ai",
+
+            text:
+              "🤍 Está bien, seguiré aquí contigo.",
+          },
+        ]);
+
+        return;
+      }
+
+      // ============================================
+      // SUBMENÚ
+      // ============================================
 
       if (subOptions[opt]) {
 
@@ -251,9 +300,9 @@ export default function User() {
         return;
       }
 
-      // ============================
-      // RESET MENU
-      // ============================
+      // ============================================
+      // RESET
+      // ============================================
 
       if (opt === "❓ No sé cuál") {
 
@@ -264,7 +313,7 @@ export default function User() {
             role: "ai",
 
             text:
-              "Te dejo opciones 👇",
+              "Te dejo algunas opciones 👇",
 
             options:
               mainOptions,
@@ -274,15 +323,17 @@ export default function User() {
         return;
       }
 
-      // ============================
-      // WRITE ACTIVITY
-      // ============================
+      // ============================================
+      // ESCRIBIR ACTIVIDAD
+      // ============================================
 
       if (
         opt.includes(
           "Escribir"
         )
       ) {
+
+        setWritingActivity(true);
 
         setMessages((prev) => [
           ...prev,
@@ -291,16 +342,16 @@ export default function User() {
             role: "ai",
 
             text:
-              "✍️ Escribe tu actividad:",
+              "✍️ Escribe tu actividad personalizada:",
           },
         ]);
 
         return;
       }
 
-      // ============================
-      // SAVE ACTIVITY
-      // ============================
+      // ============================================
+      // GUARDAR ACTIVIDAD
+      // ============================================
 
       await saveActivity(opt);
 
@@ -333,6 +384,9 @@ export default function User() {
       const text =
         input.trim();
 
+      const lower =
+        text.toLowerCase();
+
       setMessages((prev) => [
         ...prev,
 
@@ -345,6 +399,70 @@ export default function User() {
       setInput("");
 
       setLoading(true);
+
+      // ============================================
+      // DETECTAR ACTIVIDAD
+      // ============================================
+
+      if (
+        lower.includes("actividad") ||
+        lower.includes("actividades") ||
+        lower.includes("no sé qué hacer") ||
+        lower.includes("nose que hacer") ||
+        lower.includes("me siento mal") ||
+        lower.includes("aburrido") ||
+        lower.includes("triste") ||
+        lower.includes("ansioso") ||
+        lower.includes("solo") ||
+        lower.includes("ayuda")
+      ) {
+
+        setMessages((prev) => [
+          ...prev,
+
+          {
+            role: "ai",
+
+            text:
+              "🤍 ¿Deseas iniciar una actividad para sentirte mejor?",
+
+            options: [
+              "Sí",
+              "No",
+            ],
+          },
+        ]);
+
+        setLoading(false);
+
+        return;
+      }
+
+      // ============================================
+      // ESCRIBIR ACTIVIDAD
+      // ============================================
+
+      if (writingActivity) {
+
+        await saveActivity(text);
+
+        setMessages((prev) => [
+          ...prev,
+
+          {
+            role: "ai",
+
+            text:
+              `✅ Actividad personalizada guardada: ${text}`,
+          },
+        ]);
+
+        setWritingActivity(false);
+
+        setLoading(false);
+
+        return;
+      }
 
       // ============================================
       // IA
@@ -367,7 +485,6 @@ export default function User() {
 
             text:
               "🤍 Lo siento, ahora mismo no puedo entablar una conversación.",
-
           },
 
           {
@@ -387,7 +504,7 @@ export default function User() {
       }
 
       // ============================================
-      // IA RESPONSE
+      // RESPUESTA IA
       // ============================================
 
       setMessages((prev) => [
