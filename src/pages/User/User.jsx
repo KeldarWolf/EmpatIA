@@ -33,6 +33,7 @@ export default function User() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+
   const [writingActivity, setWritingActivity] =
     useState(false);
 
@@ -46,7 +47,9 @@ export default function User() {
     setMessages([
       {
         role: "ai",
-        text: `Hola ${user?.nombre || "🤍"} estoy aquí contigo.`,
+        text: `Hola ${
+          user?.nombre || "🤍"
+        } estoy aquí contigo.`,
       },
       {
         role: "ai",
@@ -55,12 +58,20 @@ export default function User() {
     ]);
 
     setFrase(
-      frases[Math.floor(Math.random() * frases.length)]
+      frases[
+        Math.floor(
+          Math.random() * frases.length
+        )
+      ]
     );
 
     const interval = setInterval(() => {
       setFrase(
-        frases[Math.floor(Math.random() * frases.length)]
+        frases[
+          Math.floor(
+            Math.random() * frases.length
+          )
+        ]
       );
     }, 8000);
 
@@ -107,8 +118,9 @@ export default function User() {
   ) => {
     try {
       const data = JSON.parse(
-        localStorage.getItem("actividades") ||
-          "[]"
+        localStorage.getItem(
+          "actividades"
+        ) || "[]"
       );
 
       const nueva = {
@@ -118,7 +130,10 @@ export default function User() {
 
       localStorage.setItem(
         "actividades",
-        JSON.stringify([...data, nueva])
+        JSON.stringify([
+          ...data,
+          nueva,
+        ])
       );
 
     } catch (err) {
@@ -133,7 +148,8 @@ export default function User() {
   // ============================================
 
   const sendMessage = async () => {
-    if (!input.trim() || loading) return;
+    if (!input.trim() || loading)
+      return;
 
     const text = input.trim();
 
@@ -161,7 +177,8 @@ export default function User() {
         ...prev,
         {
           role: "ai",
-          text: "✨ Elige una actividad:",
+          text:
+            "✨ Elige una actividad:",
           options: mainOptions,
         },
       ]);
@@ -170,7 +187,7 @@ export default function User() {
       return;
     }
 
-    // WRITE ACTIVITY
+    // ESCRIBIR ACTIVIDAD
     if (writingActivity) {
       await saveActivity(text);
 
@@ -183,12 +200,13 @@ export default function User() {
       ]);
 
       setWritingActivity(false);
+
       setLoading(false);
 
       return;
     }
 
-    // IA RESPONSE
+    // IA
     const response = await askAI(text);
 
     setMessages((prev) => [
@@ -227,7 +245,8 @@ export default function User() {
         ...prev,
         {
           role: "ai",
-          text: "✍️ Escribe tu actividad:",
+          text:
+            "✍️ Escribe tu actividad:",
         },
       ]);
 
@@ -262,13 +281,9 @@ export default function User() {
           {frase}
         </div>
 
-        <div
-          style={{
-            marginTop: 20,
-            color: "#00e5ff",
-          }}
-        >
-          👤 {user?.nombre || "Usuario"}
+        <div className="user-name">
+          👤{" "}
+          {user?.nombre || "Usuario"}
         </div>
 
       </div>
