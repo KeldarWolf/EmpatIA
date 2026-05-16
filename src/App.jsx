@@ -18,19 +18,19 @@ import Gustos from "./pages/Gustos";
 import Configuracion from "./pages/Configuracion";
 
 // ======================
-// PRIVATE ROUTE FIX FINAL
+// PRIVATE ROUTE
 // ======================
 function PrivateRoute({ children, role }) {
   const session = JSON.parse(localStorage.getItem("usuario"));
 
-  // sin sesión → login
   if (!session) {
     return <Navigate to="/" replace />;
   }
 
-  const userRole = (session.role || "").toLowerCase().trim();
+  const userRole = (session.role || "")
+    .toLowerCase()
+    .trim();
 
-  // SOLO valida role si viene definido (admin/user)
   if (role && role !== userRole) {
     return <Navigate to="/user" replace />;
   }
@@ -38,19 +38,18 @@ function PrivateRoute({ children, role }) {
   return children;
 }
 
+// ======================
+// APP
+// ======================
 export default function App() {
   return (
     <Routes>
 
-      {/* ======================
-          AUTH
-      ====================== */}
+      {/* AUTH */}
       <Route path="/" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      {/* ======================
-          ADMIN
-      ====================== */}
+      {/* ADMIN */}
       <Route
         path="/admin"
         element={
@@ -60,9 +59,7 @@ export default function App() {
         }
       />
 
-      {/* ======================
-          USER DASHBOARD
-      ====================== */}
+      {/* USER */}
       <Route
         path="/user"
         element={
@@ -72,11 +69,7 @@ export default function App() {
         }
       />
 
-      {/* ======================
-          MODULES USER (SIN ROLE CHECK)
-          👉 FIX IMPORTANTE
-      ====================== */}
-
+      {/* MODULES */}
       <Route
         path="/rutina"
         element={
@@ -140,10 +133,11 @@ export default function App() {
         }
       />
 
-      {/* ======================
-          FALLBACK (ANTI BUG)
-      ====================== */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* FALLBACK */}
+      <Route
+        path="*"
+        element={<Navigate to="/" replace />}
+      />
 
     </Routes>
   );
