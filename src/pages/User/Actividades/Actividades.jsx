@@ -1,145 +1,326 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "./user.css";
 
-const API = "https://empatia-backend.onrender.com";
+import ChatBox from "./ChatBox";
+import InputBox from "./InputBox";
+import frases from "./frases";
 
-export default function Actividades() {
-  const user = JSON.parse(localStorage.getItem("usuario") || "{}");
+const API_URL = "https://empatia-backend.onrender.com";
 
-  const [actividades, setActividades] = useState([]);
-  const [selected, setSelected] = useState(null);
-  const [gusto, setGusto] = useState(5);
-  const [editId, setEditId] = useState(null);
+// 🔎 triggers
+const activityTriggers = [
+  "aburrido",
+  "aburrida",
+  "no sé qué hacer",
+  "no se que hacer",
+  "qué hago",
+  "que hago",
+  "actividad",
+  "actividades",
+  "aburrimiento",
+];
 
-  // =========================
-  // CARGAR BD
-  // =========================
+// 🎯 opciones base
+const mainOptions = [
+  "🎵 Música",
+  "🧘 Relajación",
+  "🏃 Actividad física",
+  "🤍 Hablar un poco",
+  "❓ No sé qué hacer",
+  "🔄 Cambiar respuestas rápidas",
+];
+
+// Sí / No
+const yesNoOptions = ["Sí", "No"];
+
+// 🧠 actividades
+const activityGroups = {
+  musica: [
+    "Playlist relajante",
+    "Lo-fi",
+    "Música instrumental",
+    "Sonidos lluvia",
+    "Piano",
+    "Jazz",
+    "Música feliz",
+    "Música triste",
+    "Descubrir música nueva",
+    "Cantar",
+    "Música energética",
+  ],
+  relajacion: [
+    "Respirar profundo",
+    "Ducha relajante",
+    "Cerrar los ojos",
+    "Meditar",
+    "Estiramientos",
+    "Tomar agua",
+    "Escuchar lluvia",
+    "Descansar",
+    "Relajar hombros",
+    "Escribir lo que siento",
+    "Pausar mente",
+  ],
+  fisica: [
+    "Caminar",
+    "Ejercicio ligero",
+    "Estiramientos",
+    "Bailar",
+    "Mover brazos",
+    "Mover piernas",
+    "Salir a tomar aire",
+    "Subir escaleras",
+    "Yoga",
+    "Trotar suave",
+    "Mover cuello",
+  ],
+};
+
+export default function User() {
+  const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("usuario") || "null");
+
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [frase, setFrase] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [waitingForYes, setWaitingForYes] = useState(false);
+
+  // INIT
   useEffect(() => {
-    const load = async () => {
-      if (!user?.id_usuario) return;
+    setMessages([
+      {
+        role: "ai",
+        text: `Hola ${user?.nombre || "🤍"}, estoy aquí.`,
+      },
+      {
+        role: "ai",
+        text: "Cuéntame cómo te sientes...",
+      },
+    ]);
 
-      const res = await fetch(
-        `${API}/mis-actividades/${user.id_usuario}`
-      );
+    const interval = setInterval(() => {
+      setFrase(frases[Math.floor(Math.random() * frases.length)]);
+    }, 8000);
 
-      const data = await res.json();
-      setActividades(data);
-    };
+    return () => clearInterval(interval);
+  }, [user?.nombre]);
 
-    load();
-  }, []);
+  const shouldTriggerActivity = (text) =>
+    activityTriggers.some((w) => text.toLowerCase().includes(w));
 
-  // =========================
-  // SELECCIONAR
-  // =========================
-  const seleccionar = (act) => {
-    setSelected(act);
-    setGusto(act.puntaje_agrado || 5);
-    setEditId(act.id_registro);
-  };
-
-  // =========================
-  // GUARDAR O EDITAR
-  // =========================
-  const guardar = async () => {
-    if (!selected) return;
-
-    if (editId) {
-      // UPDATE
-      await fetch(`${API}/registro-actividad/${editId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          puntaje_agrado: gusto,
-        }),
-      });
-    } else {
-      // NUEVO (si algún día lo usas aquí)
-      await fetch(`${API}/registro-actividad`, {
+  // ======================
+  // IA
+  // ======================
+  const askAI = async (message) => {
+    try {
+      const res = await fetch(`${API_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
+      });
+
+      if (!res.ok) return null;
+
+      const data = await res.json();
+      return data?.reply || null;
+    } catch {
+      return null;
+    }
+  };
+
+  // ======================
+  // GUARDAR ACTIVIDAD BD
+  // ======================
+  const saveActivityToDB = async (nombreActividad) => {
+    try {
+      if (!user?.id_usuario) {
+        console.log("❌ usuario sin id_usuario");
+        return;
+      }
+
+      const res = await fetch(`${API_URL}/registro-actividad`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           id_usuario: user.id_usuario,
-          nombre_actividad: selected.nombre_actividad,
-          puntaje_agrado: gusto,
+          nombre_actividad: nombreActividad,
+          puntaje_agrado: 7,
           frecuencia_deseada: "media",
           reaccion: "positiva",
         }),
       });
+
+      const data = await res.json();
+      console.log("✅ GUARDADO:", data);
+    } catch (err) {
+      console.log("❌ ERROR:", err);
+    }
+  };
+
+  // ======================
+  // SEND MESSAGE
+  // ======================
+  const sendMessage = async () => {
+    if (!input.trim() || loading) return;
+
+    const text = input.trim();
+
+    setMessages((prev) => [...prev, { role: "user", text }]);
+    setInput("");
+    setLoading(true);
+
+    if (waitingForYes) {
+      const lower = text.toLowerCase();
+
+      if (lower.includes("si") || lower.includes("sí")) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "ai",
+            text: "¿Qué te gustaría hacer?",
+            options: mainOptions,
+          },
+        ]);
+        setWaitingForYes(false);
+        setLoading(false);
+        return;
+      }
+
+      if (lower.includes("no")) {
+        setMessages((prev) => [
+          ...prev,
+          { role: "ai", text: "🤍 Está bien, aquí estoy." },
+        ]);
+        setWaitingForYes(false);
+        setLoading(false);
+        return;
+      }
     }
 
-    // refrescar
-    const res = await fetch(
-      `${API}/mis-actividades/${user.id_usuario}`
-    );
+    if (shouldTriggerActivity(text)) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: "🤍 ¿Quieres que te ayude con una actividad?",
+          options: yesNoOptions,
+        },
+      ]);
 
-    const data = await res.json();
-    setActividades(data);
+      setWaitingForYes(true);
+      setLoading(false);
+      return;
+    }
 
-    setSelected(null);
-    setEditId(null);
+    const reply = await askAI(text);
+
+    if (!reply) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: "🤍 Ahora mismo no puedo responder, pero puedo ayudarte con una actividad.",
+          options: yesNoOptions,
+        },
+      ]);
+      setWaitingForYes(true);
+      setLoading(false);
+      return;
+    }
+
+    setMessages((prev) => [...prev, { role: "ai", text: reply }]);
+    setLoading(false);
+  };
+
+  // ======================
+  // BOTONES
+  // ======================
+  const handleOptionClick = async (opt) => {
+    setMessages((prev) => [...prev, { role: "user", text: opt }]);
+
+    if (opt === "Sí") {
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: "¿Qué te gustaría hacer?", options: mainOptions },
+      ]);
+      setWaitingForYes(false);
+      return;
+    }
+
+    if (opt === "No") {
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: "🤍 Está bien, aquí estoy contigo." },
+      ]);
+      setWaitingForYes(false);
+      return;
+    }
+
+    const groupKey =
+      opt.includes("Música")
+        ? "musica"
+        : opt.includes("Relajación")
+        ? "relajacion"
+        : opt.includes("Actividad física")
+        ? "fisica"
+        : null;
+
+    if (groupKey) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: "🤍 Opciones:",
+          options: activityGroups[groupKey],
+        },
+      ]);
+      return;
+    }
+
+    await saveActivityToDB(opt);
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "ai",
+        text: `✅ Actividad guardada: ${opt}`,
+      },
+    ]);
+
+    setTimeout(() => {
+      navigate("/actividades");
+    }, 1200);
   };
 
   return (
-    <div className="container">
-
-      {/* SIDEBAR */}
-      <div className="sidebar">
-        <h2>🎯 Actividades</h2>
-
-        {actividades.map((a) => (
-          <button
-            key={a.id_registro}
-            className="btn"
-            onClick={() => seleccionar(a)}
-          >
-            {a.nombre_actividad}
-          </button>
-        ))}
+    <div className="app-layout">
+      <div className="left-panel">
+        <h4>💡 Acompañamiento</h4>
+        <div className="quote-box">{frase}</div>
+        <div style={{ marginTop: 20, color: "#00e5ff" }}>
+          👤 {user?.nombre || "Usuario"}
+        </div>
       </div>
 
-      {/* MAIN */}
-      <div className="main">
+      <div className="center-panel">
+        <ChatBox messages={messages} onOptionClick={handleOptionClick} />
+        <InputBox
+          input={input}
+          setInput={setInput}
+          sendMessage={sendMessage}
+          loading={loading}
+        />
+      </div>
 
-        {selected && (
-          <div className="card">
-
-            <h2>{selected.nombre_actividad}</h2>
-
-            <p>⭐ Gusto: {gusto}/10</p>
-
-            <input
-              type="range"
-              min="1"
-              max="10"
-              value={gusto}
-              onChange={(e) => setGusto(Number(e.target.value))}
-            />
-
-            <button className="saveBtn" onClick={guardar}>
-              💾 {editId ? "Actualizar" : "Guardar"}
-            </button>
-
-          </div>
-        )}
-
-        <div className="list">
-          <h2>📌 Guardadas</h2>
-
-          {actividades.map((a) => (
-            <div key={a.id_registro} className="cardSaved">
-
-              <h3>{a.nombre_actividad}</h3>
-
-              <p>⭐ {a.puntaje_agrado}/10</p>
-
-              <button onClick={() => seleccionar(a)}>
-                ✏️ Editar
-              </button>
-
-            </div>
-          ))}
-        </div>
-
+      <div className="right-panel">
+        <button onClick={() => navigate("/rutina")}>🧘 Rutina</button>
+        <button onClick={() => navigate("/actividades")}>🎯 Actividades</button>
+        <button onClick={() => navigate("/estadisticas")}>📊 Estadísticas</button>
+        <button onClick={() => navigate("/diario")}>📓 Diario</button>
       </div>
     </div>
   );
