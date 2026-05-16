@@ -15,7 +15,7 @@ const API_URL =
   "https://empatia-backend.onrender.com";
 
 // ============================================
-// MENÚ PRINCIPAL
+// MENU PRINCIPAL
 // ============================================
 
 const mainOptions = [
@@ -27,33 +27,33 @@ const mainOptions = [
 ];
 
 // ============================================
-// SUBMENÚS
+// SUBMENUS
 // ============================================
 
 const subOptions = {
 
   "🎵 Música": [
-    "Cantar",
     "Lo-fi",
     "Piano suave",
     "Música relajante",
     "Sonidos lluvia",
+    "Cantar",
   ],
 
   "🧘 Relajación": [
     "Respirar profundo",
     "Meditar",
     "Estiramientos",
-    "Ducha relajante",
     "Cerrar ojos",
+    "Ducha relajante",
   ],
 
   "🏃 Actividad física": [
     "Caminar",
-    "Bailar",
     "Yoga",
-    "Trotar suave",
+    "Bailar",
     "Mover cuerpo",
+    "Trotar suave",
   ],
 };
 
@@ -66,7 +66,9 @@ export default function User() {
   );
 
   const [messages, setMessages] = useState([]);
+
   const [input, setInput] = useState("");
+
   const [loading, setLoading] = useState(false);
 
   const [writingActivity, setWritingActivity] =
@@ -83,11 +85,11 @@ export default function User() {
     setMessages([
       {
         role: "ai",
-        text: `Hola ${user?.nombre || "🤍"} estoy aquí contigo.`,
+        text: `Hola ${user?.nombre || "🤍"}, estoy aquí contigo.`,
       },
       {
         role: "ai",
-        text: "Cuéntame cómo te sientes.",
+        text: "Cuéntame cómo te sientes...",
       },
     ]);
 
@@ -121,7 +123,8 @@ export default function User() {
           method: "POST",
 
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
 
           body: JSON.stringify({
@@ -138,12 +141,15 @@ export default function User() {
 
       return {
         ok: false,
+
         error: true,
+
         messages: [
           "⚠️ Error de conexión.",
-          "🤍 Lo siento, no puedo conversar ahora.",
+          "🤍 Lo siento, ahora mismo no puedo conversar contigo.",
           "✨ ¿Quieres iniciar una actividad para sentirte mejor?",
         ],
+
         options: ["Sí", "No"],
       };
     }
@@ -160,8 +166,8 @@ export default function User() {
     try {
 
       const data = JSON.parse(
-        localStorage.getItem("actividades") ||
-          "[]"
+        localStorage.getItem("actividades")
+        || "[]"
       );
 
       const nueva = {
@@ -171,7 +177,10 @@ export default function User() {
 
       localStorage.setItem(
         "actividades",
-        JSON.stringify([...data, nueva])
+        JSON.stringify([
+          ...data,
+          nueva,
+        ])
       );
 
     } catch (err) {
@@ -180,26 +189,6 @@ export default function User() {
         "Error guardando actividad"
       );
     }
-  };
-
-  // ============================================
-  // DETECTAR ACTIVIDADES
-  // ============================================
-
-  const shouldOfferActivities = (
-    text
-  ) => {
-
-    const lower = text.toLowerCase();
-
-    return (
-      lower.includes("actividad") ||
-      lower.includes("actividades") ||
-      lower.includes("no se que hacer") ||
-      lower.includes("me siento mal") ||
-      lower.includes("triste") ||
-      lower.includes("mal")
-    );
   };
 
   // ============================================
@@ -222,11 +211,56 @@ export default function User() {
     ]);
 
     setInput("");
+
     setLoading(true);
 
-    // ============================================
-    // ESCRIBIR ACTIVIDAD
-    // ============================================
+    // =====================================
+    // DETECTAR ACTIVIDADES
+    // =====================================
+
+    const lower = text.toLowerCase();
+
+    const triggerWords = [
+      "actividad",
+      "actividades",
+      "me siento mal",
+      "mal",
+      "triste",
+      "solo",
+      "vacío",
+      "deprimido",
+      "ansioso",
+      "estresado",
+      "no sé qué hacer",
+      "nose que hacer",
+      "ayuda",
+    ];
+
+    const detected =
+      triggerWords.some((word) =>
+        lower.includes(word)
+      );
+
+    if (detected) {
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text:
+            "🤍 ¿Deseas iniciar una actividad para sentirte mejor?",
+          options: ["Sí", "No"],
+        },
+      ]);
+
+      setLoading(false);
+
+      return;
+    }
+
+    // =====================================
+    // WRITE ACTIVITY
+    // =====================================
 
     if (writingActivity) {
 
@@ -236,84 +270,79 @@ export default function User() {
         ...prev,
         {
           role: "ai",
-          text: `✅ Actividad guardada: ${text}`,
+          text:
+            `✅ Actividad guardada: ${text}`,
         },
         {
           role: "ai",
-          text: "📌 Te llevaré a tus actividades...",
+          text:
+            "⏳ Redirigiendo a actividades...",
         },
       ]);
 
       setWritingActivity(false);
+
       setLoading(false);
 
+      // =====================================
+      // REDIRECT
+      // =====================================
+
       setTimeout(() => {
+
         navigate("/actividades");
+
       }, 3000);
 
       return;
     }
 
-    // ============================================
-    // OFRECER ACTIVIDADES
-    // ============================================
-
-    if (shouldOfferActivities(text)) {
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text: "🤍 ¿Quieres iniciar una actividad para sentirte mejor?",
-          options: ["Sí", "No"],
-        },
-      ]);
-
-      setLoading(false);
-      return;
-    }
-
-    // ============================================
+    // =====================================
     // IA RESPONSE
-    // ============================================
+    // =====================================
 
     const response =
       await askAI(text);
 
-    // ============================================
+    // =====================================
     // ERROR IA
-    // ============================================
+    // =====================================
 
-    if (response.error) {
+    if (
+      response?.error ||
+      response?.ok === false
+    ) {
 
       const msgs =
         response.messages || [];
 
-      const formatted =
-        msgs.map((m) => ({
-          role: "ai",
-          text: m,
-        }));
+      const opts =
+        response.options || [];
 
       setMessages((prev) => [
+
         ...prev,
-        ...formatted,
+
+        ...msgs.map((m) => ({
+          role: "ai",
+          text: m,
+        })),
+
         {
           role: "ai",
-          text: "Selecciona una opción:",
-          options:
-            response.options ||
-            ["Sí", "No"],
+          text: "👇",
+          options: opts,
         },
       ]);
 
       setLoading(false);
+
       return;
     }
 
-    // ============================================
-    // IA NORMAL
-    // ============================================
+    // =====================================
+    // NORMAL RESPONSE
+    // =====================================
 
     setMessages((prev) => [
       ...prev,
@@ -344,27 +373,9 @@ export default function User() {
       },
     ]);
 
-    // ============================================
-    // SI
-    // ============================================
-
-    if (opt === "Sí") {
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text: "✨ Elige una categoría:",
-          options: mainOptions,
-        },
-      ]);
-
-      return;
-    }
-
-    // ============================================
-    // NO
-    // ============================================
+    // =====================================
+    // RESPUESTA ERROR IA
+    // =====================================
 
     if (opt === "No") {
 
@@ -372,61 +383,22 @@ export default function User() {
         ...prev,
         {
           role: "ai",
-          text: "🤍 Está bien, aquí estaré contigo.",
+          text:
+            "🤍 Está bien, sigo aquí contigo.",
         },
       ]);
 
       return;
     }
 
-    // ============================================
-    // SUBMENÚ
-    // ============================================
-
-    if (subOptions[opt]) {
+    if (opt === "Sí") {
 
       setMessages((prev) => [
         ...prev,
         {
           role: "ai",
-          text: `✨ Elige una opción de ${opt}:`,
-          options: subOptions[opt],
-        },
-      ]);
-
-      return;
-    }
-
-    // ============================================
-    // ESCRIBIR
-    // ============================================
-
-    if (opt.includes("Escribir")) {
-
-      setWritingActivity(true);
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text: "✍️ Escribe tu actividad:",
-        },
-      ]);
-
-      return;
-    }
-
-    // ============================================
-    // NO SÉ CUAL
-    // ============================================
-
-    if (opt.includes("No sé")) {
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text: "✨ Te dejo opciones:",
+          text:
+            "✨ Elige una categoría:",
           options: mainOptions,
         },
       ]);
@@ -434,9 +406,73 @@ export default function User() {
       return;
     }
 
-    // ============================================
+    // =====================================
+    // SUBMENUS
+    // =====================================
+
+    if (subOptions[opt]) {
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text:
+            `✨ Opciones de ${opt}:`,
+          options:
+            subOptions[opt],
+        },
+      ]);
+
+      return;
+    }
+
+    // =====================================
+    // ESCRIBIR ACTIVIDAD
+    // =====================================
+
+    if (
+      opt.includes("Escribir")
+    ) {
+
+      setWritingActivity(true);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text:
+            "✍️ Escribe tu actividad:",
+        },
+      ]);
+
+      return;
+    }
+
+    // =====================================
+    // NO SABE CUAL
+    // =====================================
+
+    if (
+      opt.includes("No sé")
+    ) {
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text:
+            "✨ Aquí tienes opciones:",
+          options:
+            mainOptions,
+        },
+      ]);
+
+      return;
+    }
+
+    // =====================================
     // GUARDAR ACTIVIDAD
-    // ============================================
+    // =====================================
 
     await saveActivity(opt);
 
@@ -444,20 +480,24 @@ export default function User() {
       ...prev,
       {
         role: "ai",
-        text: `✅ Actividad guardada: ${opt}`,
+        text:
+          `✅ Actividad guardada: ${opt}`,
       },
       {
         role: "ai",
-        text: "📌 Te llevaré a tus actividades...",
+        text:
+          "⏳ Redirigiendo a actividades...",
       },
     ]);
 
-    // ============================================
+    // =====================================
     // REDIRECT
-    // ============================================
+    // =====================================
 
     setTimeout(() => {
+
       navigate("/actividades");
+
     }, 3000);
   };
 
@@ -469,9 +509,12 @@ export default function User() {
     <div className="app-layout">
 
       {/* LEFT */}
+
       <div className="left-panel">
 
-        <h4>💡 Acompañamiento</h4>
+        <h4>
+          💡 Acompañamiento
+        </h4>
 
         <div className="quote-box">
           {frase}
@@ -483,12 +526,16 @@ export default function User() {
             color: "#00e5ff",
           }}
         >
-          👤 {user?.nombre || "Usuario"}
+          👤 {
+            user?.nombre ||
+            "Usuario"
+          }
         </div>
 
       </div>
 
       {/* CENTER */}
+
       <div className="center-panel">
 
         <ChatBox
@@ -508,6 +555,7 @@ export default function User() {
       </div>
 
       {/* RIGHT */}
+
       <div className="right-panel">
 
         <button
