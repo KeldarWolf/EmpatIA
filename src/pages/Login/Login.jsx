@@ -8,7 +8,7 @@ export default function Login() {
 
   const [form, setForm] = useState({
     nombre: "",
-    password: ""
+    password: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -27,12 +27,9 @@ export default function Login() {
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            nombre: form.nombre,
-            password: form.password
-          })
+          body: JSON.stringify(form),
         }
       );
 
@@ -46,27 +43,35 @@ export default function Login() {
         return;
       }
 
-      const role = (data.user?.role || "user")
-        .toLowerCase()
-        .trim();
+      // =========================
+      // NORMALIZAR USER (CRÍTICO)
+      // =========================
+      const user = data.user;
 
       const userData = {
-        id_usuario: data.user?.id_usuario,
-        nombre: data.user?.nombre,
-        email: data.user?.email,
-        role
+        id_usuario: user.id_usuario, // 🔥 IMPORTANTE
+        nombre: user.nombre,
+        email: user.email,
+        role: (user.role || "user").toLowerCase().trim(),
       };
 
+      // =========================
+      // GUARDAR SESIÓN
+      // =========================
       localStorage.setItem("usuario", JSON.stringify(userData));
+
+      console.log("USER FINAL:", userData);
 
       alert(`Bienvenido ${userData.nombre}`);
 
-      if (role === "admin") {
+      // =========================
+      // REDIRECCIÓN
+      // =========================
+      if (userData.role === "admin") {
         navigate("/admin");
       } else {
         navigate("/user");
       }
-
     } catch (error) {
       console.error("ERROR LOGIN:", error);
       alert("Error conectando con el servidor");
@@ -88,7 +93,6 @@ export default function Login() {
           </p>
 
           <div style={styles.formBox}>
-
             <input
               placeholder="Nombre de usuario"
               value={form.nombre}
@@ -122,7 +126,6 @@ export default function Login() {
             >
               Registrarse
             </button>
-
           </div>
         </div>
       </div>
