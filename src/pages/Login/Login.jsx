@@ -1,7 +1,3 @@
-// ============================================ 
-// src/pages/Login/Login.jsx
-// ============================================
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -17,10 +13,6 @@ export default function Login() {
   });
 
   const [loading, setLoading] = useState(false);
-
-  // ============================================
-  // LOGIN
-  // ============================================
 
   const handleLogin = async () => {
     if (!form.nombre || !form.password) {
@@ -42,75 +34,65 @@ export default function Login() {
         }
       );
 
-      const data = await response.json();
+      let data;
+
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error("Respuesta inválida del servidor");
+      }
 
       if (!response.ok) {
-        alert(data.error || "Credenciales incorrectas");
+        alert(data?.error || "Credenciales incorrectas");
         setLoading(false);
         return;
       }
 
-      const user = data.user;
+      const user = data?.user;
+
+      if (!user?.id_usuario) {
+        alert("Error: usuario inválido desde servidor");
+        setLoading(false);
+        return;
+      }
 
       const userData = {
         id_usuario: user.id_usuario,
         nombre: user.nombre,
         email: user.email,
-        role: (user.role || "user")
-          .toLowerCase()
-          .trim(),
+        role: (user.role || "user").toLowerCase().trim(),
       };
 
-      localStorage.setItem(
-        "usuario",
-        JSON.stringify(userData)
-      );
+      localStorage.setItem("usuario", JSON.stringify(userData));
 
-      if (userData.role === "admin") {
-        navigate("/admin");
-      } else {
-        navigate("/user");
-      }
+      navigate(userData.role === "admin" ? "/admin" : "/user");
 
     } catch (err) {
-      console.log(err);
+      console.log("LOGIN ERROR:", err);
       alert("Error conectando con servidor");
     } finally {
       setLoading(false);
     }
   };
 
-  // ============================================
-  // UI
-  // ============================================
-
   return (
     <div style={styles.container}>
-
       <LoginMatrix />
 
       <div style={styles.centerBlock}>
-
         <div style={styles.card}>
-
-          <h1 style={styles.title}>
-            EmpatIA
-          </h1>
+          <h1 style={styles.title}>EmpatIA</h1>
 
           <p style={styles.subtitle}>
             IA emocional en tiempo real
           </p>
 
           <div style={styles.formBox}>
-
             <input
               placeholder="Usuario"
               value={form.nombre}
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  nombre: e.target.value,
-                })
+                setForm({ ...form, nombre: e.target.value })
               }
               style={styles.input}
             />
@@ -120,10 +102,7 @@ export default function Login() {
               placeholder="Contraseña"
               value={form.password}
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  password: e.target.value,
-                })
+                setForm({ ...form, password: e.target.value })
               }
               style={styles.input}
             />
@@ -133,9 +112,7 @@ export default function Login() {
               onClick={handleLogin}
               disabled={loading}
             >
-              {loading
-                ? "Entrando..."
-                : "Iniciar sesión"}
+              {loading ? "Entrando..." : "Iniciar sesión"}
             </button>
 
             <button
@@ -144,13 +121,9 @@ export default function Login() {
             >
               Registrarse
             </button>
-
           </div>
-
         </div>
-
       </div>
-
     </div>
   );
 }
