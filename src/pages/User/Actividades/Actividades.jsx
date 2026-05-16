@@ -9,11 +9,12 @@ export default function Actividades() {
   const user = JSON.parse(localStorage.getItem("usuario") || "null");
 
   const [actividades, setActividades] = useState([]);
+  const [actividadDB, setActividadDB] = useState([]); // 👈 BD de instrucciones
   const [selected, setSelected] = useState(null);
   const [gusto, setGusto] = useState(5);
 
   // =========================
-  // CARGAR ACTIVIDADES
+  // CARGAR ACTIVIDADES USUARIO
   // =========================
   const loadActivities = async () => {
     try {
@@ -27,12 +28,26 @@ export default function Actividades() {
 
       setActividades(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.log("ERROR:", err);
+      console.log("ERROR ACTIVIDADES:", err);
+    }
+  };
+
+  // =========================
+  // CARGAR ACTIVIDADES BD (CATÁLOGO)
+  // =========================
+  const loadActividadDB = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/actividad`);
+      const data = await res.json();
+      setActividadDB(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.log("ERROR BD ACTIVIDAD:", err);
     }
   };
 
   useEffect(() => {
     loadActivities();
+    loadActividadDB();
   }, []);
 
   // =========================
@@ -72,34 +87,32 @@ export default function Actividades() {
   };
 
   // =========================
-  // INSTRUCCIONES DINÁMICAS
+  // INSTRUCCIONES DESDE BD
   // =========================
   const getInstructions = () => {
     if (!selected) {
       return "👈 Selecciona una actividad para ver instrucciones.";
     }
 
-    if (selected.nombre_actividad.toLowerCase().includes("caminar")) {
-      return "🚶 Camina tranquilo 5-10 minutos sin distracciones.";
-    }
+    const name = selected.nombre_actividad?.toLowerCase() || "";
 
-    if (selected.nombre_actividad.toLowerCase().includes("respirar")) {
-      return "🌬 Inhala 4s, exhala 6s. Repite por 2-3 minutos.";
-    }
+    const match = actividadDB.find(
+      (a) => a.nombre?.toLowerCase() === name
+    );
 
-    if (selected.nombre_actividad.toLowerCase().includes("yoga")) {
-      return "🧘 Haz estiramientos suaves sin forzar el cuerpo.";
-    }
-
-    return "✨ Sigue la actividad con calma y sin presión.";
+    return (
+      match?.instrucciones ||
+      "✨ Realiza la actividad con calma y sin presión."
+    );
   };
 
+  // =========================
+  // UI
+  // =========================
   return (
     <div style={styles.layout}>
 
-      {/* =========================
-          IZQUIERDA (INSTRUCCIONES)
-      ========================= */}
+      {/* IZQUIERDA */}
       <div style={styles.left}>
         <h3>🧠 Instrucciones</h3>
 
@@ -115,9 +128,7 @@ export default function Actividades() {
         )}
       </div>
 
-      {/* =========================
-          CENTRO
-      ========================= */}
+      {/* CENTRO */}
       <div style={styles.center}>
         <h2>🎯 Mis Actividades</h2>
 
@@ -158,9 +169,7 @@ export default function Actividades() {
         )}
       </div>
 
-      {/* =========================
-          DERECHA (MENÚ)
-      ========================= */}
+      {/* DERECHA */}
       <div style={styles.right}>
         <button onClick={() => navigate("/rutina")}>🧘 Rutina</button>
         <button onClick={() => navigate("/actividades")}>🎯 Actividades</button>
@@ -176,9 +185,9 @@ export default function Actividades() {
   );
 }
 
-// =========================
-// ESTILOS
-// =========================
+/* =========================
+   ESTILOS
+========================= */
 const styles = {
   layout: {
     display: "flex",
