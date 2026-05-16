@@ -1,17 +1,19 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const API_URL = "https://empatia-backend.onrender.com";
 
 export default function Actividades() {
+  const navigate = useNavigate();
+
   const user = JSON.parse(localStorage.getItem("usuario") || "null");
 
   const [actividades, setActividades] = useState([]);
   const [selected, setSelected] = useState(null);
   const [gusto, setGusto] = useState(5);
-  const [loading, setLoading] = useState(false);
 
   // =========================
-  // CARGAR ACTIVIDADES POR USUARIO
+  // CARGAR ACTIVIDADES
   // =========================
   const loadActivities = async () => {
     try {
@@ -25,7 +27,7 @@ export default function Actividades() {
 
       setActividades(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.log("ERROR LOAD:", err);
+      console.log("ERROR:", err);
     }
   };
 
@@ -34,7 +36,7 @@ export default function Actividades() {
   }, []);
 
   // =========================
-  // SELECCIONAR ACTIVIDAD
+  // SELECT
   // =========================
   const selectActivity = (act) => {
     setSelected(act);
@@ -42,67 +44,85 @@ export default function Actividades() {
   };
 
   // =========================
-  // ACTUALIZAR ACTIVIDAD
+  // UPDATE
   // =========================
   const updateActivity = async () => {
     if (!selected) return;
 
-    setLoading(true);
+    await fetch(
+      `${API_URL}/api/registro-actividad/${selected.id_registro}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          puntaje_agrado: Number(gusto),
+        }),
+      }
+    );
 
-    try {
-      await fetch(
-        `${API_URL}/api/registro-actividad/${selected.id_registro}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            puntaje_agrado: Number(gusto),
-          }),
-        }
-      );
+    setActividades((prev) =>
+      prev.map((a) =>
+        a.id_registro === selected.id_registro
+          ? { ...a, puntaje_agrado: gusto }
+          : a
+      )
+    );
 
-      setActividades((prev) =>
-        prev.map((a) =>
-          a.id_registro === selected.id_registro
-            ? { ...a, puntaje_agrado: gusto }
-            : a
-        )
-      );
+    setSelected(null);
+  };
 
-      setSelected(null);
-    } catch (err) {
-      console.log("ERROR UPDATE:", err);
+  // =========================
+  // INSTRUCCIONES DINÁMICAS
+  // =========================
+  const getInstructions = () => {
+    if (!selected) {
+      return "👈 Selecciona una actividad para ver instrucciones.";
     }
 
-    setLoading(false);
+    if (selected.nombre_actividad.toLowerCase().includes("caminar")) {
+      return "🚶 Camina tranquilo 5-10 minutos sin distracciones.";
+    }
+
+    if (selected.nombre_actividad.toLowerCase().includes("respirar")) {
+      return "🌬 Inhala 4s, exhala 6s. Repite por 2-3 minutos.";
+    }
+
+    if (selected.nombre_actividad.toLowerCase().includes("yoga")) {
+      return "🧘 Haz estiramientos suaves sin forzar el cuerpo.";
+    }
+
+    return "✨ Sigue la actividad con calma y sin presión.";
   };
 
   return (
     <div style={styles.layout}>
 
-      {/* SIDEBAR */}
-      <div style={styles.sidebar}>
-        <h2>🎯 Mis Actividades</h2>
+      {/* =========================
+          IZQUIERDA (INSTRUCCIONES)
+      ========================= */}
+      <div style={styles.left}>
+        <h3>🧠 Instrucciones</h3>
 
-        <p>Selecciona una actividad para ver detalles.</p>
+        <div style={styles.box}>
+          {getInstructions()}
+        </div>
 
         {selected && (
           <div style={styles.box}>
-            <h3>📌 Seleccionada</h3>
-            <p>{selected.nombre_actividad}</p>
+            <p>📌 {selected.nombre_actividad}</p>
             <p>⭐ {selected.puntaje_agrado}/10</p>
           </div>
         )}
       </div>
 
-      {/* MAIN */}
-      <div style={styles.main}>
-        <h1>📋 Actividades</h1>
+      {/* =========================
+          CENTRO
+      ========================= */}
+      <div style={styles.center}>
+        <h2>🎯 Mis Actividades</h2>
 
         {actividades.length === 0 && (
-          <p>❌ No hay actividades registradas aún</p>
+          <p>No tienes actividades aún</p>
         )}
 
         <div style={styles.grid}>
@@ -114,20 +134,13 @@ export default function Actividades() {
             >
               <h3>{act.nombre_actividad}</h3>
               <p>⭐ {act.puntaje_agrado}/10</p>
-              <p>
-                📅{" "}
-                {act.fecha
-                  ? new Date(act.fecha).toLocaleDateString()
-                  : "sin fecha"}
-              </p>
             </div>
           ))}
         </div>
 
-        {/* EDITOR */}
         {selected && (
           <div style={styles.editor}>
-            <h2>✏️ Editar</h2>
+            <h3>✏️ Editar</h3>
 
             <input
               type="range"
@@ -138,17 +151,25 @@ export default function Actividades() {
               style={{ width: "100%" }}
             />
 
-            <p>⭐ {gusto}/10</p>
-
-            <button
-              onClick={updateActivity}
-              disabled={loading}
-              style={styles.btn}
-            >
-              {loading ? "Guardando..." : "Guardar"}
+            <button onClick={updateActivity} style={styles.btn}>
+              💾 Guardar
             </button>
           </div>
         )}
+      </div>
+
+      {/* =========================
+          DERECHA (MENÚ)
+      ========================= */}
+      <div style={styles.right}>
+        <button onClick={() => navigate("/rutina")}>🧘 Rutina</button>
+        <button onClick={() => navigate("/actividades")}>🎯 Actividades</button>
+        <button onClick={() => navigate("/estadisticas")}>📊 Estadísticas</button>
+        <button onClick={() => navigate("/diario")}>📓 Diario</button>
+
+        <hr />
+
+        <button onClick={() => navigate("/user")}>🔙 Volver</button>
       </div>
 
     </div>
@@ -167,21 +188,30 @@ const styles = {
     fontFamily: "Arial",
   },
 
-  sidebar: {
-    width: "25%",
+  left: {
+    width: "20%",
     padding: 20,
     background: "#111827",
   },
 
-  main: {
+  center: {
     flex: 1,
     padding: 20,
     overflowY: "auto",
   },
 
+  right: {
+    width: "20%",
+    padding: 20,
+    background: "#111827",
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
+  },
+
   grid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
     gap: 10,
     marginTop: 20,
   },
@@ -195,13 +225,13 @@ const styles = {
 
   editor: {
     marginTop: 20,
-    padding: 20,
+    padding: 15,
     background: "#111827",
     borderRadius: 10,
   },
 
   box: {
-    marginTop: 15,
+    marginTop: 10,
     padding: 10,
     background: "#1f2937",
     borderRadius: 10,
@@ -215,6 +245,5 @@ const styles = {
     border: "none",
     color: "white",
     borderRadius: 8,
-    cursor: "pointer",
   },
 };
