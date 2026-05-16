@@ -7,25 +7,35 @@ export default function Rutina() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("usuario") || "null");
 
-  const today = new Date();
-
   const [rutinas, setRutinas] = useState([]);
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  const [selected, setSelected] = useState(null);
+  const [selectedRutina, setSelectedRutina] = useState(null);
+
+  const [diasSeleccionados, setDiasSeleccionados] = useState([]);
+
+  const diasSemana = [
+    "Lunes",
+    "Martes",
+    "Miércoles",
+    "Jueves",
+    "Viernes",
+    "Sábado",
+    "Domingo",
+  ];
 
   // =========================
-  // CARGAR DESDE BD
+  // CARGAR RUTINAS
   // =========================
   const loadRutinas = async () => {
-    if (!user?.id_usuario) return;
-
     try {
+      if (!user?.id_usuario) return;
+
       const res = await fetch(
         `${API_URL}/api/rutina/${user.id_usuario}`
       );
+
       const data = await res.json();
       setRutinas(data || []);
     } catch (err) {
@@ -43,48 +53,59 @@ export default function Rutina() {
   const createRutina = async () => {
     if (!nombre.trim()) return;
 
-    setLoading(true);
+    const res = await fetch(`${API_URL}/api/rutina`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id_usuario: user.id_usuario,
+        nombre,
+        descripcion,
+        frecuencia: "semanal",
+      }),
+    });
 
-    try {
-      const res = await fetch(`${API_URL}/api/rutina`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id_usuario: user.id_usuario,
-          nombre,
-          descripcion,
-          frecuencia: "diaria",
-        }),
-      });
+    const data = await res.json();
 
-      const data = await res.json();
+    setRutinas((prev) => [data, ...prev]);
 
-      setRutinas((prev) => [...prev, data]);
-
-      setNombre("");
-      setDescripcion("");
-    } catch (err) {
-      console.log("ERROR CREATE:", err);
-    }
-
-    setLoading(false);
+    setNombre("");
+    setDescripcion("");
   };
 
   // =========================
-  // ELIMINAR / DESACTIVAR
+  // AGREGAR DÍAS A RUTINA
   // =========================
-  const deleteRutina = async (id) => {
-    try {
-      await fetch(`${API_URL}/api/rutina/${id}`, {
-        method: "DELETE",
-      });
+  const saveDias = async () => {
+    if (!selectedRutina) return;
 
-      setRutinas((prev) => prev.filter((r) => r.id_rutina !== id));
-    } catch (err) {
-      console.log("ERROR DELETE:", err);
-    }
+    const diasPayload = diasSeleccionados.map((d) => ({
+      dia: d,
+      hora: "08:00",
+      descripcion: "Rutina personalizada",
+    }));
+
+    await fetch(`${API_URL}/api/rutina/dias`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id_rutina: selectedRutina.id_rutina,
+        dias: diasPayload,
+      }),
+    });
+
+    alert("Días guardados en rutina");
+    setDiasSeleccionados([]);
+  };
+
+  // =========================
+  // TOGGLE DÍAS
+  // =========================
+  const toggleDia = (index) => {
+    setDiasSeleccionados((prev) =>
+      prev.includes(index)
+        ? prev.filter((d) => d !== index)
+        : [...prev, index]
+    );
   };
 
   // =========================
@@ -95,21 +116,25 @@ export default function Rutina() {
 
       {/* HEADER */}
       <div style={styles.header}>
-        <h1>🧘 Rutina</h1>
+        <h2>🧘 Rutina</h2>
 
-        <button onClick={() => navigate("/user")} style={styles.back}>
+        <button
+          onClick={() => navigate("/user")}
+          style={styles.back}
+        >
           ⬅ Volver
         </button>
       </div>
 
       <div style={styles.grid}>
 
-        {/* IZQUIERDA - CREAR */}
+        {/* ================= LEFT ================= */}
         <div style={styles.left}>
-          <h3>➕ Nueva rutina</h3>
+
+          <h3>➕ Crear Rutina</h3>
 
           <input
-            placeholder="Nombre"
+            placeholder="Nombre rutina"
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
             style={styles.input}
@@ -123,53 +148,81 @@ export default function Rutina() {
           />
 
           <button onClick={createRutina} style={styles.btn}>
-            {loading ? "Creando..." : "Crear"}
+            Crear
           </button>
-        </div>
 
-        {/* CENTRO - LISTA */}
-        <div style={styles.center}>
-          <h2>📋 Mis rutinas</h2>
+          <hr style={{ margin: "15px 0" }} />
 
-          {rutinas.length === 0 && (
-            <p>No tienes rutinas creadas</p>
-          )}
+          <h3>📋 Mis Rutinas</h3>
 
           {rutinas.map((r) => (
             <div
               key={r.id_rutina}
-              style={styles.card}
-              onClick={() => setSelected(r)}
+              style={{
+                ...styles.card,
+                border:
+                  selectedRutina?.id_rutina === r.id_rutina
+                    ? "2px solid #22c55e"
+                    : "none",
+              }}
+              onClick={() => setSelectedRutina(r)}
             >
-              <h3>{r.nombre}</h3>
-              <p>{r.descripcion}</p>
-
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteRutina(r.id_rutina);
-                }}
-                style={styles.delete}
-              >
-                Eliminar
-              </button>
+              <p><b>{r.nombre}</b></p>
+              <small>{r.descripcion}</small>
             </div>
           ))}
         </div>
 
-        {/* DERECHA - INFO */}
-        <div style={styles.right}>
-          <h3>ℹ️ Detalle</h3>
+        {/* ================= CENTER ================= */}
+        <div style={styles.center}>
 
-          {selected ? (
-            <>
-              <p><b>{selected.nombre}</b></p>
-              <p>{selected.descripcion}</p>
-              <p>Frecuencia: {selected.frecuencia}</p>
-            </>
-          ) : (
+          <h3>📅 Días de rutina</h3>
+
+          {!selectedRutina && (
             <p>Selecciona una rutina</p>
           )}
+
+          {selectedRutina && (
+            <>
+              <p>
+                Rutina: <b>{selectedRutina.nombre}</b>
+              </p>
+
+              <div style={styles.days}>
+                {diasSemana.map((d, i) => (
+                  <div
+                    key={i}
+                    onClick={() => toggleDia(i)}
+                    style={{
+                      ...styles.day,
+                      background: diasSeleccionados.includes(i)
+                        ? "#22c55e"
+                        : "#111827",
+                    }}
+                  >
+                    {d}
+                  </div>
+                ))}
+              </div>
+
+              <button onClick={saveDias} style={styles.btn}>
+                Guardar días
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* ================= RIGHT ================= */}
+        <div style={styles.right}>
+          <h3>ℹ Info</h3>
+
+          <p>
+            Aquí creas rutinas y defines qué días se repiten.
+          </p>
+
+          <p>
+            Todo queda guardado por usuario en la base de datos.
+          </p>
         </div>
 
       </div>
@@ -177,42 +230,30 @@ export default function Rutina() {
   );
 }
 
-// =========================
-// ESTILOS
-// =========================
+/* ================= STYLES ================= */
 const styles = {
   page: {
+    height: "100vh",
     background: "#0b0f14",
     color: "white",
-    height: "100vh",
-    display: "flex",
-    flexDirection: "column",
+    fontFamily: "Arial",
   },
 
   header: {
     display: "flex",
     justifyContent: "space-between",
-    padding: 20,
+    padding: 15,
     borderBottom: "1px solid #1f2a37",
-  },
-
-  back: {
-    padding: "8px 14px",
-    background: "#1f2937",
-    color: "white",
-    border: "none",
-    borderRadius: 8,
   },
 
   grid: {
     display: "flex",
-    flex: 1,
-    gap: 15,
-    padding: 15,
+    gap: 10,
+    padding: 10,
   },
 
   left: {
-    width: 280,
+    width: "30%",
     background: "#111827",
     padding: 15,
     borderRadius: 10,
@@ -226,7 +267,7 @@ const styles = {
   },
 
   right: {
-    width: 280,
+    width: "25%",
     background: "#111827",
     padding: 15,
     borderRadius: 10,
@@ -236,21 +277,18 @@ const styles = {
     width: "100%",
     padding: 10,
     marginBottom: 10,
-    background: "#0f172a",
+    background: "#0b0f14",
     color: "white",
     border: "none",
-    borderRadius: 8,
   },
 
   textarea: {
     width: "100%",
     padding: 10,
-    height: 80,
     marginBottom: 10,
-    background: "#0f172a",
+    background: "#0b0f14",
     color: "white",
     border: "none",
-    borderRadius: 8,
   },
 
   btn: {
@@ -258,24 +296,38 @@ const styles = {
     padding: 10,
     background: "#22c55e",
     border: "none",
-    borderRadius: 8,
     color: "white",
+    cursor: "pointer",
+    marginTop: 5,
   },
 
   card: {
-    background: "#0f172a",
-    padding: 12,
-    marginBottom: 10,
-    borderRadius: 8,
+    padding: 10,
+    marginBottom: 8,
+    background: "#0b0f14",
     cursor: "pointer",
+    borderRadius: 8,
   },
 
-  delete: {
-    marginTop: 8,
-    background: "#ef4444",
-    border: "none",
-    padding: 6,
+  days: {
+    display: "grid",
+    gridTemplateColumns: "repeat(7,1fr)",
+    gap: 5,
+    margin: "10px 0",
+  },
+
+  day: {
+    padding: 8,
+    textAlign: "center",
+    cursor: "pointer",
     borderRadius: 6,
+  },
+
+  back: {
+    padding: "6px 12px",
+    background: "#1f2937",
     color: "white",
+    border: "none",
+    cursor: "pointer",
   },
 };
