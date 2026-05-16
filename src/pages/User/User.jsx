@@ -126,9 +126,9 @@ export default function User() {
     setInput("");
     setLoading(true);
 
-    // =========================
+    // =====================================
     // ACTIVIDADES
-    // =========================
+    // =====================================
     if (
       text.toLowerCase().includes("actividad") ||
       text.toLowerCase().includes("actividades")
@@ -146,9 +146,9 @@ export default function User() {
       return;
     }
 
-    // =========================
+    // =====================================
     // ESCRIBIR ACTIVIDAD
-    // =========================
+    // =====================================
     if (writingActivity) {
       await saveActivity(text);
 
@@ -161,18 +161,14 @@ export default function User() {
       ]);
 
       setWritingActivity(false);
-
-      setTimeout(() => {
-        navigate("/actividades");
-      }, 1200);
-
       setLoading(false);
+
       return;
     }
 
-    // =========================
+    // =====================================
     // IA
-    // =========================
+    // =====================================
     const response = await askAI(text);
 
     setMessages((prev) => [
@@ -198,9 +194,9 @@ export default function User() {
       },
     ]);
 
-    // =========================
+    // =====================================
     // ESCRIBIR
-    // =========================
+    // =====================================
     if (opt.includes("Escribir")) {
       setWritingActivity(true);
 
@@ -215,9 +211,9 @@ export default function User() {
       return;
     }
 
-    // =========================
+    // =====================================
     // GUARDAR
-    // =========================
+    // =====================================
     await saveActivity(opt);
 
     setMessages((prev) => [
@@ -227,10 +223,6 @@ export default function User() {
         text: `✅ Actividad guardada: ${opt}`,
       },
     ]);
-
-    setTimeout(() => {
-      navigate("/actividades");
-    }, 1200);
   };
 
   // =====================================
@@ -284,7 +276,7 @@ export default function User() {
         <button
           onClick={() => navigate("/actividades")}
         >
-          🎯 AActividades
+          🎯 Actividades
         </button>
 
         <button
