@@ -8,7 +8,7 @@ import Register from "./pages/Register";
 import User from "./pages/User/User";
 import Admin from "./pages/Admin";
 
-// MODULES
+// MODULES USER
 import Rutina from "./pages/Rutina";
 import Actividades from "./pages/User/Actividades/Actividades";
 import Estadisticas from "./pages/User/Estadisticas/Estadisticas";
@@ -18,20 +18,20 @@ import Gustos from "./pages/Gustos";
 import Configuracion from "./pages/Configuracion";
 
 // ======================
-// PRIVATE ROUTE CORREGIDA
+// PRIVATE ROUTE FIX FINAL
 // ======================
 function PrivateRoute({ children, role }) {
   const session = JSON.parse(localStorage.getItem("usuario"));
 
-  // ❌ sin sesión
+  // sin sesión → login
   if (!session) {
     return <Navigate to="/" replace />;
   }
 
   const userRole = (session.role || "").toLowerCase().trim();
 
-  // 🔥 SOLO BLOQUEA, NO REDIRIGE A OTRO ROL (FIX CLAVE)
-  if (role && userRole !== role) {
+  // SOLO valida role si viene definido (admin/user)
+  if (role && role !== userRole) {
     return <Navigate to="/user" replace />;
   }
 
@@ -61,7 +61,7 @@ export default function App() {
       />
 
       {/* ======================
-          USER
+          USER DASHBOARD
       ====================== */}
       <Route
         path="/user"
@@ -73,8 +73,10 @@ export default function App() {
       />
 
       {/* ======================
-          MÓDULOS USER
+          MODULES USER (SIN ROLE CHECK)
+          👉 FIX IMPORTANTE
       ====================== */}
+
       <Route
         path="/rutina"
         element={
@@ -137,6 +139,11 @@ export default function App() {
           </PrivateRoute>
         }
       />
+
+      {/* ======================
+          FALLBACK (ANTI BUG)
+      ====================== */}
+      <Route path="*" element={<Navigate to="/" replace />} />
 
     </Routes>
   );
