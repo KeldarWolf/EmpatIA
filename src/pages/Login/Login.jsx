@@ -42,53 +42,44 @@ export default function Login() {
 
       if (!response.ok) {
         alert(data.error || "Usuario o contraseña incorrectos");
+        setLoading(false);
         return;
       }
 
       // 🔥 NORMALIZAR ROLE
-      const role = (data.user?.role || "")
+      const role = (data.user?.role || "user")
         .toLowerCase()
         .trim();
 
-      // 🔥 USER COMPLETO
+      // 🔥 FIX CRÍTICO: backend devuelve "id", no "id_usuario"
       const userData = {
-        id_usuario: data.user?.id_usuario,
+        id_usuario: data.user?.id,   // ✅ FIX REAL
         nombre: data.user?.nombre,
         email: data.user?.email,
-        role: data.user?.role,
+        role
       };
 
       console.log("USER DATA:", userData);
 
-      // 💾 GUARDAR SESIÓN
-      localStorage.setItem(
-        "usuario",
-        JSON.stringify(userData)
-      );
+      // ⚠️ VALIDAR ID
+      if (!userData.id_usuario) {
+        alert("⚠️ El login no está devolviendo el ID del usuario");
+        console.log("ERROR USER:", data.user);
+        setLoading(false);
+        return;
+      }
 
-      // 🔥 VERIFICAR
+      // 💾 GUARDAR SESIÓN
+      localStorage.setItem("usuario", JSON.stringify(userData));
+
       console.log(
         "LOCAL STORAGE USER:",
         JSON.parse(localStorage.getItem("usuario"))
       );
 
-      // ⚠️ VALIDAR ID
-      if (!userData.id_usuario) {
-        alert(
-          "⚠️ El login no está devolviendo id_usuario"
-        );
-
-        console.log(
-          "ERROR: id_usuario undefined",
-          data.user
-        );
-
-        return;
-      }
-
       alert(`Bienvenido ${userData.nombre}`);
 
-      // 🚪 REDIRECCIÓN
+      // 🚪 REDIRECCIÓN SEGURA
       if (role === "admin") {
         navigate("/admin");
       } else {
@@ -97,7 +88,6 @@ export default function Login() {
 
     } catch (error) {
       console.error("❌ ERROR LOGIN:", error);
-
       alert("Error conectando con el servidor");
     } finally {
       setLoading(false);
@@ -148,9 +138,7 @@ export default function Login() {
               onClick={handleLogin}
               disabled={loading}
             >
-              {loading
-                ? "Entrando..."
-                : "Iniciar sesión"}
+              {loading ? "Entrando..." : "Iniciar sesión"}
             </button>
 
             <button
