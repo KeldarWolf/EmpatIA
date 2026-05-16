@@ -26,9 +26,7 @@ export default function Login() {
         "https://empatia-backend.onrender.com/api/auth/login",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             nombre: form.nombre,
             password: form.password
@@ -40,38 +38,30 @@ export default function Login() {
 
       console.log("LOGIN RESPONSE:", data);
 
-      if (!response.ok) {
-        alert(data.error || "Usuario o contraseña incorrectos");
+      if (!response.ok || !data?.user) {
+        alert(data.error || "Error en login");
         setLoading(false);
         return;
       }
 
-      // 🔥 NORMALIZAR ROLE
-      const role = (data.user?.role || "user")
+      // 🔥 CONSISTENCIA TOTAL
+      const role = (data.user.role || "user")
         .toLowerCase()
         .trim();
 
-      // 🔥 USER SESSION (SIN VALIDAR ID)
       const userData = {
-        id_usuario: data.user?.id, // o id_usuario si llega así
-        nombre: data.user?.nombre,
-        email: data.user?.email,
+        id_usuario: data.user.id_usuario,
+        nombre: data.user.nombre,
+        email: data.user.email,
         role
       };
 
       console.log("USER DATA:", userData);
 
-      // 💾 GUARDAR SESIÓN
       localStorage.setItem("usuario", JSON.stringify(userData));
-
-      console.log(
-        "LOCAL STORAGE USER:",
-        JSON.parse(localStorage.getItem("usuario"))
-      );
 
       alert(`Bienvenido ${userData.nombre}`);
 
-      // 🚪 REDIRECCIÓN
       if (role === "admin") {
         navigate("/admin");
       } else {
@@ -79,7 +69,7 @@ export default function Login() {
       }
 
     } catch (error) {
-      console.error("❌ ERROR LOGIN:", error);
+      console.error("ERROR LOGIN:", error);
       alert("Error conectando con el servidor");
     } finally {
       setLoading(false);
@@ -104,10 +94,7 @@ export default function Login() {
               placeholder="Nombre de usuario"
               value={form.nombre}
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  nombre: e.target.value
-                })
+                setForm({ ...form, nombre: e.target.value })
               }
               style={styles.input}
             />
@@ -117,10 +104,7 @@ export default function Login() {
               placeholder="Contraseña"
               value={form.password}
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  password: e.target.value
-                })
+                setForm({ ...form, password: e.target.value })
               }
               style={styles.input}
             />
