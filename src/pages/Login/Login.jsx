@@ -38,23 +38,29 @@ export default function Login() {
 
       const data = await response.json();
 
+      console.log("LOGIN RESPONSE:", data);
+
       if (!response.ok) {
         alert(data.error || "Usuario o contraseña incorrectos");
+        setLoading(false);
         return;
       }
 
-      // 🔥 NORMALIZAR ROLE (MUY IMPORTANTE)
-      const role = (data.user?.role || "").toLowerCase().trim();
+      const role = (data.user?.role || "user")
+        .toLowerCase()
+        .trim();
 
-      console.log("LOGIN OK:", data);
-      console.log("ROLE NORMALIZADO:", role);
+      const userData = {
+        id_usuario: data.user?.id_usuario,
+        nombre: data.user?.nombre,
+        email: data.user?.email,
+        role
+      };
 
-      // 💾 guardar sesión
-      localStorage.setItem("usuario", JSON.stringify(data.user));
+      localStorage.setItem("usuario", JSON.stringify(userData));
 
-      alert(`Bienvenido ${data.user.nombre}`);
+      alert(`Bienvenido ${userData.nombre}`);
 
-      // 🚪 REDIRECCIÓN CORREGIDA
       if (role === "admin") {
         navigate("/admin");
       } else {
@@ -62,7 +68,7 @@ export default function Login() {
       }
 
     } catch (error) {
-      console.error("❌ ERROR LOGIN:", error);
+      console.error("ERROR LOGIN:", error);
       alert("Error conectando con el servidor");
     } finally {
       setLoading(false);
@@ -76,9 +82,13 @@ export default function Login() {
       <div style={styles.centerBlock}>
         <div style={styles.card}>
           <h1 style={styles.title}>EmpatIA</h1>
-          <p style={styles.subtitle}>IA emocional en tiempo real</p>
+
+          <p style={styles.subtitle}>
+            IA emocional en tiempo real
+          </p>
 
           <div style={styles.formBox}>
+
             <input
               placeholder="Nombre de usuario"
               value={form.nombre}
@@ -112,6 +122,7 @@ export default function Login() {
             >
               Registrarse
             </button>
+
           </div>
         </div>
       </div>
