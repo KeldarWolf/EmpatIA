@@ -1,442 +1,257 @@
-// =========================
-// USER.JSX MOD COMPLETO
-// =========================
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./user.css";
 
-import ChatBox from "./ChatBox";
-import InputBox from "./InputBox";
-import frases from "./frases";
+const API = "https://empatia-backend.onrender.com";
 
-const API_URL = "https://empatia-backend.onrender.com";
-
-// 🔎 triggers
-const activityTriggers = [
-  "aburrido",
-  "aburrida",
-  "no sé qué hacer",
-  "no se que hacer",
-  "qué hago",
-  "que hago",
-  "actividad",
-  "actividades",
-  "aburrimiento",
-];
-
-// 🎯 opciones base
+// =========================
+// OPCIONES PRINCIPALES (6)
+// =========================
 const mainOptions = [
   "🎵 Música",
   "🧘 Relajación",
   "🏃 Actividad física",
   "🤍 Hablar un poco",
+  "⚙️ Cambiar preguntas fáciles",
   "❓ No sé qué hacer",
-  "🔄 Cambiar respuestas rápidas",
 ];
 
-const yesNoOptions = ["Sí", "No"];
-
-// 🧠 actividades
-const activityGroups = {
-  musica: [
-    "Playlist relajante",
-    "Lo-fi",
-    "Música instrumental",
-    "Sonidos lluvia",
-    "Piano",
-    "Jazz",
-    "Música feliz",
-    "Música triste",
-    "Descubrir música nueva",
-    "Cantar",
-    "Música energética",
-  ],
-
-  relajacion: [
-    "Respirar profundo",
-    "Ducha relajante",
-    "Cerrar los ojos",
-    "Meditar",
-    "Estiramientos",
-    "Tomar agua",
-    "Escuchar lluvia",
-    "Descansar",
-    "Relajar hombros",
-    "Escribir lo que siento",
-    "Pausar mente",
-  ],
-
-  fisica: [
-    "Caminar",
-    "Ejercicio ligero",
-    "Estiramientos",
-    "Bailar",
-    "Mover brazos",
-    "Mover piernas",
-    "Salir a tomar aire",
-    "Subir escaleras",
-    "Yoga",
-    "Trotar suave",
-    "Mover cuello",
-  ],
+// =========================
+// SUB OPCIONES
+// =========================
+const subOptions = {
+  musica: ["Lo-fi", "Piano", "Jazz", "Música feliz", "Naturaleza"],
+  relajacion: ["Respirar profundo", "Meditar", "Cerrar ojos", "Tomar agua"],
+  fisico: ["Caminar", "Yoga", "Estiramientos", "Bailar", "Mover cuerpo"],
 };
 
 export default function User() {
   const navigate = useNavigate();
-
   const user = JSON.parse(localStorage.getItem("usuario") || "null");
 
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
-  const [frase, setFrase] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const [waitingForYes, setWaitingForYes] = useState(false);
+  const [mode, setMode] = useState("main");
+  const [category, setCategory] = useState(null);
 
-  // ======================
-  // INIT
-  // ======================
+  // =========================
+  // INIT CHAT
+  // =========================
   useEffect(() => {
-    console.log("👤 USER STORAGE:", user);
-
     setMessages([
-      {
-        role: "ai",
-        text: `Hola ${user?.nombre || "🤍"}, estoy aquí.`,
-      },
-      {
-        role: "ai",
-        text: "Cuéntame cómo te sientes...",
-      },
+      { role: "ai", text: `Hola ${user?.nombre || "🤍"}, estoy contigo.` },
+      { role: "ai", text: "Elige una opción:" },
+      { role: "ai", options: mainOptions },
     ]);
-
-    const interval = setInterval(() => {
-      setFrase(
-        frases[Math.floor(Math.random() * frases.length)]
-      );
-    }, 8000);
-
-    return () => clearInterval(interval);
   }, []);
 
-  const shouldTriggerActivity = (text) =>
-    activityTriggers.some((w) =>
-      text.toLowerCase().includes(w)
-    );
-
-  // ======================
-  // IA
-  // ======================
+  // =========================
+  // IA CALL
+  // =========================
   const askAI = async (message) => {
     try {
-      const res = await fetch(`${API_URL}/chat`, {
+      const res = await fetch(`${API}/chat`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message }),
       });
 
-      if (!res.ok) return null;
-
-      const data = await res.json();
-
-      return data?.reply || null;
+      return await res.json();
     } catch {
       return null;
     }
   };
 
-  // ======================
-  // GUARDAR ACTIVIDAD
-  // ======================
-  const saveActivityToDB = async (actividad) => {
+  // =========================
+  // SUPABASE SAVE
+  // =========================
+  const saveActivity = async (text) => {
+    if (!user?.id_usuario) return;
+
     try {
-      console.log("🔥 GUARDANDO ACTIVIDAD");
-
-      console.log("👤 USER:", user);
-
-      if (!user?.id_usuario) {
-        console.log("❌ NO EXISTE ID_USUARIO");
-        return;
-      }
-
-      const payload = {
-        id_usuario: user.id_usuario,
-        nombre_actividad: actividad,
-        puntaje_agrado: 7,
-        frecuencia_deseada: "media",
-        reaccion: "positiva",
-      };
-
-      console.log("📦 PAYLOAD:", payload);
-
-      const res = await fetch(
-        `${API_URL}/registro-actividad`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        }
-      );
-
-      const data = await res.json();
-
-      console.log("✅ RESPUESTA BACK:", data);
-
-    } catch (err) {
-      console.log("❌ ERROR SAVE:", err);
+      await fetch(`${API}/registro-actividad`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_usuario: user.id_usuario,
+          id_actividad: null,
+          puntaje_agrado: 6,
+          frecuencia_deseada: "media",
+          reaccion: text,
+        }),
+      });
+    } catch (e) {
+      console.log("Error guardando actividad");
     }
   };
 
-  // ======================
-  // SEND MESSAGE
-  // ======================
-  const sendMessage = async () => {
-    if (!input.trim() || loading) return;
+  // =========================
+  // HANDLER PRINCIPAL
+  // =========================
+  const handleOption = async (opt) => {
+    setMessages((prev) => [...prev, { role: "user", text: opt }]);
 
-    const text = input.trim();
+    // =========================
+    // MENÚ PRINCIPAL
+    // =========================
+    if (opt === "🎵 Música") {
+      setMode("sub");
+      setCategory("musica");
 
-    setMessages((prev) => [
-      ...prev,
-      { role: "user", text },
-    ]);
-
-    setInput("");
-    setLoading(true);
-
-    // SI / NO
-    if (waitingForYes) {
-      const lower = text.toLowerCase();
-
-      if (
-        lower.includes("si") ||
-        lower.includes("sí")
-      ) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "ai",
-            text: "¿Qué te gustaría hacer?",
-            options: mainOptions,
-          },
-        ]);
-
-        setWaitingForYes(false);
-        setLoading(false);
-        return;
-      }
-
-      if (lower.includes("no")) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "ai",
-            text: "🤍 Está bien, aquí estoy.",
-          },
-        ]);
-
-        setWaitingForYes(false);
-        setLoading(false);
-        return;
-      }
-    }
-
-    // TRIGGER ACTIVIDADES
-    if (shouldTriggerActivity(text)) {
       setMessages((prev) => [
         ...prev,
-        {
-          role: "ai",
-          text: "🤍 ¿Quieres que te ayude con una actividad?",
-          options: yesNoOptions,
-        },
+        { role: "ai", text: "Elige música:" },
+        { role: "ai", options: subOptions.musica },
       ]);
-
-      setWaitingForYes(true);
-      setLoading(false);
       return;
     }
 
-    // IA
-    const reply = await askAI(text);
+    if (opt === "🧘 Relajación") {
+      setMode("sub");
+      setCategory("relajacion");
 
-    if (!reply) {
       setMessages((prev) => [
         ...prev,
-        {
-          role: "ai",
-          text:
-            "🤍 Ahora mismo no puedo responder, pero puedo ayudarte con una actividad.",
-          options: yesNoOptions,
-        },
+        { role: "ai", text: "Elige relajación:" },
+        { role: "ai", options: subOptions.relajacion },
       ]);
-
-      setWaitingForYes(true);
-      setLoading(false);
       return;
     }
 
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "ai",
-        text: reply,
-      },
-    ]);
+    if (opt === "🏃 Actividad física") {
+      setMode("sub");
+      setCategory("fisico");
 
-    setLoading(false);
-  };
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: "Elige actividad física:" },
+        { role: "ai", options: subOptions.fisico },
+      ]);
+      return;
+    }
 
-  // ======================
-  // BOTONES OPCIONES
-  // ======================
-  const handleOptionClick = async (opt) => {
+    // =========================
+    // CAMBIAR PREGUNTAS
+    // =========================
+    if (opt === "⚙️ Cambiar preguntas fáciles") {
+      setMode("main");
+      setCategory(null);
 
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "user",
-        text: opt,
-      },
-    ]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: "🔄 Reiniciando menú..." },
+        { role: "ai", options: mainOptions },
+      ]);
+      return;
+    }
 
-    // SI
-    if (opt === "Sí") {
+    // =========================
+    // NO SÉ
+    // =========================
+    if (opt === "❓ No sé qué hacer") {
       setMessages((prev) => [
         ...prev,
         {
           role: "ai",
-          text: "¿Qué te gustaría hacer?",
+          text: "Te ayudo 🤍 elige una:",
           options: mainOptions,
         },
       ]);
-
-      setWaitingForYes(false);
       return;
     }
 
-    // NO
-    if (opt === "No") {
+    // =========================
+    // HABLAR
+    // =========================
+    if (opt === "🤍 Hablar un poco") {
+      const response = await askAI("habla conmigo");
+
       setMessages((prev) => [
         ...prev,
-        {
-          role: "ai",
-          text: "🤍 Está bien, aquí estoy contigo.",
-        },
+        { role: "ai", text: response?.reply || "Estoy contigo 🤍" },
       ]);
 
-      setWaitingForYes(false);
+      await saveActivity("hablar");
       return;
     }
 
-    // CATEGORÍAS
-    const groupKey =
-      opt.includes("Música")
-        ? "musica"
-        : opt.includes("Relajación")
-        ? "relajacion"
-        : opt.includes("Actividad física")
-        ? "fisica"
-        : null;
-
-    if (groupKey) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text: "🤍 Opciones:",
-          options: activityGroups[groupKey],
-        },
-      ]);
-
-      return;
-    }
-
-    // ======================
-    // GUARDAR ACTIVIDAD FINAL
-    // ======================
-    await saveActivityToDB(opt);
-
+    // =========================
+    // SUB OPCIONES (ACTIVIDAD FINAL)
+    // =========================
     setMessages((prev) => [
       ...prev,
       {
         role: "ai",
-        text: `✅ Actividad guardada: ${opt}`,
+        text: `✔ Actividad seleccionada: ${opt}`,
+      },
+      {
+        role: "ai",
+        text: "La he guardado para ti 🤍",
       },
     ]);
 
-    setTimeout(() => {
-      navigate("/actividades");
-    }, 1200);
+    await saveActivity(opt);
+
+    setTimeout(() => navigate("/actividades"), 1000);
   };
 
+  // =========================
+  // UI
+  // =========================
   return (
-    <div className="app-layout">
+    <div style={{ padding: 20, background: "#0b0f14", color: "white" }}>
 
-      <div className="left-panel">
-        <h4>💡 Acompañamiento</h4>
+      <h2>🤍 EmpatIA</h2>
 
-        <div className="quote-box">
-          {frase}
-        </div>
+      <div>
+        {messages.map((m, i) => (
+          <div key={i} style={{ marginBottom: 12 }}>
 
-        <div
-          style={{
-            marginTop: 20,
-            color: "#00e5ff",
-          }}
-        >
-          👤 {user?.nombre || "Usuario"}
-        </div>
+            <div>
+              {m.role === "ai" ? "🤖 " : "👤 "}
+              {m.text}
+            </div>
+
+            {m.options && (
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {m.options.map((opt, j) => (
+                  <button
+                    key={j}
+                    onClick={() => handleOption(opt)}
+                    style={{
+                      padding: 10,
+                      marginTop: 5,
+                      borderRadius: 8,
+                      border: "none",
+                      background: "#1f2937",
+                      color: "white",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            )}
+
+          </div>
+        ))}
       </div>
 
-      <div className="center-panel">
+      <button
+        onClick={() => navigate("/actividades")}
+        style={{
+          marginTop: 20,
+          padding: 10,
+          background: "#1d9bf0",
+          border: "none",
+          color: "white",
+          borderRadius: 8,
+        }}
+      >
+        🎯 Ver actividades
+      </button>
 
-        <ChatBox
-          messages={messages}
-          onOptionClick={handleOptionClick}
-        />
-
-        <InputBox
-          input={input}
-          setInput={setInput}
-          sendMessage={sendMessage}
-          loading={loading}
-        />
-
-      </div>
-
-      <div className="right-panel">
-
-        <button
-          onClick={() => navigate("/rutina")}
-        >
-          🧘 Rutina
-        </button>
-
-        <button
-          onClick={() => navigate("/actividades")}
-        >
-          🎯 Actividades
-        </button>
-
-        <button
-          onClick={() => navigate("/estadisticas")}
-        >
-          📊 Estadísticas
-        </button>
-
-        <button
-          onClick={() => navigate("/diario")}
-        >
-          📓 Diario
-        </button>
-
-      </div>
     </div>
   );
 }
