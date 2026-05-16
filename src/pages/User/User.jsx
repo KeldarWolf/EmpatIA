@@ -1,6 +1,6 @@
-// =========================
-// USER.JSX COMPLETO MOD
-// =========================
+// ======================
+// USER.JSX
+// ======================
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -53,7 +53,6 @@ const activityGroups = {
     "Cantar",
     "Música energética",
   ],
-
   relajacion: [
     "Respirar profundo",
     "Ducha relajante",
@@ -67,7 +66,6 @@ const activityGroups = {
     "Escribir lo que siento",
     "Pausar mente",
   ],
-
   fisica: [
     "Caminar",
     "Ejercicio ligero",
@@ -88,18 +86,27 @@ export default function User() {
 
   const user = JSON.parse(localStorage.getItem("usuario") || "null");
 
+  // 🔥 FIX
+  const userId = user?.id || user?.id_usuario;
+
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [frase, setFrase] = useState("");
   const [loading, setLoading] = useState(false);
+
   const [waitingForYes, setWaitingForYes] = useState(false);
-  const [writingActivity, setWritingActivity] = useState(false);
 
   // INIT
   useEffect(() => {
     setMessages([
-      { role: "ai", text: `Hola ${user?.nombre || "🤍"}, estoy aquí.` },
-      { role: "ai", text: "Cuéntame cómo te sientes..." },
+      {
+        role: "ai",
+        text: `Hola ${user?.nombre || "🤍"}, estoy aquí.`,
+      },
+      {
+        role: "ai",
+        text: "Cuéntame cómo te sientes...",
+      },
     ]);
 
     const interval = setInterval(() => {
@@ -110,7 +117,9 @@ export default function User() {
   }, [user?.nombre]);
 
   const shouldTriggerActivity = (text) =>
-    activityTriggers.some((w) => text.toLowerCase().includes(w));
+    activityTriggers.some((w) =>
+      text.toLowerCase().includes(w)
+    );
 
   // ======================
   // IA
@@ -119,32 +128,83 @@ export default function User() {
     try {
       const res = await fetch(`${API_URL}/chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ message }),
       });
 
       if (!res.ok) return null;
 
       const data = await res.json();
+
       return data?.reply || null;
+
     } catch {
       return null;
     }
   };
 
   // ======================
-  // GUARDAR ACTIVIDAD BD
+  // 🔥 GUARDAR ACTIVIDAD BD
   // ======================
   const saveActivityToDB = async (nombreActividad) => {
     try {
-      if (!user?.id_usuario) {
-        console.log("❌ usuario sin id_usuario");
+
+      console.log("👤 USER:", user);
+      console.log("👤 USER ID:", userId);
+      console.log("🎯 ACTIVIDAD:", nombreActividad);
+
+      // =========================
+      // CARGAR ACTIVIDADES
+      // =========================
+      const actRes = await fetch(
+        `${API_URL}/actividades`
+      );
+
+      const actividades = await actRes.json();
+
+      console.log("📦 ACTIVIDADES:", actividades);
+
+      // =========================
+      // BUSCAR ACTIVIDAD
+      // =========================
+      let actividad = actividades.find(
+        (a) =>
+          a.nombre
+            ?.toLowerCase()
+            .trim() ===
+          nombreActividad.toLowerCase().trim()
+      );
+
+      // fallback parcial
+      if (!actividad) {
+        actividad = actividades.find((a) =>
+          a.nombre
+            ?.toLowerCase()
+            .includes(nombreActividad.toLowerCase())
+        );
+      }
+
+      console.log("🧠 ENCONTRADA:", actividad);
+
+      // fallback final
+      if (!actividad) {
+        actividad = actividades?.[0];
+      }
+
+      // =========================
+      // VALIDAR
+      // =========================
+      if (!actividad?.id_actividad) {
+        console.log("❌ SIN ID ACTIVIDAD");
         return;
       }
 
-      console.log("👤 USER:", user);
-
-      const res = await fetch(
+      // =========================
+      // REGISTRAR
+      // =========================
+      const response = await fetch(
         `${API_URL}/registro-actividad`,
         {
           method: "POST",
@@ -152,17 +212,19 @@ export default function User() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            id_usuario: user.id_usuario,
-            nombre_actividad: nombreActividad,
-            puntaje_agrado: 7,
+            id_usuario: userId,
+            id_actividad: actividad.id_actividad,
+            puntaje_agrado: 8,
             frecuencia_deseada: "media",
-            reaccion: "positiva",
+            reaccion: nombreActividad,
           }),
         }
       );
 
-      const data = await res.json();
+      const data = await response.json();
+
       console.log("✅ GUARDADO:", data);
+
     } catch (err) {
       console.log("❌ ERROR:", err);
     }
@@ -176,14 +238,22 @@ export default function User() {
 
     const text = input.trim();
 
-    setMessages((prev) => [...prev, { role: "user", text }]);
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", text },
+    ]);
+
     setInput("");
     setLoading(true);
 
+    // SI / NO
     if (waitingForYes) {
       const lower = text.toLowerCase();
 
-      if (lower.includes("si") || lower.includes("sí")) {
+      if (
+        lower.includes("si") ||
+        lower.includes("sí")
+      ) {
         setMessages((prev) => [
           ...prev,
           {
@@ -201,7 +271,10 @@ export default function User() {
       if (lower.includes("no")) {
         setMessages((prev) => [
           ...prev,
-          { role: "ai", text: "🤍 Está bien, aquí estoy." },
+          {
+            role: "ai",
+            text: "🤍 Está bien, aquí estoy.",
+          },
         ]);
 
         setWaitingForYes(false);
@@ -210,12 +283,14 @@ export default function User() {
       }
     }
 
+    // trigger actividad
     if (shouldTriggerActivity(text)) {
       setMessages((prev) => [
         ...prev,
         {
           role: "ai",
-          text: "🤍 ¿Quieres que te ayude con una actividad?",
+          text:
+            "🤍 ¿Quieres que te ayude con una actividad?",
           options: yesNoOptions,
         },
       ]);
@@ -225,6 +300,7 @@ export default function User() {
       return;
     }
 
+    // IA
     const reply = await askAI(text);
 
     if (!reply) {
@@ -232,7 +308,8 @@ export default function User() {
         ...prev,
         {
           role: "ai",
-          text: "🤍 Ahora mismo no puedo responder, pero puedo ayudarte con una actividad.",
+          text:
+            "🤍 Ahora mismo no puedo responder, pero puedo ayudarte con una actividad.",
           options: yesNoOptions,
         },
       ]);
@@ -242,7 +319,11 @@ export default function User() {
       return;
     }
 
-    setMessages((prev) => [...prev, { role: "ai", text: reply }]);
+    setMessages((prev) => [
+      ...prev,
+      { role: "ai", text: reply },
+    ]);
+
     setLoading(false);
   };
 
@@ -250,8 +331,13 @@ export default function User() {
   // BOTONES
   // ======================
   const handleOptionClick = async (opt) => {
-    setMessages((prev) => [...prev, { role: "user", text: opt }]);
 
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", text: opt },
+    ]);
+
+    // Sí
     if (opt === "Sí") {
       setMessages((prev) => [
         ...prev,
@@ -266,6 +352,7 @@ export default function User() {
       return;
     }
 
+    // No
     if (opt === "No") {
       setMessages((prev) => [
         ...prev,
@@ -279,13 +366,15 @@ export default function User() {
       return;
     }
 
-    const groupKey = opt.includes("Música")
-      ? "musica"
-      : opt.includes("Relajación")
-      ? "relajacion"
-      : opt.includes("Actividad física")
-      ? "fisica"
-      : null;
+    // categorías
+    const groupKey =
+      opt.includes("Música")
+        ? "musica"
+        : opt.includes("Relajación")
+        ? "relajacion"
+        : opt.includes("Actividad física")
+        ? "fisica"
+        : null;
 
     if (groupKey) {
       setMessages((prev) => [
@@ -296,19 +385,18 @@ export default function User() {
           options: activityGroups[groupKey],
         },
       ]);
+
       return;
     }
 
-    // ======================
-    // GUARDAR EN SUPABASE
-    // ======================
+    // 🔥 GUARDAR BD
     await saveActivityToDB(opt);
 
     setMessages((prev) => [
       ...prev,
       {
         role: "ai",
-        text: `✅ Actividad guardada: ${opt}`,
+        text: `✅ Guardado: ${opt}`,
       },
     ]);
 
@@ -319,31 +407,62 @@ export default function User() {
 
   return (
     <div className="app-layout">
-      <div className="left-panel">
-        <h4>💡 Acompañamiento</h4>
-        <div className="quote-box">{frase}</div>
 
-        <div style={{ marginTop: 20, color: "#00e5ff" }}>
+      <div className="left-panel">
+
+        <h4>💡 Acompañamiento</h4>
+
+        <div className="quote-box">
+          {frase}
+        </div>
+
+        <div
+          style={{
+            marginTop: 20,
+            color: "#00e5ff",
+          }}
+        >
           👤 {user?.nombre || "Usuario"}
         </div>
+
       </div>
 
       <div className="center-panel">
-        <ChatBox messages={messages} onOptionClick={handleOptionClick} />
+
+        <ChatBox
+          messages={messages}
+          onOptionClick={handleOptionClick}
+        />
+
         <InputBox
           input={input}
           setInput={setInput}
           sendMessage={sendMessage}
           loading={loading}
         />
+
       </div>
 
       <div className="right-panel">
-        <button onClick={() => navigate("/rutina")}> 🧘 Rutina </button>
-        <button onClick={() => navigate("/actividades")}> 🎯 Actividades </button>
-        <button onClick={() => navigate("/estadisticas")}> 📊 Estadísticas </button>
-        <button onClick={() => navigate("/diario")}> 📓 Diario </button>
+
+        <button onClick={() => navigate("/rutina")}>
+          🧘 Rutina
+        </button>
+
+        <button onClick={() => navigate("/actividades")}>
+          🎯 Actividades
+        </button>
+
+        <button onClick={() => navigate("/estadisticas")}>
+          📊 Estadísticas
+        </button>
+
+        <button onClick={() => navigate("/diario")}>
+          📓 Diario
+        </button>
+
       </div>
+
     </div>
   );
 }
