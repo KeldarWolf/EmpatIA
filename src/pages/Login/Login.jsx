@@ -51,23 +51,15 @@ export default function Login() {
         .toLowerCase()
         .trim();
 
-      // 🔥 FIX CRÍTICO: backend devuelve "id", no "id_usuario"
+      // 🔥 USER SESSION (SIN VALIDAR ID)
       const userData = {
-        id_usuario: data.user?.id,   // ✅ FIX REAL
+        id_usuario: data.user?.id, // o id_usuario si llega así
         nombre: data.user?.nombre,
         email: data.user?.email,
         role
       };
 
       console.log("USER DATA:", userData);
-
-      // ⚠️ VALIDAR ID
-      if (!userData.id_usuario) {
-        alert("⚠️ El login no está devolviendo el ID del usuario");
-        console.log("ERROR USER:", data.user);
-        setLoading(false);
-        return;
-      }
 
       // 💾 GUARDAR SESIÓN
       localStorage.setItem("usuario", JSON.stringify(userData));
@@ -79,7 +71,7 @@ export default function Login() {
 
       alert(`Bienvenido ${userData.nombre}`);
 
-      // 🚪 REDIRECCIÓN SEGURA
+      // 🚪 REDIRECCIÓN
       if (role === "admin") {
         navigate("/admin");
       } else {
