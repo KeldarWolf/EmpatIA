@@ -1,198 +1,128 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./user.css";
 
-import ChatBox from "./ChatBox";
-import InputBox from "./InputBox";
-import frases from "./frases";
-
-const API_URL = "https://empatia-backend.onrender.com";
-
-const mainOptions = [
-  "🎵 Música",
-  "🧘 Relajación",
-  "🏃 Actividad física",
-  "🤍 Hablar",
-  "✍️ Escribir actividad",
-];
-
-export default function User() {
+export default function Actividades() {
   const navigate = useNavigate();
 
-  const user = JSON.parse(localStorage.getItem("usuario") || "null");
-
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
-  const [frase, setFrase] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const [waiting, setWaiting] = useState(false);
-  const [writing, setWriting] = useState(false);
+  const [savedActivities, setSavedActivities] = useState([]);
 
   useEffect(() => {
-    setMessages([
-      { role: "ai", text: `Hola ${user?.nombre || "🤍"}, estoy aquí.` },
-      { role: "ai", text: "Cuéntame cómo te sientes..." },
-    ]);
+    const data = JSON.parse(
+      localStorage.getItem("actividades") || "[]"
+    );
 
-    const i = setInterval(() => {
-      setFrase(frases[Math.floor(Math.random() * frases.length)]);
-    }, 8000);
-
-    return () => clearInterval(i);
+    setSavedActivities(data);
   }, []);
 
-  const askAI = async (msg) => {
-    try {
-      const r = await fetch(`${API_URL}/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: msg }),
-      });
+  const deleteActivity = (index) => {
+    const updated = savedActivities.filter(
+      (_, i) => i !== index
+    );
 
-      const data = await r.json();
-      return data;
-    } catch {
-      return null;
-    }
-  };
-
-  const sendMessage = async () => {
-    if (!input.trim()) return;
-
-    const text = input;
-
-    setMessages((p) => [...p, { role: "user", text }]);
-    setInput("");
-    setLoading(true);
-
-    // escribir actividad
-    if (writing) {
-      const old = JSON.parse(localStorage.getItem("actividades") || "[]");
-
-      localStorage.setItem(
-        "actividades",
-        JSON.stringify([
-          ...old,
-          { texto: text, fecha: new Date().toISOString() },
-        ])
-      );
-
-      setMessages((p) => [
-        ...p,
-        { role: "ai", text: "✅ Guardado" },
-      ]);
-
-      setWriting(false);
-      setLoading(false);
-      return;
-    }
-
-    const res = await askAI(text);
-
-    if (!res) {
-      setMessages((p) => [
-        ...p,
-        {
-          role: "ai",
-          text: "🤍 IA no disponible. ¿Quieres una actividad?",
-          options: mainOptions,
-        },
-      ]);
-
-      setWaiting(true);
-      setLoading(false);
-      return;
-    }
-
-    if (res.errorType === "TOKEN_LIMIT") {
-      setMessages((p) => [
-        ...p,
-        {
-          role: "ai",
-          text: res.reply,
-          options: ["Sí", "No"],
-        },
-      ]);
-
-      setWaiting(true);
-      setLoading(false);
-      return;
-    }
-
-    setMessages((p) => [
-      ...p,
-      { role: "ai", text: res.reply },
-    ]);
-
-    setLoading(false);
-  };
-
-  const handleOptionClick = (opt) => {
-    setMessages((p) => [...p, { role: "user", text: opt }]);
-
-    if (opt === "Sí") {
-      setMessages((p) => [
-        ...p,
-        { role: "ai", text: "Elige actividad:", options: mainOptions },
-      ]);
-      setWaiting(false);
-      return;
-    }
-
-    if (opt === "No") {
-      setMessages((p) => [
-        ...p,
-        { role: "ai", text: "🤍 Aquí sigo contigo." },
-      ]);
-      setWaiting(false);
-      return;
-    }
-
-    if (opt.includes("Escribir")) {
-      setWriting(true);
-      setMessages((p) => [
-        ...p,
-        { role: "ai", text: "✍️ Escribe la actividad" },
-      ]);
-      return;
-    }
-
-    const old = JSON.parse(localStorage.getItem("actividades") || "[]");
+    setSavedActivities(updated);
 
     localStorage.setItem(
       "actividades",
-      JSON.stringify([
-        ...old,
-        { texto: opt, fecha: new Date().toISOString() },
-      ])
+      JSON.stringify(updated)
     );
-
-    setTimeout(() => navigate("/actividades"), 1000);
   };
 
   return (
-    <div className="app-layout">
-      <div className="left-panel">
-        <h4>💡 EmpatIA</h4>
-        <div className="quote-box">{frase}</div>
-      </div>
+    <div style={styles.page}>
 
-      <div className="center-panel">
-        <ChatBox messages={messages} onOptionClick={handleOptionClick} />
-        <InputBox
-          input={input}
-          setInput={setInput}
-          sendMessage={sendMessage}
-          loading={loading}
-        />
-      </div>
+      <div style={styles.header}>
+        <h1>🎯 Actividades</h1>
 
-      <div className="right-panel">
-        <button onClick={() => navigate("/actividades")}>
-          🎯 Actividades
+        <button
+          onClick={() => navigate("/user")}
+          style={styles.backBtn}
+        >
+          ⬅ Volver
         </button>
       </div>
+
+      {savedActivities.length === 0 ? (
+        <div style={styles.empty}>
+          No tienes actividades aún
+        </div>
+      ) : (
+        savedActivities.map((a, i) => (
+          <div key={i} style={styles.card}>
+
+            <div>
+              <h3>{a.texto}</h3>
+
+              <p style={styles.date}>
+                {new Date(a.fecha).toLocaleString()}
+              </p>
+            </div>
+
+            <button
+              style={styles.deleteBtn}
+              onClick={() => deleteActivity(i)}
+            >
+              ❌
+            </button>
+
+          </div>
+        ))
+      )}
+
     </div>
   );
 }
+
+const styles = {
+  page: {
+    minHeight: "100vh",
+    background: "#0b0f14",
+    color: "white",
+    padding: 20,
+  },
+
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+
+  backBtn: {
+    background: "#1f2937",
+    border: "none",
+    color: "white",
+    padding: "10px 15px",
+    borderRadius: 10,
+    cursor: "pointer",
+  },
+
+  card: {
+    background: "#111827",
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 12,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  date: {
+    opacity: 0.6,
+    fontSize: 12,
+  },
+
+  deleteBtn: {
+    background: "#dc2626",
+    border: "none",
+    color: "white",
+    padding: "8px 12px",
+    borderRadius: 8,
+    cursor: "pointer",
+  },
+
+  empty: {
+    opacity: 0.7,
+    textAlign: "center",
+    marginTop: 50,
+  },
+};
