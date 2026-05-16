@@ -1,166 +1,255 @@
-// ============================================
-// src/pages/User/Actividades/Actividades.jsx
-// ============================================
+import { useEffect, useState } from "react";
+import "./actividades.css";
 
-import {
-  useEffect,
-  useState,
-} from "react";
-
-import { useNavigate } from "react-router-dom";
+const API_URL = "https://empatia-backend.onrender.com";
 
 export default function Actividades() {
-  const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("usuario") || "null");
 
-  const [
-    savedActivities,
-    setSavedActivities,
-  ] = useState([]);
+  const [actividades, setActividades] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [gusto, setGusto] = useState(5);
+  const [loading, setLoading] = useState(false);
 
-  // ============================================
-  // LOAD
-  // ============================================
+  // =========================
+  // CARGAR DESDE BD
+  // =========================
+  const loadActivities = async () => {
+    try {
+      if (!user?.id_usuario) return;
 
-  useEffect(() => {
-    const data = JSON.parse(
-      localStorage.getItem("actividades") ||
-        "[]"
-    );
+      const res = await fetch(`${API_URL}/mis-actividades/${user.id_usuario}`);
+      const data = await res.json();
 
-    setSavedActivities(data);
-  }, []);
-
-  // ============================================
-  // DELETE
-  // ============================================
-
-  const deleteActivity = (index) => {
-    const updated =
-      savedActivities.filter(
-        (_, i) => i !== index
-      );
-
-    setSavedActivities(updated);
-
-    localStorage.setItem(
-      "actividades",
-      JSON.stringify(updated)
-    );
+      setActividades(data || []);
+    } catch (err) {
+      console.log(err);
+    }
   };
 
-  // ============================================
+  useEffect(() => {
+    loadActivities();
+  }, []);
+
+  // =========================
+  // SELECCIONAR
+  // =========================
+  const selectActivity = (act) => {
+    setSelected(act);
+    setGusto(act.puntaje_agrado || 5);
+  };
+
+  // =========================
+  // GUARDAR CAMBIO (PATCH BD)
+  // =========================
+  const updateActivity = async () => {
+    if (!selected) return;
+
+    setLoading(true);
+
+    try {
+      await fetch(`${API_URL}/registro-actividad/${selected.id_registro}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          puntaje_agrado: Number(gusto),
+        }),
+      });
+
+      // actualizar local
+      setActividades((prev) =>
+        prev.map((a) =>
+          a.id_registro === selected.id_registro
+            ? { ...a, puntaje_agrado: gusto }
+            : a
+        )
+      );
+
+      setSelected(null);
+    } catch (err) {
+      console.log(err);
+    }
+
+    setLoading(false);
+  };
+
+  // =========================
   // UI
-  // ============================================
-
+  // =========================
   return (
-    <div style={styles.page}>
+    <div className="layout">
 
-      <div style={styles.header}>
+      {/* =========================
+          SIDEBAR IZQUIERDA
+      ========================= */}
+      <div className="sidebar">
+        <h2>🧠 Instrucciones</h2>
 
-        <h1>🎯 Actividades</h1>
+        <p>
+          Aquí puedes ver y modificar tus actividades.
+        </p>
 
-        <button
-          onClick={() =>
-            navigate("/user")
-          }
-          style={styles.backBtn}
-        >
-          ⬅ Volver
-        </button>
+        <ul>
+          <li>✔ Selecciona una actividad</li>
+          <li>✔ Ajusta cuánto te gustó</li>
+          <li>✔ Guarda cambios en BD</li>
+        </ul>
 
+        <hr />
+
+        {selected && (
+          <div className="infoBox">
+            <h3>📌 Seleccionada</h3>
+            <p>{selected.nombre_actividad}</p>
+            <p>
+              ⭐ Gusto actual: {selected.puntaje_agrado}/10
+            </p>
+          </div>
+        )}
       </div>
 
-      {savedActivities.length === 0 ? (
-        <div style={styles.empty}>
-          No tienes actividades aún
-        </div>
-      ) : (
-        savedActivities.map((a, i) => (
-          <div
-            key={i}
-            style={styles.card}
-          >
+      {/* =========================
+          CONTENIDO PRINCIPAL
+      ========================= */}
+      <div className="main">
 
-            <div>
+        <h1>🎯 Tus Actividades</h1>
 
-              <h3>{a.texto}</h3>
+        {actividades.length === 0 && (
+          <p>No tienes actividades aún</p>
+        )}
 
-              <p style={styles.date}>
-                {new Date(
-                  a.fecha
-                ).toLocaleString()}
+        {/* LISTA */}
+        <div className="grid">
+          {actividades.map((act) => (
+            <div
+              key={act.id_registro}
+              className="card"
+              onClick={() => selectActivity(act)}
+            >
+              <h3>{act.nombre_actividad}</h3>
+
+              <p>
+                ⭐ Gusto: {act.puntaje_agrado}/10
               </p>
 
+              <p>
+                📅{" "}
+                {new Date(act.created_at || Date.now()).toLocaleDateString()}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* =========================
+            EDITOR
+        ========================= */}
+        {selected && (
+          <div className="editor">
+
+            <h2>✏️ Editar actividad</h2>
+
+            <p>{selected.nombre_actividad}</p>
+
+            <input
+              type="range"
+              min="1"
+              max="10"
+              value={gusto}
+              onChange={(e) => setGusto(e.target.value)}
+            />
+
+            <div>
+              ⭐ {gusto}/10
             </div>
 
             <button
-              style={styles.deleteBtn}
-              onClick={() =>
-                deleteActivity(i)
-              }
+              onClick={updateActivity}
+              disabled={loading}
             >
-              ❌
+              💾 {loading ? "Guardando..." : "Guardar cambios"}
             </button>
 
           </div>
-        ))
-      )}
+        )}
+
+      </div>
+
+      {/* =========================
+          ESTILOS
+      ========================= */}
+      <style>{`
+        .layout {
+          display: flex;
+          height: 100vh;
+          background: #0f172a;
+          color: white;
+          font-family: Arial;
+        }
+
+        .sidebar {
+          width: 25%;
+          padding: 20px;
+          background: #111827;
+          border-right: 1px solid #1f2937;
+        }
+
+        .main {
+          flex: 1;
+          padding: 20px;
+          overflow-y: auto;
+        }
+
+        .grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+          gap: 10px;
+          margin-top: 20px;
+        }
+
+        .card {
+          background: #1f2937;
+          padding: 15px;
+          border-radius: 10px;
+          cursor: pointer;
+          transition: 0.2s;
+        }
+
+        .card:hover {
+          background: #374151;
+        }
+
+        .editor {
+          margin-top: 20px;
+          padding: 20px;
+          background: #111827;
+          border-radius: 10px;
+        }
+
+        button {
+          margin-top: 10px;
+          padding: 10px;
+          border: none;
+          border-radius: 8px;
+          background: #2563eb;
+          color: white;
+          cursor: pointer;
+        }
+
+        input[type="range"] {
+          width: 100%;
+        }
+
+        .infoBox {
+          margin-top: 20px;
+          padding: 10px;
+          background: #1f2937;
+          border-radius: 10px;
+        }
+      `}</style>
 
     </div>
   );
 }
-
-const styles = {
-  page: {
-    minHeight: "100vh",
-    background: "#0b0f14",
-    color: "white",
-    padding: 20,
-  },
-
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-
-  backBtn: {
-    background: "#1f2937",
-    border: "none",
-    color: "white",
-    padding: "10px 15px",
-    borderRadius: 10,
-    cursor: "pointer",
-  },
-
-  card: {
-    background: "#111827",
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 12,
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  date: {
-    opacity: 0.6,
-    fontSize: 12,
-  },
-
-  deleteBtn: {
-    background: "#dc2626",
-    border: "none",
-    color: "white",
-    padding: "8px 12px",
-    borderRadius: 8,
-    cursor: "pointer",
-  },
-
-  empty: {
-    opacity: 0.7,
-    textAlign: "center",
-    marginTop: 50,
-  },
-};
