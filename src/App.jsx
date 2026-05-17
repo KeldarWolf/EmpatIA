@@ -30,17 +30,26 @@ function PrivateRoute({ children, role }) {
     localStorage.getItem("usuario")
   );
 
+  // NO SESSION
   if (!session) {
     return <Navigate to="/" replace />;
   }
 
+  // VALIDAR ROL
   const userRole = (session.role || "")
     .toLowerCase()
     .trim();
 
   if (role && role !== userRole) {
-    return <Navigate to="/user" replace />;
+    return <Navigate to="/" replace />;
   }
+
+  // BLOQUEAR BACK BUTTON
+  window.history.pushState(null, "", window.location.href);
+
+  window.onpopstate = function () {
+    window.history.go(1);
+  };
 
   return children;
 }
