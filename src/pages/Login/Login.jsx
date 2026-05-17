@@ -1,3 +1,7 @@
+// ============================================
+// LOGIN.jsx
+// ============================================
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -8,20 +12,28 @@ export default function Login() {
 
   const navigate = useNavigate();
 
+  // LIMPIAR SIEMPRE AL VOLVER AL LOGIN
+  sessionStorage.clear();
+
   const [form, setForm] = useState({
     nombre: "",
     password: "",
   });
 
-  const [loading, setLoading] = useState(false);
-
-  // LIMPIAR SESION SI VUELVE AL LOGIN
-  sessionStorage.removeItem("usuario");
+  const [loading, setLoading] =
+    useState(false);
 
   const handleLogin = async () => {
 
-    if (!form.nombre || !form.password) {
-      alert("Completa usuario y contraseña");
+    if (
+      !form.nombre ||
+      !form.password
+    ) {
+
+      alert(
+        "Completa usuario y contraseña"
+      );
+
       return;
     }
 
@@ -33,9 +45,12 @@ export default function Login() {
         "https://empatia-backend.onrender.com/api/auth/login",
         {
           method: "POST",
+
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
+
           body: JSON.stringify(form),
         }
       );
@@ -43,57 +58,93 @@ export default function Login() {
       let data;
 
       try {
-        data = await response.json();
+
+        data =
+          await response.json();
+
       } catch {
-        throw new Error("Respuesta inválida del servidor");
+
+        throw new Error(
+          "Respuesta inválida"
+        );
       }
 
       if (!response.ok) {
-        alert(data?.error || "Credenciales incorrectas");
+
+        alert(
+          data?.error ||
+          "Credenciales incorrectas"
+        );
+
         setLoading(false);
+
         return;
       }
 
-      const user = data?.user;
+      const user =
+        data?.user;
 
-      if (!user?.id_usuario) {
-        alert("Usuario inválido");
+      if (
+        !user?.id_usuario
+      ) {
+
+        alert(
+          "Usuario inválido"
+        );
+
         setLoading(false);
+
         return;
       }
 
       const userData = {
-        id_usuario: user.id_usuario,
-        nombre: user.nombre,
-        email: user.email,
-        role: (user.role || "user")
-          .toLowerCase()
-          .trim(),
+
+        id_usuario:
+          user.id_usuario,
+
+        nombre:
+          user.nombre,
+
+        email:
+          user.email,
+
+        role:
+          (
+            user.role
+            || "user"
+          )
+            .toLowerCase()
+            .trim(),
       };
 
-      // GUARDAR SESION
+      // SESSION
       sessionStorage.setItem(
         "usuario",
         JSON.stringify(userData)
       );
 
-      // REDIRECCION
       navigate(
+
         userData.role === "admin"
           ? "/admin"
           : "/user",
-        { replace: true }
+
+        {
+          replace: true,
+        }
       );
 
     } catch (err) {
 
-      console.log("LOGIN ERROR:", err);
-      alert("Error conectando servidor");
+      console.log(err);
+
+      alert(
+        "Error conectando servidor"
+      );
 
     } finally {
 
       setLoading(false);
-
     }
   };
 
@@ -122,7 +173,8 @@ export default function Login() {
               onChange={(e) =>
                 setForm({
                   ...form,
-                  nombre: e.target.value,
+                  nombre:
+                    e.target.value,
                 })
               }
               style={styles.input}
@@ -135,7 +187,8 @@ export default function Login() {
               onChange={(e) =>
                 setForm({
                   ...form,
-                  password: e.target.value,
+                  password:
+                    e.target.value,
                 })
               }
               style={styles.input}
@@ -146,9 +199,11 @@ export default function Login() {
               onClick={handleLogin}
               disabled={loading}
             >
+
               {loading
                 ? "Entrando..."
                 : "Iniciar sesión"}
+
             </button>
 
             <button
