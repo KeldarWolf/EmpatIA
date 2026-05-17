@@ -1,5 +1,5 @@
 // ============================================
-// LOGIN.jsx
+// src/pages/Login/Login.jsx
 // ============================================
 
 import { useState } from "react";
@@ -12,8 +12,15 @@ export default function Login() {
 
   const navigate = useNavigate();
 
-  // LIMPIAR SIEMPRE AL VOLVER AL LOGIN
+  // ============================================
+  // LIMPIAR SESION SI VUELVE AL LOGIN
+  // ============================================
+
   sessionStorage.clear();
+
+  // ============================================
+  // STATES
+  // ============================================
 
   const [form, setForm] = useState({
     nombre: "",
@@ -22,6 +29,10 @@ export default function Login() {
 
   const [loading, setLoading] =
     useState(false);
+
+  // ============================================
+  // LOGIN
+  // ============================================
 
   const handleLogin = async () => {
 
@@ -72,8 +83,8 @@ export default function Login() {
       if (!response.ok) {
 
         alert(
-          data?.error ||
-          "Credenciales incorrectas"
+          data?.error
+          || "Credenciales incorrectas"
         );
 
         setLoading(false);
@@ -117,11 +128,18 @@ export default function Login() {
             .trim(),
       };
 
-      // SESSION
+      // ========================================
+      // GUARDAR SESION
+      // ========================================
+
       sessionStorage.setItem(
         "usuario",
         JSON.stringify(userData)
       );
+
+      // ========================================
+      // REDIRECT
+      // ========================================
 
       navigate(
 
@@ -136,7 +154,10 @@ export default function Login() {
 
     } catch (err) {
 
-      console.log(err);
+      console.log(
+        "LOGIN ERROR:",
+        err
+      );
 
       alert(
         "Error conectando servidor"
@@ -148,7 +169,12 @@ export default function Login() {
     }
   };
 
+  // ============================================
+  // UI
+  // ============================================
+
   return (
+
     <div style={styles.container}>
 
       <LoginMatrix />
