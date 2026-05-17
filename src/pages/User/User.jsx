@@ -70,12 +70,41 @@ export default function User() {
     const session =
       sessionStorage.getItem("usuario");
 
+    // SIN SESION
     if (!session) {
 
       navigate("/", {
         replace: true,
       });
+
+      return;
     }
+
+    // ========================================
+    // CERRAR SESION SI USA ATRAS/ADELANTE
+    // ========================================
+
+    const handleBack = () => {
+
+      sessionStorage.clear();
+
+      navigate("/", {
+        replace: true,
+      });
+    };
+
+    window.addEventListener(
+      "popstate",
+      handleBack
+    );
+
+    return () => {
+
+      window.removeEventListener(
+        "popstate",
+        handleBack
+      );
+    };
 
   }, []);
 
