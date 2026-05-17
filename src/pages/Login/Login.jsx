@@ -2,34 +2,31 @@
 // src/pages/Login/Login.jsx
 // ============================================
 
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import {
+  useState,
+} from "react";
+
+import {
+  useNavigate,
+} from "react-router-dom";
 
 import { styles } from "./Login.styles";
 import LoginMatrix from "./LoginMatrix";
 
 export default function Login() {
 
-  const navigate = useNavigate();
-
-  // ============================================
-  // LIMPIAR SESION SOLO AL ENTRAR AL LOGIN
-  // ============================================
-
-  useEffect(() => {
-
-    sessionStorage.clear();
-
-  }, []);
+  const navigate =
+    useNavigate();
 
   // ============================================
   // STATES
   // ============================================
 
-  const [form, setForm] = useState({
-    nombre: "",
-    password: "",
-  });
+  const [form, setForm] =
+    useState({
+      nombre: "",
+      password: "",
+    });
 
   const [loading, setLoading] =
     useState(false);
@@ -41,8 +38,8 @@ export default function Login() {
   const handleLogin = async () => {
 
     if (
-      !form.nombre ||
-      !form.password
+      !form.nombre
+      || !form.password
     ) {
 
       alert(
@@ -56,19 +53,22 @@ export default function Login() {
 
     try {
 
-      const response = await fetch(
-        "https://empatia-backend.onrender.com/api/auth/login",
-        {
-          method: "POST",
+      const response =
+        await fetch(
+          "https://empatia-backend.onrender.com/api/auth/login",
+          {
+            method: "POST",
 
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
 
-          body: JSON.stringify(form),
-        }
-      );
+            body: JSON.stringify(
+              form
+            ),
+          }
+        );
 
       let data;
 
@@ -151,8 +151,11 @@ export default function Login() {
 
       navigate(
 
-        userData.role === "admin"
+        userData.role ===
+        "admin"
+
           ? "/admin"
+
           : "/user",
 
         {
@@ -229,8 +232,12 @@ export default function Login() {
             />
 
             <button
-              style={styles.primaryBtn}
-              onClick={handleLogin}
+              style={
+                styles.primaryBtn
+              }
+              onClick={
+                handleLogin
+              }
               disabled={loading}
             >
 
@@ -241,9 +248,13 @@ export default function Login() {
             </button>
 
             <button
-              style={styles.secondaryBtn}
+              style={
+                styles.secondaryBtn
+              }
               onClick={() =>
-                navigate("/register")
+                navigate(
+                  "/register"
+                )
               }
             >
               Registrarse
