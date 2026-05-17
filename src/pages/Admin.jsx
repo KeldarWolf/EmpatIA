@@ -1,7 +1,3 @@
-// ============================================
-// src/pages/Admin.jsx
-// ============================================
-
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -13,11 +9,12 @@ export default function Admin() {
   const navigate = useNavigate();
 
   // ============================================
-  // VALIDAR SESION
+  // SESSION
   // ============================================
 
   useEffect(() => {
 
+    // VALIDAR SESION
     const session =
       sessionStorage.getItem("usuario");
 
@@ -28,20 +25,26 @@ export default function Admin() {
       });
     }
 
-  }, []);
+    // CERRAR SESION SI SALE
+    const handleVisibility = () => {
 
-  // ============================================
-  // CERRAR SESION AL SALIR
-  // ============================================
+      if (document.hidden) {
 
-  useEffect(() => {
+        sessionStorage.clear();
+      }
+    };
+
+    document.addEventListener(
+      "visibilitychange",
+      handleVisibility
+    );
 
     return () => {
 
-      sessionStorage.removeItem(
-        "usuario"
+      document.removeEventListener(
+        "visibilitychange",
+        handleVisibility
       );
-
     };
 
   }, []);
@@ -88,7 +91,7 @@ export default function Admin() {
   };
 
   // ============================================
-  // SERVER
+  // SERVER STATUS
   // ============================================
 
   const checkServer = async () => {
@@ -113,7 +116,9 @@ export default function Admin() {
 
     } catch {
 
-      setServerStatus("offline");
+      setServerStatus(
+        "offline"
+      );
 
       addLog(
         "Servidor OFFLINE"
@@ -122,7 +127,7 @@ export default function Admin() {
   };
 
   // ============================================
-  // USERS
+  // LOAD USERS
   // ============================================
 
   const loadUsers = async () => {
@@ -207,7 +212,7 @@ export default function Admin() {
   }, [users, search]);
 
   // ============================================
-  // DELETE
+  // DELETE USER
   // ============================================
 
   const deleteUser = (id) => {
@@ -289,19 +294,6 @@ export default function Admin() {
             onClick={loadUsers}
           >
             🔄 Recargar
-          </button>
-
-          <button
-            style={styles.tab}
-            onClick={() => {
-              sessionStorage.clear();
-
-              navigate("/", {
-                replace: true,
-              });
-            }}
-          >
-            ⬅ Salir
           </button>
 
         </div>
