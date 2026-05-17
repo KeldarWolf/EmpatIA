@@ -5,6 +5,7 @@ import { styles } from "./Login.styles";
 import LoginMatrix from "./LoginMatrix";
 
 export default function Login() {
+
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -15,6 +16,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
+
     if (!form.nombre || !form.password) {
       alert("Completa usuario y contraseña");
       return;
@@ -23,6 +25,7 @@ export default function Login() {
     setLoading(true);
 
     try {
+
       const response = await fetch(
         "https://empatia-backend.onrender.com/api/auth/login",
         {
@@ -51,7 +54,7 @@ export default function Login() {
       const user = data?.user;
 
       if (!user?.id_usuario) {
-        alert("Error: usuario inválido desde servidor");
+        alert("Usuario inválido");
         setLoading(false);
         return;
       }
@@ -60,16 +63,17 @@ export default function Login() {
         id_usuario: user.id_usuario,
         nombre: user.nombre,
         email: user.email,
-        role: (user.role || "user").toLowerCase().trim(),
+        role: (user.role || "user")
+          .toLowerCase()
+          .trim(),
       };
 
-      // GUARDAR SESION
-      localStorage.setItem(
+      // SESSION ONLY
+      sessionStorage.setItem(
         "usuario",
         JSON.stringify(userData)
       );
 
-      // LIMPIAR HISTORIAL
       navigate(
         userData.role === "admin"
           ? "/admin"
@@ -78,10 +82,14 @@ export default function Login() {
       );
 
     } catch (err) {
-      console.log("LOGIN ERROR:", err);
-      alert("Error conectando con servidor");
+
+      console.log(err);
+      alert("Error conectando servidor");
+
     } finally {
+
       setLoading(false);
+
     }
   };
 
@@ -91,13 +99,17 @@ export default function Login() {
 
       <div style={styles.centerBlock}>
         <div style={styles.card}>
-          <h1 style={styles.title}>EmpatIA</h1>
+
+          <h1 style={styles.title}>
+            EmpatIA
+          </h1>
 
           <p style={styles.subtitle}>
             IA emocional en tiempo real
           </p>
 
           <div style={styles.formBox}>
+
             <input
               placeholder="Usuario"
               value={form.nombre}
@@ -141,6 +153,7 @@ export default function Login() {
             >
               Registrarse
             </button>
+
           </div>
         </div>
       </div>
