@@ -26,8 +26,9 @@ import Configuracion from "./pages/Configuracion";
 // ============================================
 
 function PrivateRoute({ children, role }) {
+
   const session = JSON.parse(
-    localStorage.getItem("usuario")
+    sessionStorage.getItem("usuario")
   );
 
   // NO SESSION
@@ -43,13 +44,6 @@ function PrivateRoute({ children, role }) {
   if (role && role !== userRole) {
     return <Navigate to="/" replace />;
   }
-
-  // BLOQUEAR BACK BUTTON
-  window.history.pushState(null, "", window.location.href);
-
-  window.onpopstate = function () {
-    window.history.go(1);
-  };
 
   return children;
 }
