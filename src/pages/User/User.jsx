@@ -1,3 +1,7 @@
+// ============================================
+// src/pages/User/User.jsx
+// ============================================
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -58,12 +62,11 @@ export default function User() {
   const navigate = useNavigate();
 
   // ============================================
-  // SESSION
+  // VALIDAR SESION
   // ============================================
 
   useEffect(() => {
 
-    // VALIDAR SESION
     const session =
       sessionStorage.getItem("usuario");
 
@@ -73,28 +76,6 @@ export default function User() {
         replace: true,
       });
     }
-
-    // CERRAR SESION SI SALE
-    const handleVisibility = () => {
-
-      if (document.hidden) {
-
-        sessionStorage.clear();
-      }
-    };
-
-    document.addEventListener(
-      "visibilitychange",
-      handleVisibility
-    );
-
-    return () => {
-
-      document.removeEventListener(
-        "visibilitychange",
-        handleVisibility
-      );
-    };
 
   }, []);
 
@@ -606,8 +587,6 @@ export default function User() {
 
     <div className="app-layout">
 
-      {/* LEFT */}
-
       <div className="left-panel">
 
         <h4>
@@ -632,8 +611,6 @@ export default function User() {
 
       </div>
 
-      {/* CENTER */}
-
       <div className="center-panel">
 
         <ChatBox
@@ -651,8 +628,6 @@ export default function User() {
         />
 
       </div>
-
-      {/* RIGHT */}
 
       <div className="right-panel">
 
