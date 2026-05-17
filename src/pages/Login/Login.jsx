@@ -15,6 +15,9 @@ export default function Login() {
 
   const [loading, setLoading] = useState(false);
 
+  // LIMPIAR SESION SI VUELVE AL LOGIN
+  sessionStorage.removeItem("usuario");
+
   const handleLogin = async () => {
 
     if (!form.nombre || !form.password) {
@@ -68,12 +71,13 @@ export default function Login() {
           .trim(),
       };
 
-      // SESSION ONLY
+      // GUARDAR SESION
       sessionStorage.setItem(
         "usuario",
         JSON.stringify(userData)
       );
 
+      // REDIRECCION
       navigate(
         userData.role === "admin"
           ? "/admin"
@@ -83,7 +87,7 @@ export default function Login() {
 
     } catch (err) {
 
-      console.log(err);
+      console.log("LOGIN ERROR:", err);
       alert("Error conectando servidor");
 
     } finally {
@@ -95,9 +99,11 @@ export default function Login() {
 
   return (
     <div style={styles.container}>
+
       <LoginMatrix />
 
       <div style={styles.centerBlock}>
+
         <div style={styles.card}>
 
           <h1 style={styles.title}>
