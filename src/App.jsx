@@ -2,7 +2,11 @@
 // src/App.jsx
 // ============================================
 
-import { Routes, Route, Navigate } from "react-router-dom";
+import {
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 
 // AUTH
 import Login from "./pages/Login/Login";
@@ -25,24 +29,57 @@ import Configuracion from "./pages/Configuracion";
 // PRIVATE ROUTE
 // ============================================
 
-function PrivateRoute({ children, role }) {
+function PrivateRoute({
+  children,
+  role,
+}) {
 
   const session = JSON.parse(
     sessionStorage.getItem("usuario")
   );
 
-  // NO SESSION
+  // ========================================
+  // SIN SESION
+  // ========================================
+
   if (!session) {
-    return <Navigate to="/" replace />;
+
+    alert(
+      "Sesión expirada. Debe iniciar sesión."
+    );
+
+    return (
+      <Navigate
+        to="/"
+        replace
+      />
+    );
   }
 
+  // ========================================
   // VALIDAR ROL
-  const userRole = (session.role || "")
-    .toLowerCase()
-    .trim();
+  // ========================================
 
-  if (role && role !== userRole) {
-    return <Navigate to="/" replace />;
+  const userRole =
+    (session.role || "")
+      .toLowerCase()
+      .trim();
+
+  if (
+    role &&
+    role !== userRole
+  ) {
+
+    alert(
+      "Acceso no autorizado"
+    );
+
+    return (
+      <Navigate
+        to="/"
+        replace
+      />
+    );
   }
 
   return children;
@@ -53,11 +90,17 @@ function PrivateRoute({ children, role }) {
 // ============================================
 
 export default function App() {
+
   return (
+
     <Routes>
 
       {/* AUTH */}
-      <Route path="/" element={<Login />} />
+
+      <Route
+        path="/"
+        element={<Login />}
+      />
 
       <Route
         path="/register"
@@ -65,6 +108,7 @@ export default function App() {
       />
 
       {/* ADMIN */}
+
       <Route
         path="/admin"
         element={
@@ -75,6 +119,7 @@ export default function App() {
       />
 
       {/* USER */}
+
       <Route
         path="/user"
         element={
@@ -85,6 +130,7 @@ export default function App() {
       />
 
       {/* MODULES */}
+
       <Route
         path="/rutina"
         element={
@@ -149,9 +195,15 @@ export default function App() {
       />
 
       {/* FALLBACK */}
+
       <Route
         path="*"
-        element={<Navigate to="/" replace />}
+        element={
+          <Navigate
+            to="/"
+            replace
+          />
+        }
       />
 
     </Routes>
