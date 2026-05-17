@@ -2,7 +2,7 @@
 // src/pages/Login/Login.jsx
 // ============================================
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { styles } from "./Login.styles";
@@ -13,10 +13,14 @@ export default function Login() {
   const navigate = useNavigate();
 
   // ============================================
-  // LIMPIAR SESION SI VUELVE AL LOGIN
+  // LIMPIAR SESION SOLO AL ENTRAR AL LOGIN
   // ============================================
 
-  sessionStorage.clear();
+  useEffect(() => {
+
+    sessionStorage.clear();
+
+  }, []);
 
   // ============================================
   // STATES
@@ -107,6 +111,10 @@ export default function Login() {
 
         return;
       }
+
+      // ========================================
+      // USER DATA
+      // ========================================
 
       const userData = {
 
