@@ -1,7 +1,3 @@
-// ============================================
-// src/pages/User/User.jsx
-// ============================================
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -14,10 +10,6 @@ import frases from "./frases";
 const API_URL =
   "https://empatia-backend.onrender.com";
 
-// ============================================
-// MENU PRINCIPAL
-// ============================================
-
 const mainOptions = [
   "🎵 Música",
   "🧘 Relajación",
@@ -25,10 +17,6 @@ const mainOptions = [
   "✍️ Escribir actividad",
   "❓ No sé cuál",
 ];
-
-// ============================================
-// SUBMENUS
-// ============================================
 
 const subOptions = {
 
@@ -61,9 +49,43 @@ export default function User() {
 
   const navigate = useNavigate();
 
+  // ============================================
+  // SESSION
+  // ============================================
+
   const user = JSON.parse(
-    localStorage.getItem("usuario") || "null"
+    sessionStorage.getItem("usuario") || "null"
   );
+
+  useEffect(() => {
+
+    // SI NO HAY SESION
+    if (!user) {
+      navigate("/", { replace: true });
+    }
+
+    // CERRAR SESION AL SALIR
+    const handleUnload = () => {
+      sessionStorage.removeItem("usuario");
+    };
+
+    window.addEventListener(
+      "beforeunload",
+      handleUnload
+    );
+
+    return () => {
+      window.removeEventListener(
+        "beforeunload",
+        handleUnload
+      );
+    };
+
+  }, []);
+
+  // ============================================
+  // STATES
+  // ============================================
 
   const [messages, setMessages] = useState([]);
 
@@ -166,7 +188,7 @@ export default function User() {
     try {
 
       const data = JSON.parse(
-        localStorage.getItem("actividades")
+        sessionStorage.getItem("actividades")
         || "[]"
       );
 
@@ -175,7 +197,7 @@ export default function User() {
         fecha: new Date().toISOString(),
       };
 
-      localStorage.setItem(
+      sessionStorage.setItem(
         "actividades",
         JSON.stringify([
           ...data,
@@ -213,10 +235,6 @@ export default function User() {
     setInput("");
 
     setLoading(true);
-
-    // =====================================
-    // DETECTAR ACTIVIDADES
-    // =====================================
 
     const lower = text.toLowerCase();
 
@@ -258,10 +276,6 @@ export default function User() {
       return;
     }
 
-    // =====================================
-    // WRITE ACTIVITY
-    // =====================================
-
     if (writingActivity) {
 
       await saveActivity(text);
@@ -284,10 +298,6 @@ export default function User() {
 
       setLoading(false);
 
-      // =====================================
-      // REDIRECT
-      // =====================================
-
       setTimeout(() => {
 
         navigate("/actividades");
@@ -297,16 +307,8 @@ export default function User() {
       return;
     }
 
-    // =====================================
-    // IA RESPONSE
-    // =====================================
-
     const response =
       await askAI(text);
-
-    // =====================================
-    // ERROR IA
-    // =====================================
 
     if (
       response?.error ||
@@ -340,10 +342,6 @@ export default function User() {
       return;
     }
 
-    // =====================================
-    // NORMAL RESPONSE
-    // =====================================
-
     setMessages((prev) => [
       ...prev,
       {
@@ -372,10 +370,6 @@ export default function User() {
         text: opt,
       },
     ]);
-
-    // =====================================
-    // RESPUESTA ERROR IA
-    // =====================================
 
     if (opt === "No") {
 
@@ -406,10 +400,6 @@ export default function User() {
       return;
     }
 
-    // =====================================
-    // SUBMENUS
-    // =====================================
-
     if (subOptions[opt]) {
 
       setMessages((prev) => [
@@ -425,10 +415,6 @@ export default function User() {
 
       return;
     }
-
-    // =====================================
-    // ESCRIBIR ACTIVIDAD
-    // =====================================
 
     if (
       opt.includes("Escribir")
@@ -448,10 +434,6 @@ export default function User() {
       return;
     }
 
-    // =====================================
-    // NO SABE CUAL
-    // =====================================
-
     if (
       opt.includes("No sé")
     ) {
@@ -470,10 +452,6 @@ export default function User() {
       return;
     }
 
-    // =====================================
-    // GUARDAR ACTIVIDAD
-    // =====================================
-
     await saveActivity(opt);
 
     setMessages((prev) => [
@@ -490,10 +468,6 @@ export default function User() {
       },
     ]);
 
-    // =====================================
-    // REDIRECT
-    // =====================================
-
     setTimeout(() => {
 
       navigate("/actividades");
@@ -502,13 +476,24 @@ export default function User() {
   };
 
   // ============================================
+  // LOGOUT
+  // ============================================
+
+  const logout = () => {
+
+    sessionStorage.removeItem("usuario");
+
+    navigate("/", {
+      replace: true,
+    });
+  };
+
+  // ============================================
   // UI
   // ============================================
 
   return (
     <div className="app-layout">
-
-      {/* LEFT */}
 
       <div className="left-panel">
 
@@ -534,8 +519,6 @@ export default function User() {
 
       </div>
 
-      {/* CENTER */}
-
       <div className="center-panel">
 
         <ChatBox
@@ -553,8 +536,6 @@ export default function User() {
         />
 
       </div>
-
-      {/* RIGHT */}
 
       <div className="right-panel">
 
@@ -588,6 +569,12 @@ export default function User() {
           }
         >
           📓 Diario
+        </button>
+
+        <button
+          onClick={logout}
+        >
+          ⬅ Salir
         </button>
 
       </div>
