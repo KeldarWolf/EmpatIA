@@ -63,9 +63,19 @@ export default function Login() {
         role: (user.role || "user").toLowerCase().trim(),
       };
 
-      localStorage.setItem("usuario", JSON.stringify(userData));
+      // GUARDAR SESION
+      localStorage.setItem(
+        "usuario",
+        JSON.stringify(userData)
+      );
 
-      navigate(userData.role === "admin" ? "/admin" : "/user");
+      // LIMPIAR HISTORIAL
+      navigate(
+        userData.role === "admin"
+          ? "/admin"
+          : "/user",
+        { replace: true }
+      );
 
     } catch (err) {
       console.log("LOGIN ERROR:", err);
@@ -92,7 +102,10 @@ export default function Login() {
               placeholder="Usuario"
               value={form.nombre}
               onChange={(e) =>
-                setForm({ ...form, nombre: e.target.value })
+                setForm({
+                  ...form,
+                  nombre: e.target.value,
+                })
               }
               style={styles.input}
             />
@@ -102,7 +115,10 @@ export default function Login() {
               placeholder="Contraseña"
               value={form.password}
               onChange={(e) =>
-                setForm({ ...form, password: e.target.value })
+                setForm({
+                  ...form,
+                  password: e.target.value,
+                })
               }
               style={styles.input}
             />
@@ -112,12 +128,16 @@ export default function Login() {
               onClick={handleLogin}
               disabled={loading}
             >
-              {loading ? "Entrando..." : "Iniciar sesión"}
+              {loading
+                ? "Entrando..."
+                : "Iniciar sesión"}
             </button>
 
             <button
               style={styles.secondaryBtn}
-              onClick={() => navigate("/register")}
+              onClick={() =>
+                navigate("/register")
+              }
             >
               Registrarse
             </button>
