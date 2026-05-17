@@ -1,3 +1,7 @@
+// ============================================
+// src/pages/Admin.jsx
+// ============================================
+
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -9,35 +13,35 @@ export default function Admin() {
   const navigate = useNavigate();
 
   // ============================================
-  // SESSION
+  // VALIDAR SESION
   // ============================================
-
-  const user = JSON.parse(
-    sessionStorage.getItem("usuario") || "null"
-  );
 
   useEffect(() => {
 
-    // SI NO HAY SESION
-    if (!user) {
-      navigate("/", { replace: true });
+    const session =
+      sessionStorage.getItem("usuario");
+
+    if (!session) {
+
+      navigate("/", {
+        replace: true,
+      });
     }
 
-    // CERRAR SESION AL SALIR
-    const handleUnload = () => {
-      sessionStorage.removeItem("usuario");
-    };
+  }, []);
 
-    window.addEventListener(
-      "beforeunload",
-      handleUnload
-    );
+  // ============================================
+  // CERRAR SESION AL SALIR
+  // ============================================
+
+  useEffect(() => {
 
     return () => {
-      window.removeEventListener(
-        "beforeunload",
-        handleUnload
+
+      sessionStorage.removeItem(
+        "usuario"
       );
+
     };
 
   }, []);
@@ -71,12 +75,15 @@ export default function Admin() {
   const addLog = (msg) => {
 
     setLogs((prev) => [
+
       {
         msg,
         time:
           new Date().toLocaleTimeString(),
       },
+
       ...prev,
+
     ].slice(0, 50));
   };
 
@@ -104,16 +111,18 @@ export default function Admin() {
           : "Servidor OFFLINE"
       );
 
-    } catch (e) {
+    } catch {
 
       setServerStatus("offline");
 
-      addLog("Servidor OFFLINE");
+      addLog(
+        "Servidor OFFLINE"
+      );
     }
   };
 
   // ============================================
-  // LOAD USERS
+  // USERS
   // ============================================
 
   const loadUsers = async () => {
@@ -122,14 +131,18 @@ export default function Admin() {
 
     try {
 
-      const res = await fetch(API);
+      const res =
+        await fetch(API);
 
-      if (!res.ok)
+      if (!res.ok) {
+
         throw new Error(
           "Error servidor"
         );
+      }
 
-      const data = await res.json();
+      const data =
+        await res.json();
 
       setUsers(
         Array.isArray(data)
@@ -143,13 +156,13 @@ export default function Admin() {
 
     } catch (e) {
 
-      console.error(e);
+      console.log(e);
+
+      setUsers([]);
 
       addLog(
         "❌ Error cargando usuarios"
       );
-
-      setUsers([]);
 
     } finally {
 
@@ -217,25 +230,11 @@ export default function Admin() {
   };
 
   // ============================================
-  // LOGOUT
-  // ============================================
-
-  const logout = () => {
-
-    sessionStorage.removeItem(
-      "usuario"
-    );
-
-    navigate("/", {
-      replace: true,
-    });
-  };
-
-  // ============================================
   // UI
   // ============================================
 
   return (
+
     <div style={styles.layout}>
 
       <div style={styles.topbar}>
@@ -294,7 +293,13 @@ export default function Admin() {
 
           <button
             style={styles.tab}
-            onClick={logout}
+            onClick={() => {
+              sessionStorage.clear();
+
+              navigate("/", {
+                replace: true,
+              });
+            }}
           >
             ⬅ Salir
           </button>
