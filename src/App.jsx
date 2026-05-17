@@ -38,15 +38,8 @@ function PrivateRoute({
     sessionStorage.getItem("usuario")
   );
 
-  // ========================================
   // SIN SESION
-  // ========================================
-
   if (!session) {
-
-    alert(
-      "Sesión expirada. Debe iniciar sesión."
-    );
 
     return (
       <Navigate
@@ -56,10 +49,7 @@ function PrivateRoute({
     );
   }
 
-  // ========================================
   // VALIDAR ROL
-  // ========================================
-
   const userRole =
     (session.role || "")
       .toLowerCase()
@@ -69,10 +59,6 @@ function PrivateRoute({
     role &&
     role !== userRole
   ) {
-
-    alert(
-      "Acceso no autorizado"
-    );
 
     return (
       <Navigate
