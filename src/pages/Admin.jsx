@@ -1,3 +1,7 @@
+// ============================================
+// src/pages/Admin.jsx
+// ============================================
+
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -9,12 +13,11 @@ export default function Admin() {
   const navigate = useNavigate();
 
   // ============================================
-  // SESSION
+  // VALIDAR SESION
   // ============================================
 
   useEffect(() => {
 
-    // VALIDAR SESION
     const session =
       sessionStorage.getItem("usuario");
 
@@ -24,28 +27,6 @@ export default function Admin() {
         replace: true,
       });
     }
-
-    // CERRAR SESION SI SALE
-    const handleVisibility = () => {
-
-      if (document.hidden) {
-
-        sessionStorage.clear();
-      }
-    };
-
-    document.addEventListener(
-      "visibilitychange",
-      handleVisibility
-    );
-
-    return () => {
-
-      document.removeEventListener(
-        "visibilitychange",
-        handleVisibility
-      );
-    };
 
   }, []);
 
@@ -453,10 +434,6 @@ export default function Admin() {
     </div>
   );
 }
-
-// ============================================
-// STYLES
-// ============================================
 
 const styles = {
 
