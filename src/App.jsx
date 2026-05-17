@@ -1,22 +1,15 @@
-// ============================================
-// src/App.jsx
-// ============================================
-
 import {
   Routes,
   Route,
   Navigate,
 } from "react-router-dom";
 
-// AUTH
 import Login from "./pages/Login/Login";
 import Register from "./pages/Register";
 
-// DASHBOARD
 import User from "./pages/User/User";
 import Admin from "./pages/Admin";
 
-// USER MODULES
 import Rutina from "./pages/Rutina";
 import Actividades from "./pages/User/Actividades/Actividades";
 import Estadisticas from "./pages/User/Estadisticas/Estadisticas";
@@ -26,46 +19,29 @@ import Gustos from "./pages/Gustos";
 import Configuracion from "./pages/Configuracion";
 
 // ============================================
-// PRIVATE ROUTE
+// PRIVATE ROUTE PRO (FIX REAL)
 // ============================================
 
-function PrivateRoute({
-  children,
-  role,
-}) {
+function PrivateRoute({ children, role }) {
+  let session = null;
 
-  const session = JSON.parse(
-    sessionStorage.getItem("usuario")
-  );
-
-  // SIN SESION
-  if (!session) {
-
-    return (
-      <Navigate
-        to="/"
-        replace
-      />
-    );
+  try {
+    session = JSON.parse(sessionStorage.getItem("usuario"));
+  } catch {
+    session = null;
   }
 
-  // VALIDAR ROL
+  if (!session) {
+    return <Navigate to="/" replace />;
+  }
+
   const userRole =
     (session.role || "")
       .toLowerCase()
       .trim();
 
-  if (
-    role &&
-    role !== userRole
-  ) {
-
-    return (
-      <Navigate
-        to="/"
-        replace
-      />
-    );
+  if (role && role !== userRole) {
+    return <Navigate to="/" replace />;
   }
 
   return children;
@@ -76,25 +52,14 @@ function PrivateRoute({
 // ============================================
 
 export default function App() {
-
   return (
-
     <Routes>
 
       {/* AUTH */}
-
-      <Route
-        path="/"
-        element={<Login />}
-      />
-
-      <Route
-        path="/register"
-        element={<Register />}
-      />
+      <Route path="/" element={<Login />} />
+      <Route path="/register" element={<Register />} />
 
       {/* ADMIN */}
-
       <Route
         path="/admin"
         element={
@@ -105,7 +70,6 @@ export default function App() {
       />
 
       {/* USER */}
-
       <Route
         path="/user"
         element={
@@ -116,7 +80,6 @@ export default function App() {
       />
 
       {/* MODULES */}
-
       <Route
         path="/rutina"
         element={
@@ -181,16 +144,7 @@ export default function App() {
       />
 
       {/* FALLBACK */}
-
-      <Route
-        path="*"
-        element={
-          <Navigate
-            to="/"
-            replace
-          />
-        }
-      />
+      <Route path="*" element={<Navigate to="/" replace />} />
 
     </Routes>
   );
