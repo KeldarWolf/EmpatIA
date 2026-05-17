@@ -2,15 +2,23 @@
 // src/pages/Admin.jsx
 // ============================================
 
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  useNavigate,
+} from "react-router-dom";
 
 const API =
   "https://empatia-backend.onrender.com/api/users";
 
 export default function Admin() {
 
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
   // ============================================
   // VALIDAR SESION
@@ -19,8 +27,11 @@ export default function Admin() {
   useEffect(() => {
 
     const session =
-      sessionStorage.getItem("usuario");
+      sessionStorage.getItem(
+        "usuario"
+      );
 
+    // SIN SESION
     if (!session) {
 
       navigate("/", {
@@ -31,12 +42,17 @@ export default function Admin() {
     }
 
     // ========================================
-    // CERRAR SESION SI USA ATRAS/ADELANTE
+    // SI USA ATRAS/ADELANTE
+    // CERRAR SESION
     // ========================================
 
     const handleBack = () => {
 
       sessionStorage.clear();
+
+      alert(
+        "Sesión cerrada"
+      );
 
       navigate("/", {
         replace: true,
@@ -91,7 +107,8 @@ export default function Admin() {
       {
         msg,
         time:
-          new Date().toLocaleTimeString(),
+          new Date()
+            .toLocaleTimeString(),
       },
 
       ...prev,
@@ -107,17 +124,20 @@ export default function Admin() {
 
     try {
 
-      const res = await fetch(API, {
-        method: "HEAD",
-      });
+      const res =
+        await fetch(API, {
+          method: "HEAD",
+        });
 
       setServerStatus(
+
         res.ok
           ? "online"
           : "offline"
       );
 
       addLog(
+
         res.ok
           ? "Servidor ONLINE"
           : "Servidor OFFLINE"
@@ -266,7 +286,9 @@ export default function Admin() {
                 : styles.tab
             }
             onClick={() =>
-              setTab("dashboard")
+              setTab(
+                "dashboard"
+              )
             }
           >
             📊 Dashboard
@@ -317,7 +339,9 @@ export default function Admin() {
             <div style={styles.card}>
               👤 Usuarios
               <br />
-              <b>{users.length}</b>
+              <b>
+                {users.length}
+              </b>
             </div>
 
             <div style={styles.card}>
@@ -328,6 +352,7 @@ export default function Admin() {
 
               {serverStatus ===
                 "online" && (
+
                 <b
                   style={{
                     color:
@@ -340,6 +365,7 @@ export default function Admin() {
 
               {serverStatus ===
                 "offline" && (
+
                 <b
                   style={{
                     color:
@@ -352,6 +378,7 @@ export default function Admin() {
 
               {serverStatus ===
                 "checking" && (
+
                 <b>
                   ⏳ Checking...
                 </b>
@@ -367,7 +394,9 @@ export default function Admin() {
           <>
 
             <input
-              style={styles.input}
+              style={
+                styles.input
+              }
               placeholder="🔎 Buscar usuario..."
               value={search}
               onChange={(e) =>
@@ -399,7 +428,8 @@ export default function Admin() {
 
                 <tbody>
 
-                  {filtered.map((u) => (
+                  {filtered.map(
+                    (u) => (
 
                     <tr key={u._id}>
 
@@ -417,7 +447,9 @@ export default function Admin() {
                       <td>
 
                         <button
-                          style={styles.danger}
+                          style={
+                            styles.danger
+                          }
                           onClick={() =>
                             deleteUser(
                               u._id
@@ -444,7 +476,8 @@ export default function Admin() {
 
           <div style={styles.logsBox}>
 
-            {logs.map((l, i) => (
+            {logs.map(
+              (l, i) => (
 
               <div key={i}>
 
@@ -480,7 +513,8 @@ const styles = {
     padding: "15px",
     background: "#1a1a2e",
     display: "flex",
-    justifyContent: "space-between",
+    justifyContent:
+      "space-between",
     alignItems: "center",
   },
 
@@ -539,7 +573,8 @@ const styles = {
 
   table: {
     width: "100%",
-    borderCollapse: "collapse",
+    borderCollapse:
+      "collapse",
     background: "#16213e",
   },
 
