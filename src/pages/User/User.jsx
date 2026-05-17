@@ -58,11 +58,12 @@ export default function User() {
   const navigate = useNavigate();
 
   // ============================================
-  // VALIDAR SESION
+  // SESSION
   // ============================================
 
   useEffect(() => {
 
+    // VALIDAR SESION
     const session =
       sessionStorage.getItem("usuario");
 
@@ -73,20 +74,26 @@ export default function User() {
       });
     }
 
-  }, []);
+    // CERRAR SESION SI SALE
+    const handleVisibility = () => {
 
-  // ============================================
-  // CERRAR SESION AL SALIR
-  // ============================================
+      if (document.hidden) {
 
-  useEffect(() => {
+        sessionStorage.clear();
+      }
+    };
+
+    document.addEventListener(
+      "visibilitychange",
+      handleVisibility
+    );
 
     return () => {
 
-      sessionStorage.removeItem(
-        "usuario"
+      document.removeEventListener(
+        "visibilitychange",
+        handleVisibility
       );
-
     };
 
   }, []);
@@ -300,10 +307,6 @@ export default function User() {
 
     setLoading(true);
 
-    // ========================================
-    // DETECTAR ACTIVIDAD
-    // ========================================
-
     const lower =
       text.toLowerCase();
 
@@ -354,10 +357,6 @@ export default function User() {
       return;
     }
 
-    // ========================================
-    // WRITE ACTIVITY
-    // ========================================
-
     if (writingActivity) {
 
       await saveActivity(text);
@@ -396,16 +395,8 @@ export default function User() {
       return;
     }
 
-    // ========================================
-    // IA RESPONSE
-    // ========================================
-
     const response =
       await askAI(text);
-
-    // ========================================
-    // ERROR IA
-    // ========================================
 
     if (
       response?.error
@@ -438,10 +429,6 @@ export default function User() {
 
       return;
     }
-
-    // ========================================
-    // NORMAL RESPONSE
-    // ========================================
 
     setMessages((prev) => [
 
@@ -477,10 +464,6 @@ export default function User() {
       },
     ]);
 
-    // ========================================
-    // NO
-    // ========================================
-
     if (opt === "No") {
 
       setMessages((prev) => [
@@ -497,10 +480,6 @@ export default function User() {
 
       return;
     }
-
-    // ========================================
-    // SI
-    // ========================================
 
     if (opt === "Sí") {
 
@@ -522,10 +501,6 @@ export default function User() {
       return;
     }
 
-    // ========================================
-    // SUBMENU
-    // ========================================
-
     if (subOptions[opt]) {
 
       setMessages((prev) => [
@@ -545,10 +520,6 @@ export default function User() {
 
       return;
     }
-
-    // ========================================
-    // ESCRIBIR
-    // ========================================
 
     if (
       opt.includes(
@@ -573,10 +544,6 @@ export default function User() {
       return;
     }
 
-    // ========================================
-    // NO SABE
-    // ========================================
-
     if (
       opt.includes(
         "No sé"
@@ -600,10 +567,6 @@ export default function User() {
 
       return;
     }
-
-    // ========================================
-    // SAVE
-    // ========================================
 
     await saveActivity(opt);
 
@@ -633,19 +596,6 @@ export default function User() {
       );
 
     }, 3000);
-  };
-
-  // ============================================
-  // LOGOUT
-  // ============================================
-
-  const logout = () => {
-
-    sessionStorage.clear();
-
-    navigate("/", {
-      replace: true,
-    });
   };
 
   // ============================================
@@ -736,12 +686,6 @@ export default function User() {
           }
         >
           📓 Diario
-        </button>
-
-        <button
-          onClick={logout}
-        >
-          ⬅ Salir
         </button>
 
       </div>
