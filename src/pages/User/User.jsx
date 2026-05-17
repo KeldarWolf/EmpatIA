@@ -59,7 +59,7 @@ export default function User() {
   const navigate = useNavigate();
 
   // ============================================
-  // USER SESSION (PROTECTION REAL)
+  // PROTECCIÓN REAL (SIN useEffect / SIN BUGS)
   // ============================================
 
   const user = JSON.parse(
@@ -68,7 +68,7 @@ export default function User() {
 
   if (!user) {
     navigate("/", { replace: true });
-    return null; // 🔴 evita render completo
+    return null;
   }
 
   // ============================================
@@ -111,7 +111,7 @@ export default function User() {
   }, []);
 
   // ============================================
-  // IA CALL
+  // IA REQUEST
   // ============================================
 
   const askAI = async (message) => {
@@ -132,7 +132,7 @@ export default function User() {
         messages: [
           "⚠️ Error de conexión.",
           "🤍 No puedo responder ahora.",
-          "✨ ¿Quieres una actividad?",
+          "✨ ¿Quieres iniciar una actividad?",
         ],
         options: ["Sí", "No"],
       };
@@ -158,7 +158,7 @@ export default function User() {
         "actividades",
         JSON.stringify([...data, nueva])
       );
-    } catch (e) {
+    } catch {
       console.log("Error guardando actividad");
     }
   };
@@ -331,6 +331,7 @@ export default function User() {
 
   return (
     <div className="app-layout">
+
       <div className="left-panel">
         <h4>💡 Acompañamiento</h4>
 
@@ -372,6 +373,7 @@ export default function User() {
           📓 Diario
         </button>
       </div>
+
     </div>
   );
 }
