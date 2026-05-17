@@ -2,156 +2,65 @@
 // src/pages/Admin.jsx
 // ============================================
 
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-
-import {
-  useNavigate,
-} from "react-router-dom";
+import { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 
 const API =
   "https://empatia-backend.onrender.com/api/users";
 
 export default function Admin() {
-
-  const navigate =
-    useNavigate();
+  const navigate = useNavigate();
 
   // ============================================
-  // VALIDAR SESION
+  // PROTECCIÓN REAL (NO RENDER SI NO HAY SESIÓN)
   // ============================================
 
-  useEffect(() => {
+  const session = sessionStorage.getItem("usuario");
 
-    const session =
-      sessionStorage.getItem(
-        "usuario"
-      );
-
-    // SIN SESION
-    if (!session) {
-
-      navigate("/", {
-        replace: true,
-      });
-
-      return;
-    }
-
-    // ========================================
-    // SI USA ATRAS/ADELANTE
-    // CERRAR SESION
-    // ========================================
-
-    const handleBack = () => {
-
-      sessionStorage.clear();
-
-      alert(
-        "Sesión cerrada"
-      );
-
-      navigate("/", {
-        replace: true,
-      });
-    };
-
-    window.addEventListener(
-      "popstate",
-      handleBack
-    );
-
-    return () => {
-
-      window.removeEventListener(
-        "popstate",
-        handleBack
-      );
-    };
-
-  }, []);
+  if (!session) {
+    navigate("/", { replace: true });
+    return null;
+  }
 
   // ============================================
   // STATES
   // ============================================
 
-  const [tab, setTab] =
-    useState("users");
-
-  const [users, setUsers] =
-    useState([]);
-
-  const [search, setSearch] =
-    useState("");
-
-  const [logs, setLogs] =
-    useState([]);
-
-  const [loading, setLoading] =
-    useState(false);
-
-  const [serverStatus, setServerStatus] =
-    useState("checking");
+  const [tab, setTab] = useState("users");
+  const [users, setUsers] = useState([]);
+  const [search, setSearch] = useState("");
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [serverStatus, setServerStatus] = useState("checking");
 
   // ============================================
   // LOGS
   // ============================================
 
   const addLog = (msg) => {
-
     setLogs((prev) => [
-
       {
         msg,
-        time:
-          new Date()
-            .toLocaleTimeString(),
+        time: new Date().toLocaleTimeString(),
       },
-
       ...prev,
-
     ].slice(0, 50));
   };
 
   // ============================================
-  // SERVER STATUS
+  // SERVER CHECK
   // ============================================
 
   const checkServer = async () => {
-
     try {
+      const res = await fetch(API, { method: "HEAD" });
 
-      const res =
-        await fetch(API, {
-          method: "HEAD",
-        });
+      setServerStatus(res.ok ? "online" : "offline");
 
-      setServerStatus(
-
-        res.ok
-          ? "online"
-          : "offline"
-      );
-
-      addLog(
-
-        res.ok
-          ? "Servidor ONLINE"
-          : "Servidor OFFLINE"
-      );
-
+      addLog(res.ok ? "Servidor ONLINE" : "Servidor OFFLINE");
     } catch {
-
-      setServerStatus(
-        "offline"
-      );
-
-      addLog(
-        "Servidor OFFLINE"
-      );
+      setServerStatus("offline");
+      addLog("Servidor OFFLINE");
     }
   };
 
@@ -160,46 +69,23 @@ export default function Admin() {
   // ============================================
 
   const loadUsers = async () => {
-
     setLoading(true);
 
     try {
+      const res = await fetch(API);
 
-      const res =
-        await fetch(API);
+      if (!res.ok) throw new Error("Error servidor");
 
-      if (!res.ok) {
+      const data = await res.json();
 
-        throw new Error(
-          "Error servidor"
-        );
-      }
+      setUsers(Array.isArray(data) ? data : []);
 
-      const data =
-        await res.json();
-
-      setUsers(
-        Array.isArray(data)
-          ? data
-          : []
-      );
-
-      addLog(
-        `✅ ${data.length} usuarios cargados`
-      );
-
+      addLog(`✅ ${data.length} usuarios cargados`);
     } catch (e) {
-
       console.log(e);
-
       setUsers([]);
-
-      addLog(
-        "❌ Error cargando usuarios"
-      );
-
+      addLog("❌ Error cargando usuarios");
     } finally {
-
       setLoading(false);
     }
   };
@@ -209,11 +95,8 @@ export default function Admin() {
   // ============================================
 
   useEffect(() => {
-
     loadUsers();
-
     checkServer();
-
   }, []);
 
   // ============================================
@@ -221,23 +104,13 @@ export default function Admin() {
   // ============================================
 
   const filtered = useMemo(() => {
+    const t = search.toLowerCase();
 
-    const t =
-      search.toLowerCase();
-
-    return users.filter((u) =>
-
-      u.nombre
-        ?.toLowerCase()
-        .includes(t)
-
-      ||
-
-      u.email
-        ?.toLowerCase()
-        .includes(t)
+    return users.filter(
+      (u) =>
+        u.nombre?.toLowerCase().includes(t) ||
+        u.email?.toLowerCase().includes(t)
     );
-
   }, [users, search]);
 
   // ============================================
@@ -245,22 +118,20 @@ export default function Admin() {
   // ============================================
 
   const deleteUser = (id) => {
+    if (!window.confirm("¿Eliminar usuario?")) return;
 
-    if (
-      !window.confirm(
-        "¿Eliminar usuario?"
-      )
-    ) return;
+    setUsers((prev) => prev.filter((u) => u._id !== id));
 
-    setUsers((prev) =>
-      prev.filter(
-        (u) => u._id !== id
-      )
-    );
+    addLog(`Usuario eliminado: ${id}`);
+  };
 
-    addLog(
-      `Usuario eliminado: ${id}`
-    );
+  // ============================================
+  // LOGOUT (PRO)
+  // ============================================
+
+  const logout = () => {
+    sessionStorage.clear();
+    navigate("/", { replace: true });
   };
 
   // ============================================
@@ -268,229 +139,116 @@ export default function Admin() {
   // ============================================
 
   return (
-
     <div style={styles.layout}>
-
       <div style={styles.topbar}>
-
-        <h2 style={styles.title}>
-          🛠 EmpatIA Admin
-        </h2>
+        <h2 style={styles.title}>🛠 EmpatIA Admin</h2>
 
         <div style={styles.tabs}>
-
           <button
-            style={
-              tab === "dashboard"
-                ? styles.tabActive
-                : styles.tab
-            }
-            onClick={() =>
-              setTab(
-                "dashboard"
-              )
-            }
+            style={tab === "dashboard" ? styles.tabActive : styles.tab}
+            onClick={() => setTab("dashboard")}
           >
             📊 Dashboard
           </button>
 
           <button
-            style={
-              tab === "users"
-                ? styles.tabActive
-                : styles.tab
-            }
-            onClick={() =>
-              setTab("users")
-            }
+            style={tab === "users" ? styles.tabActive : styles.tab}
+            onClick={() => setTab("users")}
           >
             👤 Usuarios
           </button>
 
           <button
-            style={
-              tab === "logs"
-                ? styles.tabActive
-                : styles.tab
-            }
-            onClick={() =>
-              setTab("logs")
-            }
+            style={tab === "logs" ? styles.tabActive : styles.tab}
+            onClick={() => setTab("logs")}
           >
             📜 Logs
           </button>
 
-          <button
-            style={styles.tab}
-            onClick={loadUsers}
-          >
+          <button style={styles.tab} onClick={loadUsers}>
             🔄 Recargar
           </button>
 
+          <button style={styles.danger} onClick={logout}>
+            🚪 Salir
+          </button>
         </div>
       </div>
 
       <div style={styles.main}>
-
         {tab === "dashboard" && (
-
           <div style={styles.cards}>
-
             <div style={styles.card}>
-              👤 Usuarios
-              <br />
-              <b>
-                {users.length}
-              </b>
+              👤 Usuarios <br />
+              <b>{users.length}</b>
             </div>
 
             <div style={styles.card}>
-
-              ⚡ Servidor:
-
-              {" "}
-
-              {serverStatus ===
-                "online" && (
-
-                <b
-                  style={{
-                    color:
-                      "#00ff88",
-                  }}
-                >
-                  🟢 ONLINE
-                </b>
+              ⚡ Servidor:{" "}
+              {serverStatus === "online" && (
+                <b style={{ color: "#00ff88" }}>🟢 ONLINE</b>
               )}
 
-              {serverStatus ===
-                "offline" && (
-
-                <b
-                  style={{
-                    color:
-                      "#ff3b3b",
-                  }}
-                >
-                  🔴 OFFLINE
-                </b>
+              {serverStatus === "offline" && (
+                <b style={{ color: "#ff3b3b" }}>🔴 OFFLINE</b>
               )}
 
-              {serverStatus ===
-                "checking" && (
-
-                <b>
-                  ⏳ Checking...
-                </b>
-              )}
-
+              {serverStatus === "checking" && <b>⏳ Checking...</b>}
             </div>
-
           </div>
         )}
 
         {tab === "users" && (
-
           <>
-
             <input
-              style={
-                styles.input
-              }
+              style={styles.input}
               placeholder="🔎 Buscar usuario..."
               value={search}
-              onChange={(e) =>
-                setSearch(
-                  e.target.value
-                )
-              }
+              onChange={(e) => setSearch(e.target.value)}
             />
 
             {loading ? (
-
-              <p>
-                Cargando usuarios...
-              </p>
-
+              <p>Cargando usuarios...</p>
             ) : (
-
               <table style={styles.table}>
-
                 <thead>
-
                   <tr>
                     <th>Nombre</th>
                     <th>Email</th>
                     <th>Acción</th>
                   </tr>
-
                 </thead>
 
                 <tbody>
-
-                  {filtered.map(
-                    (u) => (
-
+                  {filtered.map((u) => (
                     <tr key={u._id}>
-
+                      <td>{u.nombre || "Sin nombre"}</td>
+                      <td>{u.email}</td>
                       <td>
-                        {
-                          u.nombre
-                          || "Sin nombre"
-                        }
-                      </td>
-
-                      <td>
-                        {u.email}
-                      </td>
-
-                      <td>
-
                         <button
-                          style={
-                            styles.danger
-                          }
-                          onClick={() =>
-                            deleteUser(
-                              u._id
-                            )
-                          }
+                          style={styles.danger}
+                          onClick={() => deleteUser(u._id)}
                         >
                           Eliminar
                         </button>
-
                       </td>
-
                     </tr>
                   ))}
-
                 </tbody>
-
               </table>
             )}
-
           </>
         )}
 
         {tab === "logs" && (
-
           <div style={styles.logsBox}>
-
-            {logs.map(
-              (l, i) => (
-
+            {logs.map((l, i) => (
               <div key={i}>
-
-                {l.time}
-                {" — "}
-                {l.msg}
-
+                {l.time} — {l.msg}
               </div>
             ))}
-
           </div>
         )}
-
       </div>
     </div>
   );
@@ -501,7 +259,6 @@ export default function Admin() {
 // ============================================
 
 const styles = {
-
   layout: {
     minHeight: "100vh",
     background: "#0f0f1a",
@@ -513,14 +270,11 @@ const styles = {
     padding: "15px",
     background: "#1a1a2e",
     display: "flex",
-    justifyContent:
-      "space-between",
+    justifyContent: "space-between",
     alignItems: "center",
   },
 
-  title: {
-    margin: 0,
-  },
+  title: { margin: 0 },
 
   tabs: {
     display: "flex",
@@ -573,8 +327,7 @@ const styles = {
 
   table: {
     width: "100%",
-    borderCollapse:
-      "collapse",
+    borderCollapse: "collapse",
     background: "#16213e",
   },
 
