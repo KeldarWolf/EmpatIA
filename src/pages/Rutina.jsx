@@ -805,21 +805,15 @@ const styles = {
     cursor: "pointer",
   },
 
-      
 eventCard: {
-  background: "#111827",
-  padding: 12,           // Reducido de 15
-  borderRadius: 10,      // Un poco más pequeño
-  marginBottom: 10,      // Reducido de 12
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "flex-start",   // Mejor que "center" para textos largos
-  borderLeft: "5px solid #2563eb",   // Añadido para que se vea mejor
-  minHeight: "85px",                 // Controla la altura mínima
-},
-
-
-
+    background: "#111827",
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 12,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
       
   deleteBtn: {
     background: "#ef4444",
