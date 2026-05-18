@@ -1,6 +1,3 @@
-/* =========================
-   BASE
-========================= */
 .page {
   height: 100vh;
   background: #0b0f14;
@@ -10,244 +7,130 @@
   font-family: Arial;
 }
 
-/* =========================
-   HEADER
-========================= */
+.loading {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .header {
   display: flex;
   justify-content: space-between;
-  padding: 14px; /* ↓ compacto */
+  padding: 20px;
   border-bottom: 1px solid #1f2937;
 }
 
-.backBtn {
-  padding: 8px 14px;
-  border-radius: 8px;
-  border: none;
-  background: #1f2937;
-  color: white;
-  cursor: pointer;
-}
-
-/* =========================
-   LAYOUT
-========================= */
 .layout {
   flex: 1;
   display: flex;
-  gap: 10px; /* ↓ más compacto */
-  padding: 10px; /* ↓ más compacto */
-  overflow: hidden;
+  gap: 15px;
+  padding: 15px;
 }
 
-/* =========================
-   COLUMNAS
-========================= */
-.left {
-  width: 255px; /* ↓ antes más grande */
-  background: #0f172a;
-  padding: 11px;
-  border-radius: 10px;
-  overflow-y: auto;
-}
-
-.center {
-  flex: 1;
+.left, .center, .right {
   background: #0f172a;
   padding: 15px;
-  border-radius: 10px;
+  border-radius: 12px;
   overflow-y: auto;
 }
 
-.right {
-  width: 285px;
-  background: #0f172a;
-  padding: 11px;
-  border-radius: 10px;
-  overflow-y: auto;
-}
+.left { width: 320px; }
+.center { flex: 1; }
+.right { width: 360px; }
 
-/* =========================
-   ACTIVIDADES
-========================= */
 .activityCard {
   background: #111827;
-  padding: 9px;
-  border-radius: 8px;
-  margin-bottom: 7px;
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 10px;
   cursor: pointer;
 }
 
-.activityCard.active {
+.activityCard.selected {
   border: 2px solid #22c55e;
-}
-
-/* =========================
-   INPUTS
-========================= */
-input,
-select {
-  width: 100%;
-  padding: 7px;
-  margin-top: 4px;
-  margin-bottom: 10px;
-  border-radius: 7px;
-  border: none;
-  background: #111827;
-  color: white;
-}
-
-/* =========================
-   BOTÓN
-========================= */
-.createBtn {
-  width: 100%;
-  padding: 10px;
-  background: #22c55e;
-  border: none;
-  border-radius: 8px;
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-/* =========================
-   DÍAS SELECCIONADOS
-========================= */
-.selectedContainer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.selectedDay {
-  background: #22c55e;
-  padding: 4px 7px;
-  border-radius: 6px;
-  font-size: 12px;
-}
-
-/* =========================
-   CALENDARIO
-========================= */
-.calendarHeader {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.weekHeader,
-.weekRow {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
-}
-
-.weekHeader {
-  margin-bottom: 8px;
-}
-
-.weekDay {
-  text-align: center;
-  opacity: 0.7;
-}
-
-.dayCell {
-  height: 36px; /* ↓ reducido */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 7px;
-  cursor: pointer;
-  background: #111827;
-}
-
-/* =========================
-   SEMANA
-========================= */
-.weekContainer {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-
-.weekCard {
-  padding: 10px;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-/* =========================
-   EVENTOS
-========================= */
-.timeline {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.emptyDay {
-  height: 260px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  opacity: 0.6;
 }
 
 .eventCard {
   background: #111827;
   padding: 12px;
+  margin-bottom: 10px;
   border-radius: 10px;
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
 }
 
-.eventLeft {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-}
-
-.eventCard button {
-  background: #ef4444;
+.input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  background: #111827;
   border: none;
   color: white;
-  padding: 8px;
-  border-radius: 7px;
-  cursor: pointer;
+  border-radius: 8px;
 }
 
-/* =========================
-   CHECKBOX
-========================= */
-input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  margin-top: 4px;
+.createBtn {
+  width: 100%;
+  padding: 12px;
+  background: #22c55e;
+  border: none;
+  color: white;
+  border-radius: 10px;
 }
 
-/* =========================
-   BADGES
-========================= */
-.repeatBadge {
-  margin-top: 8px;
-  background: #1e293b;
-  display: inline-block;
-  padding: 5px 8px;
-  border-radius: 7px;
+.selectedContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.selectedDay {
+  background: #22c55e;
+  padding: 5px 10px;
+  border-radius: 8px;
   font-size: 12px;
 }
 
-/* =========================
-   TEXTOS
-========================= */
-hr {
-  border: 0;
-  border-top: 1px solid #1f2937;
-  margin: 14px 0;
+.weekRow {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+}
+
+.dayCell {
+  height: 40px;
+  background: #111827;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.dayCell.active {
+  background: #2563eb;
+}
+
+.dayCell.selectedDayCell {
+  background: #22c55e;
+}
+
+.backBtn {
+  padding: 10px;
+  background: #1f2937;
+  border: none;
+  border-radius: 10px;
+  color: white;
+}
+
+.empty {
+  text-align: center;
+  opacity: 0.6;
+  padding: 40px;
+}
+
+.hr {
+  border-color: #1f2937;
+  margin: 15px 0;
 }
