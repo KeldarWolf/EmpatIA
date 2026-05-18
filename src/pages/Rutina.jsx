@@ -20,32 +20,62 @@ export default function Rutina() {
 
   const today = new Date();
 
+  const [year, setYear] = useState(today.getFullYear());
+  const [month, setMonth] = useState(today.getMonth());
+
   const [selectedDate, setSelectedDate] = useState(
     today.toISOString().split("T")[0]
   );
 
   const [actividades, setActividades] = useState([]);
-  const [selectedActivities, setSelectedActivities] = useState([]);
-
-  const [titulo, setTitulo] = useState("");
-  const [descripcion, setDescripcion] = useState("");
-
-  const [horaInicio, setHoraInicio] = useState("09:00");
-  const [duracion, setDuracion] = useState(30);
-
-  const [modo, setModo] = useState("dia");
-
-  const [selectedDays, setSelectedDays] = useState([]);
-
   const [eventos, setEventos] = useState([]);
 
-  /* =========================================================
-     LOAD
-  ========================================================= */
+  const [selectedActivities, setSelectedActivities] = useState([]);
+  const [selectedDays, setSelectedDays] = useState([]);
 
+  const [hora, setHora] = useState("09:00");
+  const [horaFin, setHoraFin] = useState("10:00");
+  const [duracion, setDuracion] = useState(60);
+
+  const [repeticion, setRepeticion] = useState("dia");
+
+  const [loading, setLoading] = useState(true);
+
+  const months = [
+    "Enero",
+    "Febrero",
+    "Marzo",
+    "Abril",
+    "Mayo",
+    "Junio",
+    "Julio",
+    "Agosto",
+    "Septiembre",
+    "Octubre",
+    "Noviembre",
+    "Diciembre",
+  ];
+
+  const daysShort = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+
+  const daysFull = [
+    "Lunes",
+    "Martes",
+    "Miércoles",
+    "Jueves",
+    "Viernes",
+    "Sábado",
+    "Domingo",
+  ];
+
+  /* =====================================================
+     LOAD DATA
+  ===================================================== */
   const loadData = async () => {
     try {
-      const [actRes, eventosRes] = await Promise.all([
+      setLoading(true);
+
+      const [actRes, eventRes] = await Promise.all([
         fetch(
           `${API_URL}/api/registro-actividad/usuario/${user.id_usuario}`
         ),
@@ -55,12 +85,14 @@ export default function Rutina() {
       ]);
 
       const actData = await actRes.json();
-      const eventosData = await eventosRes.json();
+      const eventData = await eventRes.json();
 
       setActividades(Array.isArray(actData) ? actData : []);
-      setEventos(Array.isArray(eventosData) ? eventosData : []);
+      setEventos(Array.isArray(eventData) ? eventData : []);
     } catch (err) {
       console.log(err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -70,45 +102,60 @@ export default function Rutina() {
     }
   }, []);
 
-  /* =========================================================
-     GENERAR HORA FIN
-  ========================================================= */
-
-  const calcularHoraFin = () => {
-    const [h, m] = horaInicio.split(":").map(Number);
-
-    const total = h * 60 + m + Number(duracion);
-
-    const hh = String(Math.floor(total / 60)).padStart(2, "0");
-    const mm = String(total % 60).padStart(2, "0");
-
-    return `${hh}:${mm}`;
-  };
-
-  /* =========================================================
-     SELECT ACTIVIDAD
-  ========================================================= */
-
-  const toggleActivity = (actividad) => {
+  /* =====================================================
+     TOGGLE ACTIVIDAD
+  ===================================================== */
+  const toggleActivity = (act) => {
     setSelectedActivities((prev) => {
       const exists = prev.find(
-        (a) => a.id_registro === actividad.id_registro
+        (a) => a.id_registro === act.id_registro
       );
 
       if (exists) {
         return prev.filter(
-          (a) => a.id_registro !== actividad.id_registro
+          (a) => a.id_registro !== act.id_registro
         );
       }
 
-      return [...prev, actividad];
+      return [...prev, act];
     });
   };
 
-  /* =========================================================
-     SELECT DAY
-  ========================================================= */
+  /* =====================================================
+     CURRENT WEEK
+  ===================================================== */
+  const currentWeek = useMemo(() => {
+    const base = new Date(selectedDate);
 
+    const monday = new Date(base);
+
+    const day = base.getDay();
+
+    monday.setDate(
+      base.getDate() - (day === 0 ? 6 : day - 1)
+    );
+
+    const week = [];
+
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+
+      d.setDate(monday.getDate() + i);
+
+      week.push({
+        date: d.toISOString().split("T")[0],
+        name: daysShort[i],
+        full: daysFull[i],
+        index: i,
+      });
+    }
+
+    return week;
+  }, [selectedDate]);
+
+  /* =====================================================
+     TOGGLE DAY
+  ===================================================== */
   const toggleDay = (day) => {
     setSelectedDays((prev) =>
       prev.includes(day)
@@ -117,111 +164,63 @@ export default function Rutina() {
     );
   };
 
-  /* =========================================================
-     WEEK DATES
-  ========================================================= */
-
-  const getCurrentWeekDates = () => {
-    const date = new Date(selectedDate);
-
-    const start = new Date(date);
-
-    const day = date.getDay();
-
-    start.setDate(
-      date.getDate() - (day === 0 ? 6 : day - 1)
-    );
-
-    const dates = [];
-
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(start);
-
-      d.setDate(start.getDate() + i);
-
-      dates.push(d.toISOString().split("T")[0]);
+  /* =====================================================
+     CREATE EVENTS
+  ===================================================== */
+  const crearEventos = async () => {
+    if (selectedActivities.length === 0) {
+      return alert("Selecciona actividades");
     }
 
-    return dates;
-  };
+    if (selectedDays.length === 0) {
+      return alert("Selecciona días");
+    }
 
-  const weekDates = getCurrentWeekDates();
-
-  /* =========================================================
-     CREATE EVENTS
-  ========================================================= */
-
-  const saveRutina = async () => {
     try {
-      let fechas = [];
+      const requests = [];
 
-      if (modo === "dia") {
-        fechas = [selectedDate];
-      }
-
-      if (modo === "semana") {
-        fechas = weekDates.filter((_, index) =>
-          selectedDays.includes(index)
-        );
-      }
-
-      const nuevosEventos = [];
-
-      for (const fecha of fechas) {
-        for (const act of selectedActivities) {
-          const body = {
-            id_usuario: user.id_usuario,
-            titulo:
-              titulo ||
-              act.nombre_actividad ||
-              "Actividad",
-            descripcion:
-              descripcion ||
-              act.instrucciones_usuario ||
-              "",
-            fecha,
-            hora: horaInicio,
-            hora_fin: calcularHoraFin(),
-            duracion,
-            repeticion: modo,
-            completado: false,
-          };
-
-          const res = await fetch(
-            `${API_URL}/api/rutina-eventos`,
-            {
+      selectedDays.forEach((date) => {
+        selectedActivities.forEach((act) => {
+          requests.push(
+            fetch(`${API_URL}/api/rutina-eventos`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify(body),
-            }
+              body: JSON.stringify({
+                id_usuario: user.id_usuario,
+                id_registro: act.id_registro,
+                titulo: act.nombre_actividad,
+                descripcion:
+                  act.instrucciones_usuario || "",
+                fecha: date,
+                hora,
+                hora_fin: horaFin,
+                duracion,
+                repeticion,
+              }),
+            })
           );
+        });
+      });
 
-          const data = await res.json();
+      await Promise.all(requests);
 
-          nuevosEventos.push(data);
-        }
-      }
+      alert("✅ Rutina creada");
 
-      setEventos((prev) => [...nuevosEventos, ...prev]);
-
-      setTitulo("");
-      setDescripcion("");
       setSelectedActivities([]);
       setSelectedDays([]);
 
-      alert("✔ Rutina guardada");
+      loadData();
     } catch (err) {
       console.log(err);
     }
   };
 
-  /* =========================================================
-     TOGGLE COMPLETED
-  ========================================================= */
-
-  const toggleCompleted = async (evento) => {
+  /* =====================================================
+     COMPLETE EVENT
+  ===================================================== */
+  const toggleComplete = async (evento) => {
     try {
       await fetch(
         `${API_URL}/api/rutina-eventos/${evento.id_evento}`,
@@ -251,10 +250,9 @@ export default function Rutina() {
     }
   };
 
-  /* =========================================================
+  /* =====================================================
      DELETE EVENT
-  ========================================================= */
-
+  ===================================================== */
   const deleteEvent = async (id) => {
     try {
       await fetch(
@@ -272,58 +270,84 @@ export default function Rutina() {
     }
   };
 
-  /* =========================================================
-     EVENTOS DIA
-  ========================================================= */
+  /* =====================================================
+     EVENTOS DEL DÍA
+  ===================================================== */
+  const eventosDelDia = eventos
+    .filter((e) => e.fecha === selectedDate)
+    .sort((a, b) => a.hora.localeCompare(b.hora));
 
-  const eventosDelDia = useMemo(() => {
-    return eventos
-      .filter((e) => e.fecha === selectedDate)
-      .sort((a, b) =>
-        a.hora.localeCompare(b.hora)
-      );
-  }, [eventos, selectedDate]);
+  /* =====================================================
+     CALENDARIO
+  ===================================================== */
+  const getWeeksForMonth = (m, y) => {
+    const weeks = [];
 
-  const horasDelDia = [
-    "06:00",
-    "07:00",
-    "08:00",
-    "09:00",
-    "10:00",
-    "11:00",
-    "12:00",
-    "13:00",
-    "14:00",
-    "15:00",
-    "16:00",
-    "17:00",
-    "18:00",
-    "19:00",
-    "20:00",
-    "21:00",
-    "22:00",
-  ];
+    const firstDay = new Date(y, m, 1);
 
-  const daysShort = [
-    "Lun",
-    "Mar",
-    "Mié",
-    "Jue",
-    "Vie",
-    "Sáb",
-    "Dom",
-  ];
+    let current = new Date(firstDay);
+
+    current.setDate(
+      current.getDate() -
+        (current.getDay() === 0
+          ? 6
+          : current.getDay() - 1)
+    );
+
+    while (
+      current.getMonth() === m ||
+      weeks.length === 0
+    ) {
+      const week = [];
+
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(current);
+
+        if (
+          d.getMonth() === m &&
+          d.getFullYear() === y
+        ) {
+          week.push(
+            d.toISOString().split("T")[0]
+          );
+        } else {
+          week.push(null);
+        }
+
+        current.setDate(current.getDate() + 1);
+      }
+
+      weeks.push(week);
+
+      if (current.getMonth() !== m) break;
+    }
+
+    return weeks;
+  };
+
+  const monthWeeks = getWeeksForMonth(
+    month,
+    year
+  );
+
+  if (loading) {
+    return (
+      <div style={styles.loading}>
+        Cargando rutina...
+      </div>
+    );
+  }
 
   return (
     <div style={styles.page}>
       {/* HEADER */}
-
       <div style={styles.header}>
         <div>
           <h1>🧘 Rutina Inteligente</h1>
 
           <p style={{ opacity: 0.7 }}>
-            Organiza actividades y planificación
+            Organiza actividades por día,
+            semana o mes
           </p>
         </div>
 
@@ -335,378 +359,361 @@ export default function Rutina() {
         </button>
       </div>
 
-      {/* GRID */}
-
-      <div style={styles.grid}>
-        {/* LEFT */}
-
+      <div style={styles.layout}>
+        {/* =====================================================
+            LEFT
+        ===================================================== */}
         <div style={styles.left}>
-          <h3>➕ Crear rutina</h3>
+          <h3>🎯 Actividades</h3>
 
-          <input
-            placeholder="Título"
-            value={titulo}
-            onChange={(e) =>
-              setTitulo(e.target.value)
-            }
-            style={styles.input}
-          />
+          {actividades.map((act) => {
+            const selected =
+              selectedActivities.find(
+                (a) =>
+                  a.id_registro ===
+                  act.id_registro
+              );
 
-          <textarea
-            placeholder="Descripción"
-            value={descripcion}
-            onChange={(e) =>
-              setDescripcion(e.target.value)
-            }
-            style={styles.textarea}
-          />
+            return (
+              <div
+                key={act.id_registro}
+                onClick={() =>
+                  toggleActivity(act)
+                }
+                style={{
+                  ...styles.activityCard,
+                  border: selected
+                    ? "2px solid #22c55e"
+                    : "2px solid transparent",
+                }}
+              >
+                <b>{act.nombre_actividad}</b>
 
-          <label>⏰ Hora inicio</label>
-
-          <input
-            type="time"
-            value={horaInicio}
-            onChange={(e) =>
-              setHoraInicio(e.target.value)
-            }
-            style={styles.input}
-          />
-
-          <label>⌛ Duración</label>
-
-          <select
-            value={duracion}
-            onChange={(e) =>
-              setDuracion(e.target.value)
-            }
-            style={styles.input}
-          >
-            <option value={15}>15 min</option>
-            <option value={30}>30 min</option>
-            <option value={45}>45 min</option>
-            <option value={60}>1 hora</option>
-            <option value={90}>1h 30m</option>
-            <option value={120}>2 horas</option>
-          </select>
-
-          <label>🔁 Repetición</label>
-
-          <div style={styles.modeContainer}>
-            <button
-              onClick={() => setModo("dia")}
-              style={{
-                ...styles.modeBtn,
-                background:
-                  modo === "dia"
-                    ? "#2563eb"
-                    : "#111827",
-              }}
-            >
-              Día
-            </button>
-
-            <button
-              onClick={() => setModo("semana")}
-              style={{
-                ...styles.modeBtn,
-                background:
-                  modo === "semana"
-                    ? "#2563eb"
-                    : "#111827",
-              }}
-            >
-              Semana
-            </button>
-          </div>
-
-          {modo === "semana" && (
-            <div style={styles.daysGrid}>
-              {daysShort.map((d, i) => (
-                <div
-                  key={i}
-                  onClick={() => toggleDay(i)}
-                  style={{
-                    ...styles.dayBtn,
-                    background:
-                      selectedDays.includes(i)
-                        ? "#22c55e"
-                        : "#111827",
-                  }}
-                >
-                  {d}
-                </div>
-              ))}
-            </div>
-          )}
+                <p style={{ opacity: 0.7 }}>
+                  ⭐ {act.puntaje_agrado}/10
+                </p>
+              </div>
+            );
+          })}
 
           <hr style={styles.hr} />
 
-          <h3>🎯 Actividades</h3>
+          <h3>⏰ Configuración</h3>
 
-          <div style={styles.activitiesContainer}>
-            {actividades.map((act) => {
-              const active =
-                selectedActivities.find(
-                  (a) =>
-                    a.id_registro === act.id_registro
-                );
+          <label>Hora inicio</label>
 
-              return (
-                <div
-                  key={act.id_registro}
-                  onClick={() =>
-                    toggleActivity(act)
-                  }
-                  style={{
-                    ...styles.activityCard,
-                    border: active
-                      ? "2px solid #22c55e"
-                      : "1px solid #1f2937",
-                  }}
-                >
-                  <div>
-                    <b>
-                      {act.nombre_actividad}
-                    </b>
+          <input
+            type="time"
+            value={hora}
+            onChange={(e) =>
+              setHora(e.target.value)
+            }
+            style={styles.input}
+          />
 
-                    <p style={styles.smallText}>
-                      ⭐ {act.puntaje_agrado}/10
-                    </p>
-                  </div>
+          <label>Hora fin</label>
 
-                  {active && <span>✔</span>}
-                </div>
-              );
-            })}
-          </div>
+          <input
+            type="time"
+            value={horaFin}
+            onChange={(e) =>
+              setHoraFin(e.target.value)
+            }
+            style={styles.input}
+          />
+
+          <label>Duración (min)</label>
+
+          <input
+            type="number"
+            value={duracion}
+            onChange={(e) =>
+              setDuracion(
+                Number(e.target.value)
+              )
+            }
+            style={styles.input}
+          />
+
+          <label>Repetición</label>
+
+          <select
+            value={repeticion}
+            onChange={(e) =>
+              setRepeticion(
+                e.target.value
+              )
+            }
+            style={styles.input}
+          >
+            <option value="dia">
+              Diario
+            </option>
+
+            <option value="semana">
+              Semanal
+            </option>
+
+            <option value="mes">
+              Mensual
+            </option>
+          </select>
 
           <button
-            onClick={saveRutina}
-            style={styles.saveBtn}
+            onClick={crearEventos}
+            style={styles.createBtn}
           >
-            💾 Guardar rutina
+            ✅ Crear rutina
           </button>
         </div>
 
-        {/* CENTER */}
-
+        {/* =====================================================
+            CENTER
+        ===================================================== */}
         <div style={styles.center}>
-          <div style={styles.dayHeader}>
-            <div>
-              <h2>📅 Planificación del día</h2>
+          <h2>
+            📅 Planificación del día
+          </h2>
 
-              <p style={{ opacity: 0.7 }}>
-                {selectedDate}
-              </p>
-            </div>
-
-            <div style={styles.resumeBox}>
-              📝 {eventosDelDia.length} actividades
-            </div>
+          <div style={styles.selectedDate}>
+            {selectedDate}
           </div>
 
-          <div style={styles.timeline}>
-            {horasDelDia.map((horaBase) => {
-              const eventosHora =
-                eventosDelDia.filter(
-                  (e) =>
-                    e.hora.slice(0, 2) ===
-                    horaBase.slice(0, 2)
+          {eventosDelDia.length === 0 ? (
+            <div style={styles.empty}>
+              No hay actividades
+            </div>
+          ) : (
+            eventosDelDia.map((evento) => (
+              <div
+                key={evento.id_evento}
+                style={{
+                  ...styles.eventCard,
+                  opacity: evento.completado
+                    ? 0.6
+                    : 1,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={
+                      evento.completado
+                    }
+                    onChange={() =>
+                      toggleComplete(
+                        evento
+                      )
+                    }
+                  />
+
+                  <div>
+                    <h3
+                      style={{
+                        textDecoration:
+                          evento.completado
+                            ? "line-through"
+                            : "none",
+                      }}
+                    >
+                      {evento.titulo}
+                    </h3>
+
+                    <p>
+                      ⏰ {evento.hora} -{" "}
+                      {evento.hora_fin}
+                    </p>
+
+                    <p>
+                      🕒 {evento.duracion} min
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() =>
+                    deleteEvent(
+                      evento.id_evento
+                    )
+                  }
+                  style={styles.deleteBtn}
+                >
+                  🗑
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* =====================================================
+            RIGHT
+        ===================================================== */}
+        <div style={styles.right}>
+          <div style={styles.calendarHeader}>
+            <select
+              value={month}
+              onChange={(e) =>
+                setMonth(
+                  Number(e.target.value)
+                )
+              }
+              style={styles.select}
+            >
+              {months.map((m, i) => (
+                <option
+                  key={i}
+                  value={i}
+                >
+                  {m}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={year}
+              onChange={(e) =>
+                setYear(
+                  Number(e.target.value)
+                )
+              }
+              style={styles.select}
+            >
+              {[2025, 2026, 2027, 2028].map(
+                (y) => (
+                  <option
+                    key={y}
+                    value={y}
+                  >
+                    {y}
+                  </option>
+                )
+              )}
+            </select>
+          </div>
+
+          <h2 style={{ textAlign: "center" }}>
+            {months[month]} {year}
+          </h2>
+
+          {/* DIAS */}
+          <div style={styles.weekHeader}>
+            {daysShort.map((d) => (
+              <div
+                key={d}
+                style={styles.weekDay}
+              >
+                {d}
+              </div>
+            ))}
+          </div>
+
+          {/* CALENDARIO */}
+          {monthWeeks.map((week, i) => (
+            <div
+              key={i}
+              style={styles.weekRow}
+            >
+              {week.map((date, j) => {
+                const selected =
+                  selectedDays.includes(
+                    date
+                  );
+
+                const active =
+                  selectedDate === date;
+
+                return (
+                  <div
+                    key={j}
+                    onClick={() => {
+                      if (!date) return;
+
+                      setSelectedDate(
+                        date
+                      );
+
+                      toggleDay(date);
+                    }}
+                    style={{
+                      ...styles.dayCell,
+                      background: active
+                        ? "#2563eb"
+                        : selected
+                        ? "#22c55e"
+                        : "#111827",
+                    }}
+                  >
+                    {date
+                      ? parseInt(
+                          date.slice(8)
+                        )
+                      : ""}
+                  </div>
                 );
+              })}
+            </div>
+          ))}
+
+          <hr style={styles.hr} />
+
+          <h3>📌 Días seleccionados</h3>
+
+          <div style={styles.selectedContainer}>
+            {selectedDays.map((d) => (
+              <div
+                key={d}
+                style={styles.selectedDay}
+              >
+                {d}
+              </div>
+            ))}
+          </div>
+
+          <hr style={styles.hr} />
+
+          <h3>📅 Semana actual</h3>
+
+          <div style={styles.weekContainer}>
+            {currentWeek.map((d) => {
+              const count = eventos.filter(
+                (e) => e.fecha === d.date
+              ).length;
 
               return (
                 <div
-                  key={horaBase}
-                  style={styles.timelineRow}
+                  key={d.date}
+                  onClick={() =>
+                    setSelectedDate(
+                      d.date
+                    )
+                  }
+                  style={{
+                    ...styles.weekCard,
+                    background:
+                      selectedDate ===
+                      d.date
+                        ? "#2563eb"
+                        : "#111827",
+                  }}
                 >
-                  <div style={styles.timelineHour}>
-                    {horaBase}
+                  <div>
+                    <b>{d.name}</b>
+
+                    <p>{d.date}</p>
                   </div>
 
-                  <div
-                    style={styles.timelineContent}
-                  >
-                    {eventosHora.length ===
-                    0 ? (
-                      <div
-                        style={styles.emptySlot}
-                      >
-                        Sin actividades
-                      </div>
-                    ) : (
-                      eventosHora.map(
-                        (evento) => (
-                          <div
-                            key={
-                              evento.id_evento
-                            }
-                            style={{
-                              ...styles.timelineCard,
-                              opacity:
-                                evento.completado
-                                  ? 0.5
-                                  : 1,
-                            }}
-                          >
-                            <div
-                              style={
-                                styles.timelineTop
-                              }
-                            >
-                              <div>
-                                <h3
-                                  style={{
-                                    margin: 0,
-                                  }}
-                                >
-                                  {
-                                    evento.titulo
-                                  }
-                                </h3>
-
-                                <small>
-                                  ⏰{" "}
-                                  {
-                                    evento.hora
-                                  }{" "}
-                                  -{" "}
-                                  {
-                                    evento.hora_fin
-                                  }
-                                </small>
-                              </div>
-
-                              <div
-                                style={
-                                  styles.actions
-                                }
-                              >
-                                <button
-                                  onClick={() =>
-                                    toggleCompleted(
-                                      evento
-                                    )
-                                  }
-                                  style={{
-                                    ...styles.doneBtn,
-                                    background:
-                                      evento.completado
-                                        ? "#22c55e"
-                                        : "#374151",
-                                  }}
-                                >
-                                  {evento.completado
-                                    ? "✔"
-                                    : "○"}
-                                </button>
-
-                                <button
-                                  onClick={() =>
-                                    deleteEvent(
-                                      evento.id_evento
-                                    )
-                                  }
-                                  style={
-                                    styles.deleteBtn
-                                  }
-                                >
-                                  🗑
-                                </button>
-                              </div>
-                            </div>
-
-                            <p
-                              style={
-                                styles.eventDesc
-                              }
-                            >
-                              {
-                                evento.descripcion
-                              }
-                            </p>
-
-                            <div
-                              style={
-                                styles.badges
-                              }
-                            >
-                              <div
-                                style={
-                                  styles.badge
-                                }
-                              >
-                                ⌛{" "}
-                                {
-                                  evento.duracion
-                                }{" "}
-                                min
-                              </div>
-
-                              <div
-                                style={
-                                  styles.badge
-                                }
-                              >
-                                🔁{" "}
-                                {
-                                  evento.repeticion
-                                }
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      )
-                    )}
-                  </div>
+                  <span>
+                    {count} act.
+                  </span>
                 </div>
               );
             })}
-          </div>
-        </div>
-
-        {/* RIGHT */}
-
-        <div style={styles.right}>
-          <h3>📅 Semana</h3>
-
-          <div style={styles.weekList}>
-            {weekDates.map((date, i) => (
-              <div
-                key={date}
-                onClick={() =>
-                  setSelectedDate(date)
-                }
-                style={{
-                  ...styles.weekCard,
-                  background:
-                    selectedDate === date
-                      ? "#2563eb"
-                      : "#111827",
-                }}
-              >
-                <div>
-                  <b>{daysShort[i]}</b>
-
-                  <p
-                    style={{
-                      margin: 0,
-                      opacity: 0.7,
-                    }}
-                  >
-                    {date}
-                  </p>
-                </div>
-
-                <span>
-                  {
-                    eventos.filter(
-                      (e) =>
-                        e.fecha === date
-                    ).length
-                  }
-                </span>
-              </div>
-            ))}
           </div>
         </div>
       </div>
@@ -714,10 +721,9 @@ export default function Rutina() {
   );
 }
 
-/* =========================================================
+/* =====================================================
    STYLES
-========================================================= */
-
+===================================================== */
 const styles = {
   page: {
     height: "100vh",
@@ -728,263 +734,201 @@ const styles = {
     fontFamily: "Arial",
   },
 
+  loading: {
+    height: "100vh",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    background: "#0b0f14",
+    color: "white",
+  },
+
   header: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center",
     padding: 20,
     borderBottom: "1px solid #1f2937",
   },
 
-  backBtn: {
-    padding: "10px 16px",
-    borderRadius: 10,
-    border: "none",
-    background: "#1f2937",
-    color: "white",
-    cursor: "pointer",
-  },
-
-  grid: {
+  layout: {
     flex: 1,
     display: "flex",
-    gap: 14,
-    padding: 14,
+    gap: 15,
+    padding: 15,
     overflow: "hidden",
   },
 
   left: {
-    width: 340,
+    width: 320,
     background: "#0f172a",
-    borderRadius: 16,
-    padding: 16,
+    padding: 15,
+    borderRadius: 12,
     overflowY: "auto",
   },
 
   center: {
     flex: 1,
     background: "#0f172a",
-    borderRadius: 16,
     padding: 20,
+    borderRadius: 12,
     overflowY: "auto",
   },
 
   right: {
-    width: 260,
+    width: 360,
     background: "#0f172a",
-    borderRadius: 16,
-    padding: 16,
-  },
-
-  input: {
-    width: "100%",
-    padding: 12,
-    borderRadius: 10,
-    border: "none",
-    background: "#111827",
-    color: "white",
-    marginTop: 8,
-    marginBottom: 12,
-  },
-
-  textarea: {
-    width: "100%",
-    height: 90,
-    padding: 12,
-    borderRadius: 10,
-    border: "none",
-    background: "#111827",
-    color: "white",
-    marginTop: 8,
-    marginBottom: 12,
-  },
-
-  modeContainer: {
-    display: "flex",
-    gap: 10,
-    marginTop: 10,
-  },
-
-  modeBtn: {
-    flex: 1,
-    padding: 12,
-    border: "none",
-    borderRadius: 10,
-    color: "white",
-    cursor: "pointer",
-  },
-
-  daysGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(7,1fr)",
-    gap: 6,
-    marginTop: 14,
-  },
-
-  dayBtn: {
-    padding: 10,
-    borderRadius: 8,
-    textAlign: "center",
-    cursor: "pointer",
-    fontSize: 13,
-  },
-
-  hr: {
-    borderColor: "#1f2937",
-    margin: "18px 0",
-  },
-
-  activitiesContainer: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 8,
-    marginTop: 10,
+    padding: 15,
+    borderRadius: 12,
+    overflowY: "auto",
   },
 
   activityCard: {
     background: "#111827",
     padding: 12,
-    borderRadius: 12,
+    borderRadius: 10,
+    marginBottom: 10,
     cursor: "pointer",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
   },
 
-  smallText: {
-    margin: 0,
-    opacity: 0.7,
-    fontSize: 12,
+  input: {
+    width: "100%",
+    padding: 10,
+    marginTop: 5,
+    marginBottom: 15,
+    borderRadius: 8,
+    border: "none",
+    background: "#111827",
+    color: "white",
   },
 
-  saveBtn: {
+  createBtn: {
     width: "100%",
     padding: 14,
     background: "#22c55e",
     border: "none",
-    borderRadius: 12,
+    borderRadius: 10,
     color: "white",
-    marginTop: 18,
-    cursor: "pointer",
     fontWeight: "bold",
-  },
-
-  dayHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-
-  resumeBox: {
-    background: "#111827",
-    padding: "10px 14px",
-    borderRadius: 10,
-  },
-
-  timeline: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 10,
-  },
-
-  timelineRow: {
-    display: "flex",
-    gap: 14,
-    minHeight: 90,
-  },
-
-  timelineHour: {
-    width: 80,
-    fontSize: 14,
-    opacity: 0.7,
-    paddingTop: 10,
-  },
-
-  timelineContent: {
-    flex: 1,
-    borderLeft: "2px solid #1f2937",
-    paddingLeft: 18,
-    display: "flex",
-    flexDirection: "column",
-    gap: 10,
-  },
-
-  emptySlot: {
-    opacity: 0.3,
-    fontSize: 13,
-    paddingTop: 10,
-  },
-
-  timelineCard: {
-    background: "#111827",
-    padding: 14,
-    borderRadius: 14,
-    border: "1px solid #1f2937",
-  },
-
-  timelineTop: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  actions: {
-    display: "flex",
-    gap: 8,
-  },
-
-  doneBtn: {
-    border: "none",
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    color: "white",
     cursor: "pointer",
+  },
+
+  eventCard: {
+    background: "#111827",
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 12,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
 
   deleteBtn: {
-    border: "none",
-    width: 36,
-    height: 36,
-    borderRadius: 10,
     background: "#ef4444",
+    border: "none",
     color: "white",
+    padding: 10,
+    borderRadius: 8,
     cursor: "pointer",
   },
 
-  eventDesc: {
+  selectedDate: {
+    background: "#111827",
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 20,
     marginTop: 10,
-    lineHeight: 1.5,
-    opacity: 0.9,
   },
 
-  badges: {
+  empty: {
+    padding: 40,
+    textAlign: "center",
+    opacity: 0.6,
+  },
+
+  calendarHeader: {
     display: "flex",
-    gap: 8,
-    marginTop: 12,
+    gap: 10,
+    marginBottom: 15,
   },
 
-  badge: {
-    background: "#1f2937",
+  select: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 8,
+    border: "none",
+    background: "#111827",
+    color: "white",
+  },
+
+  weekHeader: {
+    display: "grid",
+    gridTemplateColumns: "repeat(7,1fr)",
+    gap: 5,
+    marginBottom: 10,
+  },
+
+  weekDay: {
+    textAlign: "center",
+    opacity: 0.7,
+  },
+
+  weekRow: {
+    display: "grid",
+    gridTemplateColumns: "repeat(7,1fr)",
+    gap: 5,
+    marginBottom: 5,
+  },
+
+  dayCell: {
+    height: 45,
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 8,
+    cursor: "pointer",
+    userSelect: "none",
+  },
+
+  selectedContainer: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 10,
+  },
+
+  selectedDay: {
+    background: "#22c55e",
     padding: "6px 10px",
-    borderRadius: 999,
+    borderRadius: 8,
     fontSize: 12,
   },
 
-  weekList: {
+  hr: {
+    borderColor: "#1f2937",
+    margin: "20px 0",
+  },
+
+  weekContainer: {
     display: "flex",
     flexDirection: "column",
     gap: 10,
-    marginTop: 12,
   },
 
   weekCard: {
-    padding: 14,
-    borderRadius: 12,
+    padding: 12,
+    borderRadius: 10,
     cursor: "pointer",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
+  },
+
+  backBtn: {
+    padding: "10px 18px",
+    borderRadius: 10,
+    border: "none",
+    background: "#1f2937",
+    color: "white",
+    cursor: "pointer",
   },
 };
