@@ -5,14 +5,15 @@ const API_URL = "https://empatia-backend.onrender.com";
 
 export default function Rutina() {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem("usuario") || "null");
+
+  // 🔥 SESIÓN CORRECTA (igual que backend/frontend)
+  const user = JSON.parse(sessionStorage.getItem("usuario") || "null");
 
   const [rutinas, setRutinas] = useState([]);
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
 
   const [selectedRutina, setSelectedRutina] = useState(null);
-
   const [diasSeleccionados, setDiasSeleccionados] = useState([]);
 
   const diasSemana = [
@@ -25,9 +26,9 @@ export default function Rutina() {
     "Domingo",
   ];
 
-  // =========================
-  // CARGAR RUTINAS
-  // =========================
+  /* =========================
+     LOAD RUTINAS BD
+  ========================= */
   const loadRutinas = async () => {
     try {
       if (!user?.id_usuario) return;
@@ -37,69 +38,56 @@ export default function Rutina() {
       );
 
       const data = await res.json();
-      setRutinas(data || []);
+      setRutinas(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.log("ERROR LOAD:", err);
+      console.log("ERROR LOAD RUTINA:", err);
     }
   };
 
   useEffect(() => {
-    loadRutinas();
+    if (user?.id_usuario) loadRutinas();
   }, []);
 
-  // =========================
-  // CREAR RUTINA
-  // =========================
+  /* =========================
+     CREAR RUTINA
+  ========================= */
   const createRutina = async () => {
     if (!nombre.trim()) return;
 
-    const res = await fetch(`${API_URL}/api/rutina`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        id_usuario: user.id_usuario,
-        nombre,
-        descripcion,
-        frecuencia: "semanal",
-      }),
-    });
+    try {
+      const res = await fetch(`${API_URL}/api/rutina`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_usuario: user.id_usuario,
+          nombre,
+          descripcion,
+          frecuencia: "semanal",
+        }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    setRutinas((prev) => [data, ...prev]);
+      setRutinas((prev) => [data, ...prev]);
 
-    setNombre("");
-    setDescripcion("");
+      setNombre("");
+      setDescripcion("");
+    } catch (err) {
+      console.log("ERROR CREATE:", err);
+    }
   };
 
-  // =========================
-  // AGREGAR DÍAS A RUTINA
-  // =========================
-  const saveDias = async () => {
-    if (!selectedRutina) return;
-
-    const diasPayload = diasSeleccionados.map((d) => ({
-      dia: d,
-      hora: "08:00",
-      descripcion: "Rutina personalizada",
-    }));
-
-    await fetch(`${API_URL}/api/rutina/dias`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        id_rutina: selectedRutina.id_rutina,
-        dias: diasPayload,
-      }),
-    });
-
-    alert("Días guardados en rutina");
+  /* =========================
+     SELECT RUTINA
+  ========================= */
+  const selectRutina = (r) => {
+    setSelectedRutina(r);
     setDiasSeleccionados([]);
   };
 
-  // =========================
-  // TOGGLE DÍAS
-  // =========================
+  /* =========================
+     TOGGLE DÍAS
+  ========================= */
   const toggleDia = (index) => {
     setDiasSeleccionados((prev) =>
       prev.includes(index)
@@ -108,20 +96,44 @@ export default function Rutina() {
     );
   };
 
-  // =========================
-  // UI
-  // =========================
+  /* =========================
+     GUARDAR DÍAS EN BD
+  ========================= */
+  const saveDias = async () => {
+    if (!selectedRutina) return;
+
+    const diasPayload = diasSeleccionados.map((i) => ({
+      dia: diasSemana[i],
+      hora: "08:00",
+      descripcion: "Rutina personalizada",
+    }));
+
+    try {
+      await fetch(`${API_URL}/api/rutina/dias`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_rutina: selectedRutina.id_rutina,
+          dias: diasPayload,
+        }),
+      });
+
+      alert("✔ Días guardados en la base de datos");
+
+      setDiasSeleccionados([]);
+    } catch (err) {
+      console.log("ERROR SAVE DIAS:", err);
+    }
+  };
+
   return (
     <div style={styles.page}>
 
       {/* HEADER */}
       <div style={styles.header}>
-        <h2>🧘 Rutina</h2>
+        <h2>🧘 Rutina Personal</h2>
 
-        <button
-          onClick={() => navigate("/user")}
-          style={styles.back}
-        >
+        <button onClick={() => navigate("/user")} style={styles.back}>
           ⬅ Volver
         </button>
       </div>
@@ -130,7 +142,6 @@ export default function Rutina() {
 
         {/* ================= LEFT ================= */}
         <div style={styles.left}>
-
           <h3>➕ Crear Rutina</h3>
 
           <input
@@ -148,16 +159,21 @@ export default function Rutina() {
           />
 
           <button onClick={createRutina} style={styles.btn}>
-            Crear
+            Crear rutina
           </button>
 
           <hr style={{ margin: "15px 0" }} />
 
           <h3>📋 Mis Rutinas</h3>
 
+          {rutinas.length === 0 && (
+            <p style={{ opacity: 0.6 }}>No hay rutinas aún</p>
+          )}
+
           {rutinas.map((r) => (
             <div
               key={r.id_rutina}
+              onClick={() => selectRutina(r)}
               style={{
                 ...styles.card,
                 border:
@@ -165,31 +181,27 @@ export default function Rutina() {
                     ? "2px solid #22c55e"
                     : "none",
               }}
-              onClick={() => setSelectedRutina(r)}
             >
-              <p><b>{r.nombre}</b></p>
-              <small>{r.descripcion}</small>
+              <b>{r.nombre}</b>
+              <p style={{ fontSize: 12, opacity: 0.7 }}>
+                {r.descripcion}
+              </p>
             </div>
           ))}
         </div>
 
         {/* ================= CENTER ================= */}
         <div style={styles.center}>
+          <h3>📅 Días de la rutina</h3>
 
-          <h3>📅 Días de rutina</h3>
-
-          {!selectedRutina && (
-            <p>Selecciona una rutina</p>
-          )}
-
-          {selectedRutina && (
+          {!selectedRutina ? (
+            <p>👈 Selecciona una rutina</p>
+          ) : (
             <>
-              <p>
-                Rutina: <b>{selectedRutina.nombre}</b>
-              </p>
+              <h4>Rutina: {selectedRutina.nombre}</h4>
 
               <div style={styles.days}>
-                {diasSemana.map((d, i) => (
+                {diasSemana.map((dia, i) => (
                   <div
                     key={i}
                     onClick={() => toggleDia(i)}
@@ -200,13 +212,13 @@ export default function Rutina() {
                         : "#111827",
                     }}
                   >
-                    {d}
+                    {dia}
                   </div>
                 ))}
               </div>
 
               <button onClick={saveDias} style={styles.btn}>
-                Guardar días
+                💾 Guardar días en BD
               </button>
             </>
           )}
@@ -214,15 +226,12 @@ export default function Rutina() {
 
         {/* ================= RIGHT ================= */}
         <div style={styles.right}>
-          <h3>ℹ Info</h3>
+          <h3>ℹ Información</h3>
 
-          <p>
-            Aquí creas rutinas y defines qué días se repiten.
-          </p>
-
-          <p>
-            Todo queda guardado por usuario en la base de datos.
-          </p>
+          <p>✔ Rutinas por usuario</p>
+          <p>✔ Guardado en PostgreSQL</p>
+          <p>✔ Relación rutina → días</p>
+          <p>✔ Selección visual interactiva</p>
         </div>
 
       </div>
@@ -230,11 +239,13 @@ export default function Rutina() {
   );
 }
 
-/* ================= STYLES ================= */
+/* =========================
+   STYLES UX
+========================= */
 const styles = {
   page: {
     height: "100vh",
-    background: "#0b0f14",
+    background: "#0f172a",
     color: "white",
     fontFamily: "Arial",
   },
@@ -243,7 +254,7 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     padding: 15,
-    borderBottom: "1px solid #1f2a37",
+    borderBottom: "1px solid #1f2937",
   },
 
   grid: {
@@ -257,6 +268,7 @@ const styles = {
     background: "#111827",
     padding: 15,
     borderRadius: 10,
+    overflowY: "auto",
   },
 
   center: {
@@ -280,6 +292,7 @@ const styles = {
     background: "#0b0f14",
     color: "white",
     border: "none",
+    borderRadius: 6,
   },
 
   textarea: {
@@ -289,6 +302,7 @@ const styles = {
     background: "#0b0f14",
     color: "white",
     border: "none",
+    borderRadius: 6,
   },
 
   btn: {
@@ -297,8 +311,8 @@ const styles = {
     background: "#22c55e",
     border: "none",
     color: "white",
+    borderRadius: 8,
     cursor: "pointer",
-    marginTop: 5,
   },
 
   card: {
@@ -317,10 +331,11 @@ const styles = {
   },
 
   day: {
-    padding: 8,
+    padding: 10,
     textAlign: "center",
     cursor: "pointer",
     borderRadius: 6,
+    userSelect: "none",
   },
 
   back: {
@@ -328,6 +343,7 @@ const styles = {
     background: "#1f2937",
     color: "white",
     border: "none",
+    borderRadius: 6,
     cursor: "pointer",
   },
 };
