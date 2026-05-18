@@ -7,7 +7,7 @@ export default function Rutina() {
   const navigate = useNavigate();
 
   /* =========================
-     USER FIX
+     USER
   ========================= */
   const storedUser = JSON.parse(
     sessionStorage.getItem("usuario") || "null"
@@ -22,21 +22,59 @@ export default function Rutina() {
   };
 
   /* =========================
+     DATE
+  ========================= */
+  const today = new Date();
+
+  const [year, setYear] = useState(today.getFullYear());
+  const [month, setMonth] = useState(today.getMonth());
+
+  const [selectedDate, setSelectedDate] = useState(
+    today.toISOString().split("T")[0]
+  );
+
+  /* =========================
      STATES
   ========================= */
-  const [rutinas, setRutinas] = useState([]);
   const [actividades, setActividades] = useState([]);
 
-  const [selectedRutina, setSelectedRutina] = useState(null);
+  const [calendarEvents, setCalendarEvents] = useState([]);
 
-  const [nombre, setNombre] = useState("");
-  const [descripcion, setDescripcion] = useState("");
+  const [draggedActivity, setDraggedActivity] = useState(null);
 
-  const [diasSeleccionados, setDiasSeleccionados] = useState([]);
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
   const [loading, setLoading] = useState(true);
 
-  const diasSemana = [
+  /* =========================
+     CALENDAR
+  ========================= */
+  const months = [
+    "Enero",
+    "Febrero",
+    "Marzo",
+    "Abril",
+    "Mayo",
+    "Junio",
+    "Julio",
+    "Agosto",
+    "Septiembre",
+    "Octubre",
+    "Noviembre",
+    "Diciembre",
+  ];
+
+  const daysShort = [
+    "Lun",
+    "Mar",
+    "Mié",
+    "Jue",
+    "Vie",
+    "Sáb",
+    "Dom",
+  ];
+
+  const daysFull = [
     "Lunes",
     "Martes",
     "Miércoles",
@@ -51,142 +89,186 @@ export default function Rutina() {
   ========================= */
   const loadData = async () => {
     try {
-      if (!user?.id_usuario) {
-        console.log("❌ NO USER");
-        setLoading(false);
-        return;
-      }
+      setLoading(true);
 
-      console.log("✅ USER:", user);
-
-      const rutinasRes = await fetch(
-        `${API_URL}/api/rutina/${user.id_usuario}`
-      );
-
+      /* ACTIVIDADES */
       const actividadesRes = await fetch(
         `${API_URL}/api/registro-actividad/usuario/${user.id_usuario}`
       );
 
-      const rutinasData = await rutinasRes.json();
       const actividadesData = await actividadesRes.json();
 
-      console.log("📅 RUTINAS:", rutinasData);
-      console.log("🎯 ACTIVIDADES:", actividadesData);
+      setActividades(
+        Array.isArray(actividadesData)
+          ? actividadesData
+          : []
+      );
 
-      /* =========================
-         FIX ARRAY
-      ========================= */
-      const rutinasFinal = Array.isArray(rutinasData)
-        ? rutinasData
-        : rutinasData.data || [];
+      /* EVENTOS */
+      const eventosRes = await fetch(
+        `${API_URL}/api/rutina-evento/${user.id_usuario}`
+      );
 
-      const actividadesFinal = Array.isArray(actividadesData)
-        ? actividadesData
-        : actividadesData.data || [];
+      const eventosData = await eventosRes.json();
 
-      setRutinas(rutinasFinal);
-      setActividades(actividadesFinal);
+      setCalendarEvents(
+        Array.isArray(eventosData)
+          ? eventosData
+          : []
+      );
     } catch (err) {
-      console.log("❌ ERROR LOAD:", err);
+      console.log(err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
+    if (user?.id_usuario) {
+      loadData();
+    }
   }, []);
 
   /* =========================
-     CREATE RUTINA
+     HANDLE DROP
   ========================= */
-  const createRutina = async () => {
-    if (!nombre.trim()) return;
-
+  const handleDrop = async (dateStr) => {
     try {
-      const res = await fetch(`${API_URL}/api/rutina`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id_usuario: user.id_usuario,
-          nombre,
-          descripcion,
-          frecuencia: "Semanal",
-        }),
-      });
+      if (!draggedActivity) return;
 
-      const data = await res.json();
+      const hora =
+        prompt("Hora del evento", "08:00") || "08:00";
 
-      console.log("✅ NUEVA RUTINA:", data);
+      const repeticion =
+        prompt(
+          "Repetición: none | diario | semanal | mensual",
+          "none"
+        ) || "none";
 
-      setRutinas((prev) => [data, ...prev]);
-
-      setNombre("");
-      setDescripcion("");
-    } catch (err) {
-      console.log("❌ ERROR CREATE:", err);
-    }
-  };
-
-  /* =========================
-     SELECT RUTINA
-  ========================= */
-  const selectRutina = (rutina) => {
-    setSelectedRutina(rutina);
-    setDiasSeleccionados([]);
-  };
-
-  /* =========================
-     TOGGLE DIA
-  ========================= */
-  const toggleDia = (index) => {
-    setDiasSeleccionados((prev) =>
-      prev.includes(index)
-        ? prev.filter((d) => d !== index)
-        : [...prev, index]
-    );
-  };
-
-  /* =========================
-     SAVE DIAS
-  ========================= */
-  const saveDias = async () => {
-    if (!selectedRutina) return;
-
-    try {
-      const diasPayload = diasSeleccionados.map((i) => ({
-        dia: diasSemana[i],
-        hora: "08:00",
-        descripcion: "Rutina personalizada",
-      }));
-
-      console.log("📅 DIAS:", diasPayload);
+      const body = {
+        id_usuario: user.id_usuario,
+        id_registro: draggedActivity.id_registro,
+        titulo: draggedActivity.nombre_actividad,
+        descripcion:
+          draggedActivity.instrucciones_usuario || "",
+        fecha: dateStr,
+        hora,
+        repeticion,
+      };
 
       const res = await fetch(
-        `${API_URL}/api/rutina/dias`,
+        `${API_URL}/api/rutina-evento`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            id_rutina: selectedRutina.id_rutina,
-            dias: diasPayload,
-          }),
+          body: JSON.stringify(body),
         }
       );
 
       const data = await res.json();
 
-      console.log("✅ SAVE:", data);
+      setCalendarEvents((prev) => [...prev, data]);
 
-      alert("✔ Rutina guardada");
+      setDraggedActivity(null);
     } catch (err) {
-      console.log("❌ ERROR SAVE:", err);
+      console.log(err);
     }
   };
+
+  /* =========================
+     TOGGLE COMPLETADO
+  ========================= */
+  const toggleCompleted = async (evento) => {
+    try {
+      await fetch(
+        `${API_URL}/api/rutina-evento/${evento.id_evento}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            completado: !evento.completado,
+          }),
+        }
+      );
+
+      setCalendarEvents((prev) =>
+        prev.map((e) =>
+          e.id_evento === evento.id_evento
+            ? {
+                ...e,
+                completado: !e.completado,
+              }
+            : e
+        )
+      );
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  /* =========================
+     EVENTS DAY
+  ========================= */
+  const dayEvents = calendarEvents
+    .filter((e) => e.fecha === selectedDate)
+    .sort((a, b) => a.hora.localeCompare(b.hora));
+
+  /* =========================
+     CALENDAR LOGIC
+  ========================= */
+  const getWeeksForMonth = (m, y) => {
+    const weeks = [];
+
+    const firstDay = new Date(y, m, 1);
+
+    let current = new Date(firstDay);
+
+    current.setDate(
+      current.getDate() -
+        (current.getDay() === 0
+          ? 6
+          : current.getDay() - 1)
+    );
+
+    while (
+      current.getMonth() === m ||
+      weeks.length === 0
+    ) {
+      const week = [];
+
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(current);
+
+        if (
+          d.getMonth() === m &&
+          d.getFullYear() === y
+        ) {
+          week.push(
+            d.toISOString().split("T")[0]
+          );
+        } else {
+          week.push(null);
+        }
+
+        current.setDate(current.getDate() + 1);
+      }
+
+      weeks.push(week);
+
+      if (current.getMonth() !== m) break;
+    }
+
+    return weeks;
+  };
+
+  const monthWeeks = getWeeksForMonth(
+    month,
+    year
+  );
 
   /* =========================
      LOADING
@@ -194,7 +276,7 @@ export default function Rutina() {
   if (loading) {
     return (
       <div style={styles.loading}>
-        ⏳ Cargando rutinas...
+        ⏳ Cargando rutina...
       </div>
     );
   }
@@ -207,13 +289,13 @@ export default function Rutina() {
       ========================= */}
       <div style={styles.header}>
         <div>
-          <h2 style={{ margin: 0 }}>
-            🧘 Rutinas
-          </h2>
+          <h1 style={{ margin: 0 }}>
+            🧘 Rutina Inteligente
+          </h1>
 
-          <small style={{ opacity: 0.7 }}>
-            Organiza tus hábitos
-          </small>
+          <p style={{ opacity: 0.7 }}>
+            Arrastra actividades al calendario
+          </p>
         </div>
 
         <button
@@ -234,58 +316,35 @@ export default function Rutina() {
         ========================= */}
         <div style={styles.left}>
 
-          <h3>➕ Nueva rutina</h3>
+          <h3>🎯 Actividades</h3>
 
-          <input
-            type="text"
-            placeholder="Nombre"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            style={styles.input}
-          />
-
-          <textarea
-            placeholder="Descripción..."
-            value={descripcion}
-            onChange={(e) => setDescripcion(e.target.value)}
-            style={styles.textarea}
-          />
-
-          <button
-            onClick={createRutina}
-            style={styles.createBtn}
-          >
-            Crear rutina
-          </button>
-
-          <div style={styles.separator} />
-
-          <h3>📋 Mis rutinas</h3>
-
-          {rutinas.length === 0 ? (
+          {actividades.length === 0 ? (
             <div style={styles.empty}>
-              No hay rutinas creadas
+              No hay actividades
             </div>
           ) : (
-            rutinas.map((r) => (
+            actividades.map((a) => (
               <div
-                key={r.id_rutina}
-                onClick={() => selectRutina(r)}
-                style={{
-                  ...styles.rutinaCard,
-                  border:
-                    selectedRutina?.id_rutina === r.id_rutina
-                      ? "2px solid #22c55e"
-                      : "2px solid transparent",
-                }}
+                key={a.id_registro}
+                draggable
+                onDragStart={() =>
+                  setDraggedActivity(a)
+                }
+                style={styles.activityCard}
               >
-                <h4 style={{ margin: 0 }}>
-                  {r.nombre}
-                </h4>
+                <div>
+                  <h4 style={{ margin: 0 }}>
+                    {a.nombre_actividad}
+                  </h4>
 
-                <p style={styles.rutinaDesc}>
-                  {r.descripcion || "Sin descripción"}
-                </p>
+                  <small style={{ opacity: 0.7 }}>
+                    ⭐ {a.puntaje_agrado || 0}/10
+                  </small>
+                </div>
+
+                <div style={styles.drag}>
+                  ☰
+                </div>
               </div>
             ))
           )}
@@ -296,65 +355,76 @@ export default function Rutina() {
         ========================= */}
         <div style={styles.center}>
 
-          {!selectedRutina ? (
-            <div style={styles.centerEmpty}>
-              <h2>📅 Calendario semanal</h2>
+          <h2>
+            {
+              daysFull[
+                new Date(selectedDate).getDay() === 0
+                  ? 6
+                  : new Date(selectedDate).getDay() - 1
+              ]
+            }
 
-              <p style={{ opacity: 0.7 }}>
-                Selecciona una rutina
-              </p>
-            </div>
-          ) : (
-            <>
-              <div style={styles.centerHeader}>
-                <div>
-                  <h2 style={{ margin: 0 }}>
-                    {selectedRutina.nombre}
-                  </h2>
+            <span style={styles.dateText}>
+              {selectedDate}
+            </span>
+          </h2>
 
-                  <small style={{ opacity: 0.7 }}>
-                    {selectedRutina.descripcion}
-                  </small>
-                </div>
+          <div style={styles.eventsContainer}>
 
-                <div style={styles.counter}>
-                  {diasSeleccionados.length} días
-                </div>
+            {dayEvents.length === 0 ? (
+              <div style={styles.emptyDay}>
+                Arrastra actividades aquí
               </div>
-
-              <div style={styles.daysGrid}>
-                {diasSemana.map((dia, i) => (
+            ) : (
+              dayEvents.map((e) => (
+                <div
+                  key={e.id_evento}
+                  style={{
+                    ...styles.eventCard,
+                    opacity:
+                      e.completado ? 0.5 : 1,
+                  }}
+                  onClick={() =>
+                    setSelectedEvent(e)
+                  }
+                >
                   <div
-                    key={i}
-                    onClick={() => toggleDia(i)}
-                    style={{
-                      ...styles.dayCard,
-                      background: diasSeleccionados.includes(i)
-                        ? "#22c55e"
-                        : "#1f2937",
+                    style={styles.checkbox}
+                    onClick={(ev) => {
+                      ev.stopPropagation();
+                      toggleCompleted(e);
                     }}
                   >
-                    {dia}
+                    {e.completado
+                      ? "✅"
+                      : "⬜"}
                   </div>
-                ))}
-              </div>
 
-              {diasSeleccionados.length > 0 && (
-                <div style={styles.selectedInfo}>
-                  ✔ {diasSeleccionados
-                    .map((i) => diasSemana[i])
-                    .join(", ")}
+                  <div style={{ flex: 1 }}>
+                    <h4
+                      style={{
+                        margin: 0,
+                        textDecoration:
+                          e.completado
+                            ? "line-through"
+                            : "none",
+                      }}
+                    >
+                      {e.titulo}
+                    </h4>
+
+                    <small>
+                      🕒 {e.hora}
+                    </small>
+
+                    <div style={styles.repeat}>
+                      🔁 {e.repeticion}
+                    </div>
+                  </div>
                 </div>
-              )}
-
-              <button
-                onClick={saveDias}
-                style={styles.saveBtn}
-              >
-                💾 Guardar días
-              </button>
-            </>
-          )}
+              ))
+            )}
+          </div>
         </div>
 
         {/* =========================
@@ -362,37 +432,164 @@ export default function Rutina() {
         ========================= */}
         <div style={styles.right}>
 
-          <h3>🎯 Actividades</h3>
+          <div style={styles.calendarHeader}>
+            <select
+              value={year}
+              onChange={(e) =>
+                setYear(Number(e.target.value))
+              }
+              style={styles.select}
+            >
+              {[2025, 2026, 2027, 2028].map(
+                (y) => (
+                  <option
+                    key={y}
+                    value={y}
+                  >
+                    {y}
+                  </option>
+                )
+              )}
+            </select>
 
-          {actividades.length === 0 ? (
-            <div style={styles.empty}>
-              Sin actividades
-            </div>
-          ) : (
-            actividades.map((a) => (
+            <select
+              value={month}
+              onChange={(e) =>
+                setMonth(Number(e.target.value))
+              }
+              style={styles.select}
+            >
+              {months.map((m, i) => (
+                <option
+                  key={i}
+                  value={i}
+                >
+                  {m}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <h3 style={styles.monthTitle}>
+            {months[month]} {year}
+          </h3>
+
+          {/* WEEK */}
+          <div style={styles.weekHeader}>
+            {daysShort.map((d) => (
               <div
-                key={a.id_registro}
-                style={styles.activityCard}
+                key={d}
+                style={styles.weekDay}
               >
-                <h4 style={{ margin: 0 }}>
-                  {a.nombre_actividad}
-                </h4>
-
-                <p style={styles.score}>
-                  ⭐ {a.puntaje_agrado || 0}/10
-                </p>
-
-                <small style={{ opacity: 0.7 }}>
-                  {a.instrucciones_usuario
-                    ? a.instrucciones_usuario.slice(0, 70)
-                    : "Sin instrucciones"}
-                </small>
+                {d}
               </div>
-            ))
-          )}
+            ))}
+          </div>
+
+          {/* CALENDAR */}
+          <div style={styles.calendar}>
+            {monthWeeks.map((week, i) => (
+              <div
+                key={i}
+                style={styles.weekRow}
+              >
+                {week.map((dateStr, j) => {
+                  const count =
+                    calendarEvents.filter(
+                      (e) =>
+                        e.fecha === dateStr
+                    ).length;
+
+                  return (
+                    <div
+                      key={j}
+                      onClick={() =>
+                        dateStr &&
+                        setSelectedDate(
+                          dateStr
+                        )
+                      }
+                      onDragOver={(e) =>
+                        e.preventDefault()
+                      }
+                      onDrop={() =>
+                        dateStr &&
+                        handleDrop(dateStr)
+                      }
+                      style={{
+                        ...styles.dayCell,
+                        background:
+                          dateStr ===
+                          selectedDate
+                            ? "#2563eb"
+                            : "#111827",
+                      }}
+                    >
+                      <div>
+                        {dateStr
+                          ? parseInt(
+                              dateStr.slice(8)
+                            )
+                          : ""}
+                      </div>
+
+                      {count > 0 && (
+                        <small
+                          style={{
+                            fontSize: 10,
+                          }}
+                        >
+                          {count}
+                        </small>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+
         </div>
 
       </div>
+
+      {/* =========================
+         MODAL
+      ========================= */}
+      {selectedEvent && (
+        <div style={styles.modal}>
+          <div style={styles.modalContent}>
+
+            <h2>{selectedEvent.titulo}</h2>
+
+            <p>
+              📅 {selectedEvent.fecha}
+            </p>
+
+            <p>
+              🕒 {selectedEvent.hora}
+            </p>
+
+            <p>
+              🔁 {selectedEvent.repeticion}
+            </p>
+
+            <div style={styles.modalDesc}>
+              {selectedEvent.descripcion ||
+                "Sin descripción"}
+            </div>
+
+            <button
+              onClick={() =>
+                setSelectedEvent(null)
+              }
+              style={styles.closeBtn}
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -403,7 +600,7 @@ export default function Rutina() {
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#0f172a",
+    background: "#0b0f14",
     color: "white",
     fontFamily: "Arial",
   },
@@ -413,23 +610,21 @@ const styles = {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    background: "#0f172a",
-    color: "white",
-    fontSize: 22,
+    fontSize: 24,
+    background: "#0b0f14",
   },
 
   header: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center",
     padding: 20,
     borderBottom: "1px solid #1f2937",
   },
 
   backBtn: {
     background: "#1f2937",
-    color: "white",
     border: "none",
+    color: "white",
     padding: "10px 14px",
     borderRadius: 10,
     cursor: "pointer",
@@ -437,7 +632,7 @@ const styles = {
 
   grid: {
     display: "grid",
-    gridTemplateColumns: "28% 1fr 28%",
+    gridTemplateColumns: "280px 1fr 360px",
     gap: 15,
     padding: 15,
   },
@@ -446,13 +641,13 @@ const styles = {
     background: "#111827",
     padding: 15,
     borderRadius: 14,
+    overflowY: "auto",
   },
 
   center: {
     background: "#111827",
     padding: 20,
     borderRadius: 14,
-    minHeight: 600,
   },
 
   right: {
@@ -461,126 +656,151 @@ const styles = {
     borderRadius: 14,
   },
 
-  input: {
-    width: "100%",
-    padding: 12,
-    borderRadius: 10,
-    border: "1px solid #374151",
-    background: "#0f172a",
-    color: "white",
-    marginBottom: 10,
-  },
-
-  textarea: {
-    width: "100%",
-    height: 100,
-    padding: 12,
-    borderRadius: 10,
-    border: "1px solid #374151",
-    background: "#0f172a",
-    color: "white",
-    marginBottom: 10,
-  },
-
-  createBtn: {
-    width: "100%",
-    padding: 12,
-    background: "#22c55e",
-    color: "white",
-    border: "none",
-    borderRadius: 10,
-    cursor: "pointer",
-    fontWeight: "bold",
-  },
-
-  separator: {
-    height: 1,
-    background: "#1f2937",
-    margin: "20px 0",
-  },
-
   empty: {
     opacity: 0.6,
     marginTop: 20,
   },
 
-  rutinaCard: {
-    background: "#0f172a",
+  activityCard: {
+    background: "#1f2937",
     padding: 14,
     borderRadius: 12,
     marginBottom: 10,
+    cursor: "grab",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  drag: {
+    fontSize: 20,
+    opacity: 0.5,
+  },
+
+  dateText: {
+    marginLeft: 10,
+    opacity: 0.6,
+    fontSize: 16,
+  },
+
+  eventsContainer: {
+    marginTop: 20,
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
+  },
+
+  emptyDay: {
+    height: 300,
+    border: "2px dashed #374151",
+    borderRadius: 14,
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    opacity: 0.6,
+  },
+
+  eventCard: {
+    background: "#1f2937",
+    padding: 14,
+    borderRadius: 12,
+    display: "flex",
+    gap: 12,
     cursor: "pointer",
-    transition: "0.2s",
   },
 
-  rutinaDesc: {
+  checkbox: {
+    fontSize: 22,
+  },
+
+  repeat: {
+    marginTop: 5,
     opacity: 0.7,
-    fontSize: 13,
+    fontSize: 12,
   },
 
-  centerEmpty: {
-    height: "100%",
+  calendarHeader: {
+    display: "flex",
+    gap: 8,
+  },
+
+  select: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 10,
+    border: "none",
+    background: "#1f2937",
+    color: "white",
+  },
+
+  monthTitle: {
+    textAlign: "center",
+    margin: "15px 0",
+  },
+
+  weekHeader: {
+    display: "grid",
+    gridTemplateColumns: "repeat(7,1fr)",
+    marginBottom: 5,
+  },
+
+  weekDay: {
+    textAlign: "center",
+    opacity: 0.7,
+    fontSize: 12,
+  },
+
+  calendar: {},
+
+  weekRow: {
+    display: "grid",
+    gridTemplateColumns: "repeat(7,1fr)",
+    gap: 5,
+    marginBottom: 5,
+  },
+
+  dayCell: {
+    height: 60,
+    borderRadius: 10,
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
-  },
-
-  centerHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-
-  counter: {
-    background: "#1e293b",
-    padding: "8px 14px",
-    borderRadius: 20,
-  },
-
-  daysGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(7,1fr)",
-    gap: 10,
-    marginBottom: 20,
-  },
-
-  dayCard: {
-    padding: 15,
-    borderRadius: 12,
-    textAlign: "center",
     cursor: "pointer",
     userSelect: "none",
-    transition: "0.2s",
   },
 
-  selectedInfo: {
-    background: "#052e16",
+  modal: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(0,0,0,0.8)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  modalContent: {
+    background: "#111827",
+    padding: 25,
+    borderRadius: 14,
+    width: 400,
+  },
+
+  modalDesc: {
+    marginTop: 15,
+    background: "#1f2937",
     padding: 12,
     borderRadius: 10,
-    marginBottom: 20,
   },
 
-  saveBtn: {
+  closeBtn: {
+    marginTop: 20,
     width: "100%",
-    padding: 14,
-    background: "#2563eb",
-    color: "white",
+    padding: 12,
     border: "none",
-    borderRadius: 12,
+    borderRadius: 10,
+    background: "#ef4444",
+    color: "white",
     cursor: "pointer",
-    fontWeight: "bold",
-  },
-
-  activityCard: {
-    background: "#0f172a",
-    padding: 14,
-    borderRadius: 12,
-    marginBottom: 10,
-  },
-
-  score: {
-    color: "#facc15",
   },
 };
