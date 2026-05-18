@@ -1,41 +1,37 @@
-// ============================================
-// src/pages/Admin.jsx
-// ============================================
-
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API =
-  "https://empatia-backend.onrender.com/api/users";
+const API = "https://empatia-backend.onrender.com/api/users";
 
 export default function Admin() {
   const navigate = useNavigate();
 
-  // ============================================
-  // PROTECCIÓN REAL (NO RENDER SI NO HAY SESIÓN)
-  // ============================================
+  /* =========================
+     PROTECCIÓN SEGURA
+  ========================= */
 
-  const session = sessionStorage.getItem("usuario");
+  useEffect(() => {
+    const session = sessionStorage.getItem("usuario");
 
-  if (!session) {
-    navigate("/", { replace: true });
-    return null;
-  }
+    if (!session) {
+      navigate("/", { replace: true });
+    }
+  }, [navigate]);
 
-  // ============================================
-  // STATES
-  // ============================================
+  /* =========================
+     STATES
+  ========================= */
 
-  const [tab, setTab] = useState("users");
+  const [tab, setTab] = useState("dashboard");
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [serverStatus, setServerStatus] = useState("checking");
 
-  // ============================================
-  // LOGS
-  // ============================================
+  /* =========================
+     LOG SYSTEM
+  ========================= */
 
   const addLog = (msg) => {
     setLogs((prev) => [
@@ -47,26 +43,26 @@ export default function Admin() {
     ].slice(0, 50));
   };
 
-  // ============================================
-  // SERVER CHECK
-  // ============================================
+  /* =========================
+     SERVER CHECK
+  ========================= */
 
   const checkServer = async () => {
     try {
-      const res = await fetch(API, { method: "HEAD" });
+      const res = await fetch(API);
 
       setServerStatus(res.ok ? "online" : "offline");
 
-      addLog(res.ok ? "Servidor ONLINE" : "Servidor OFFLINE");
+      addLog(res.ok ? "🟢 Servidor ONLINE" : "🔴 Servidor OFFLINE");
     } catch {
       setServerStatus("offline");
-      addLog("Servidor OFFLINE");
+      addLog("🔴 Servidor OFFLINE");
     }
   };
 
-  // ============================================
-  // LOAD USERS
-  // ============================================
+  /* =========================
+     LOAD USERS
+  ========================= */
 
   const loadUsers = async () => {
     setLoading(true);
@@ -74,15 +70,12 @@ export default function Admin() {
     try {
       const res = await fetch(API);
 
-      if (!res.ok) throw new Error("Error servidor");
-
       const data = await res.json();
 
       setUsers(Array.isArray(data) ? data : []);
 
-      addLog(`✅ ${data.length} usuarios cargados`);
-    } catch (e) {
-      console.log(e);
+      addLog(`👤 ${data.length} usuarios cargados`);
+    } catch {
       setUsers([]);
       addLog("❌ Error cargando usuarios");
     } finally {
@@ -90,18 +83,18 @@ export default function Admin() {
     }
   };
 
-  // ============================================
-  // INIT
-  // ============================================
+  /* =========================
+     INIT
+  ========================= */
 
   useEffect(() => {
     loadUsers();
     checkServer();
   }, []);
 
-  // ============================================
-  // FILTER
-  // ============================================
+  /* =========================
+     FILTER
+  ========================= */
 
   const filtered = useMemo(() => {
     const t = search.toLowerCase();
@@ -113,30 +106,40 @@ export default function Admin() {
     );
   }, [users, search]);
 
-  // ============================================
-  // DELETE USER
-  // ============================================
+  /* =========================
+     DELETE USER (FIX REAL ID)
+  ========================= */
 
-  const deleteUser = (id) => {
+  const deleteUser = async (id) => {
     if (!window.confirm("¿Eliminar usuario?")) return;
 
-    setUsers((prev) => prev.filter((u) => u._id !== id));
+    try {
+      await fetch(`${API}/${id}`, {
+        method: "DELETE",
+      });
 
-    addLog(`Usuario eliminado: ${id}`);
+      setUsers((prev) =>
+        prev.filter((u) => u.id_usuario !== id)
+      );
+
+      addLog(`🗑 Usuario eliminado: ${id}`);
+    } catch {
+      addLog("❌ Error eliminando usuario");
+    }
   };
 
-  // ============================================
-  // LOGOUT (PRO)
-  // ============================================
+  /* =========================
+     LOGOUT
+  ========================= */
 
   const logout = () => {
     sessionStorage.clear();
     navigate("/", { replace: true });
   };
 
-  // ============================================
-  // UI
-  // ============================================
+  /* =========================
+     UI
+  ========================= */
 
   return (
     <div style={styles.layout}>
@@ -144,60 +147,51 @@ export default function Admin() {
         <h2 style={styles.title}>🛠 EmpatIA Admin</h2>
 
         <div style={styles.tabs}>
-          <button
-            style={tab === "dashboard" ? styles.tabActive : styles.tab}
-            onClick={() => setTab("dashboard")}
-          >
+          <button onClick={() => setTab("dashboard")} style={tab === "dashboard" ? styles.tabActive : styles.tab}>
             📊 Dashboard
           </button>
 
-          <button
-            style={tab === "users" ? styles.tabActive : styles.tab}
-            onClick={() => setTab("users")}
-          >
+          <button onClick={() => setTab("users")} style={tab === "users" ? styles.tabActive : styles.tab}>
             👤 Usuarios
           </button>
 
-          <button
-            style={tab === "logs" ? styles.tabActive : styles.tab}
-            onClick={() => setTab("logs")}
-          >
+          <button onClick={() => setTab("logs")} style={tab === "logs" ? styles.tabActive : styles.tab}>
             📜 Logs
           </button>
 
-          <button style={styles.tab} onClick={loadUsers}>
+          <button onClick={loadUsers} style={styles.tab}>
             🔄 Recargar
           </button>
 
-          <button style={styles.danger} onClick={logout}>
+          <button onClick={logout} style={styles.danger}>
             🚪 Salir
           </button>
         </div>
       </div>
 
       <div style={styles.main}>
+        {/* =========================
+            DASHBOARD
+        ========================= */}
         {tab === "dashboard" && (
           <div style={styles.cards}>
             <div style={styles.card}>
-              👤 Usuarios <br />
+              👤 Usuarios<br />
               <b>{users.length}</b>
             </div>
 
             <div style={styles.card}>
               ⚡ Servidor:{" "}
-              {serverStatus === "online" && (
-                <b style={{ color: "#00ff88" }}>🟢 ONLINE</b>
-              )}
-
-              {serverStatus === "offline" && (
-                <b style={{ color: "#ff3b3b" }}>🔴 OFFLINE</b>
-              )}
-
+              {serverStatus === "online" && <b style={{ color: "#00ff88" }}>🟢 ONLINE</b>}
+              {serverStatus === "offline" && <b style={{ color: "#ff3b3b" }}>🔴 OFFLINE</b>}
               {serverStatus === "checking" && <b>⏳ Checking...</b>}
             </div>
           </div>
         )}
 
+        {/* =========================
+            USERS TABLE
+        ========================= */}
         {tab === "users" && (
           <>
             <input
@@ -208,7 +202,7 @@ export default function Admin() {
             />
 
             {loading ? (
-              <p>Cargando usuarios...</p>
+              <p>Loading...</p>
             ) : (
               <table style={styles.table}>
                 <thead>
@@ -221,13 +215,13 @@ export default function Admin() {
 
                 <tbody>
                   {filtered.map((u) => (
-                    <tr key={u._id}>
-                      <td>{u.nombre || "Sin nombre"}</td>
+                    <tr key={u.id_usuario}>
+                      <td>{u.nombre}</td>
                       <td>{u.email}</td>
                       <td>
                         <button
                           style={styles.danger}
-                          onClick={() => deleteUser(u._id)}
+                          onClick={() => deleteUser(u.id_usuario)}
                         >
                           Eliminar
                         </button>
@@ -240,6 +234,9 @@ export default function Admin() {
           </>
         )}
 
+        {/* =========================
+            LOGS
+        ========================= */}
         {tab === "logs" && (
           <div style={styles.logsBox}>
             {logs.map((l, i) => (
@@ -254,9 +251,9 @@ export default function Admin() {
   );
 }
 
-// ============================================
-// STYLES
-// ============================================
+/* =========================
+   STYLES
+========================= */
 
 const styles = {
   layout: {
@@ -306,7 +303,6 @@ const styles = {
   cards: {
     display: "flex",
     gap: "20px",
-    flexWrap: "wrap",
   },
 
   card: {
@@ -333,7 +329,7 @@ const styles = {
 
   danger: {
     background: "#ff3b3b",
-    color: "white",
+    color: "#fff",
     border: "none",
     padding: "8px 12px",
     borderRadius: "4px",
