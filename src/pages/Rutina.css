@@ -8,9 +8,6 @@
   display: flex;
   flex-direction: column;
   font-family: Arial;
-
-  /* 🔤 15% menos texto global */
-  font-size: 85%;
 }
 
 /* =========================
@@ -19,12 +16,12 @@
 .header {
   display: flex;
   justify-content: space-between;
-  padding: 16px; /* antes 20 */
+  padding: 14px; /* ↓ compacto */
   border-bottom: 1px solid #1f2937;
 }
 
 .backBtn {
-  padding: 8px 14px; /* reducido */
+  padding: 8px 14px;
   border-radius: 8px;
   border: none;
   background: #1f2937;
@@ -38,8 +35,8 @@
 .layout {
   flex: 1;
   display: flex;
-  gap: 12px; /* antes 15 */
-  padding: 12px; /* antes 15 */
+  gap: 10px; /* ↓ más compacto */
+  padding: 10px; /* ↓ más compacto */
   overflow: hidden;
 }
 
@@ -47,9 +44,9 @@
    COLUMNAS
 ========================= */
 .left {
-  width: 260px; /* antes 320 */
+  width: 255px; /* ↓ antes más grande */
   background: #0f172a;
-  padding: 12px; /* antes 15 */
+  padding: 11px;
   border-radius: 10px;
   overflow-y: auto;
 }
@@ -57,15 +54,15 @@
 .center {
   flex: 1;
   background: #0f172a;
-  padding: 16px; /* antes 20 */
+  padding: 15px;
   border-radius: 10px;
   overflow-y: auto;
 }
 
 .right {
-  width: 290px; /* antes 360 */
+  width: 285px;
   background: #0f172a;
-  padding: 12px;
+  padding: 11px;
   border-radius: 10px;
   overflow-y: auto;
 }
@@ -75,15 +72,10 @@
 ========================= */
 .activityCard {
   background: #111827;
-  padding: 10px; /* antes 12 */
+  padding: 9px;
   border-radius: 8px;
-  margin-bottom: 8px; /* antes 10 */
+  margin-bottom: 7px;
   cursor: pointer;
-  transition: 0.2s;
-}
-
-.activityCard:hover {
-  transform: scale(1.01);
 }
 
 .activityCard.active {
@@ -96,9 +88,9 @@
 input,
 select {
   width: 100%;
-  padding: 8px; /* antes 10 */
-  margin-top: 5px;
-  margin-bottom: 12px; /* antes 15 */
+  padding: 7px;
+  margin-top: 4px;
+  margin-bottom: 10px;
   border-radius: 7px;
   border: none;
   background: #111827;
@@ -106,11 +98,11 @@ select {
 }
 
 /* =========================
-   BOTONES
+   BOTÓN
 ========================= */
 .createBtn {
   width: 100%;
-  padding: 11px; /* antes 14 */
+  padding: 10px;
   background: #22c55e;
   border: none;
   border-radius: 8px;
@@ -125,14 +117,14 @@ select {
 .selectedContainer {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px; /* antes 8 */
+  gap: 5px;
 }
 
 .selectedDay {
   background: #22c55e;
-  padding: 5px 8px;
+  padding: 4px 7px;
   border-radius: 6px;
-  font-size: 0.75rem;
+  font-size: 12px;
 }
 
 /* =========================
@@ -141,16 +133,7 @@ select {
 .calendarHeader {
   display: flex;
   gap: 8px;
-  margin-bottom: 12px;
-}
-
-.select {
-  flex: 1;
-  padding: 8px;
-  border-radius: 7px;
-  border: none;
-  background: #111827;
-  color: white;
+  margin-bottom: 10px;
 }
 
 .weekHeader,
@@ -167,11 +150,10 @@ select {
 .weekDay {
   text-align: center;
   opacity: 0.7;
-  font-size: 0.8rem;
 }
 
 .dayCell {
-  height: 38px; /* antes 45 */
+  height: 36px; /* ↓ reducido */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -180,35 +162,26 @@ select {
   background: #111827;
 }
 
-.dayCell:hover {
-  background: #1f2937;
-}
-
-.dayCell.active {
-  background: #2563eb;
-}
-
 /* =========================
    SEMANA
 ========================= */
 .weekContainer {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 7px;
 }
 
 .weekCard {
-  padding: 10px; /* antes 12 */
+  padding: 10px;
   border-radius: 8px;
-  background: #111827;
+  cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  cursor: pointer;
 }
 
 /* =========================
-   CENTRO - EVENTOS
+   EVENTOS
 ========================= */
 .timeline {
   display: flex;
@@ -216,9 +189,10 @@ select {
   gap: 12px;
 }
 
-.empty {
-  height: 250px;
+.emptyDay {
+  height: 260px;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   opacity: 0.6;
@@ -233,15 +207,19 @@ select {
   align-items: flex-start;
 }
 
-.eventCard h3 {
-  margin: 0;
-  font-size: 0.95rem;
+.eventLeft {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
 }
 
-.eventCard p {
-  margin: 4px 0;
-  font-size: 0.85rem;
-  opacity: 0.8;
+.eventCard button {
+  background: #ef4444;
+  border: none;
+  color: white;
+  padding: 8px;
+  border-radius: 7px;
+  cursor: pointer;
 }
 
 /* =========================
@@ -254,41 +232,22 @@ input[type="checkbox"] {
 }
 
 /* =========================
-   BOTÓN DELETE
+   BADGES
 ========================= */
-.eventCard button {
-  background: #ef4444;
-  border: none;
-  color: white;
-  padding: 8px;
+.repeatBadge {
+  margin-top: 8px;
+  background: #1e293b;
+  display: inline-block;
+  padding: 5px 8px;
   border-radius: 7px;
-  cursor: pointer;
-}
-
-/* =========================
-   HR
-========================= */
-hr {
-  border: 0;
-  border-top: 1px solid #1f2937;
-  margin: 16px 0;
+  font-size: 12px;
 }
 
 /* =========================
    TEXTOS
 ========================= */
-h1 {
-  font-size: 1.4rem; /* reducido */
-}
-
-h2 {
-  font-size: 1.2rem;
-}
-
-h3 {
-  font-size: 1rem;
-}
-
-p {
-  line-height: 1.4;
+hr {
+  border: 0;
+  border-top: 1px solid #1f2937;
+  margin: 14px 0;
 }
