@@ -26,38 +26,75 @@ const mainOptions = [
 ];
 
 const subOptions = {
-  "🎵 Música": ["Lo-fi", "Piano suave", "Música relajante", "Sonidos lluvia", "Cantar"],
-  "🧘 Relajación": ["Respirar profundo", "Meditar", "Estiramientos", "Cerrar ojos", "Ducha relajante"],
-  "🏃 Actividad física": ["Caminar", "Yoga", "Bailar", "Mover cuerpo", "Trotar suave"],
+  "🎵 Música": [
+    "Lo-fi",
+    "Piano suave",
+    "Música relajante",
+    "Sonidos lluvia",
+    "Cantar",
+  ],
+  "🧘 Relajación": [
+    "Respirar profundo",
+    "Meditar",
+    "Estiramientos",
+    "Cerrar ojos",
+    "Ducha relajante",
+  ],
+  "🏃 Actividad física": [
+    "Caminar",
+    "Yoga",
+    "Bailar",
+    "Mover cuerpo",
+    "Trotar suave",
+  ],
 };
+
+// ============================================
+// COMPONENTE
+// ============================================
 
 export default function User() {
   const navigate = useNavigate();
 
-  const user = JSON.parse(
+  // =========================
+  // SESSION FIX REAL
+  // =========================
+  const storedUser = JSON.parse(
     sessionStorage.getItem("usuario") || "null"
   );
 
-  if (!user) {
+  const user = {
+    id_usuario:
+      storedUser?.id_usuario ||
+      storedUser?.user?.id_usuario ||
+      storedUser?.id ||
+      null,
+    nombre:
+      storedUser?.nombre ||
+      storedUser?.user?.nombre ||
+      "Usuario",
+  };
+
+  if (!user.id_usuario) {
     navigate("/", { replace: true });
     return null;
   }
 
-  // ============================================
+  // =========================
   // STATES
-  // ============================================
+  // =========================
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [writingActivity, setWritingActivity] = useState(false);
   const [frase, setFrase] = useState("");
 
-  // ============================================
+  // =========================
   // INIT
-  // ============================================
+  // =========================
   useEffect(() => {
     setMessages([
-      { role: "ai", text: `Hola ${user?.nombre || "🤍"}, estoy aquí contigo.` },
+      { role: "ai", text: `Hola ${user.nombre}, estoy aquí contigo.` },
       { role: "ai", text: "Cuéntame cómo te sientes..." },
     ]);
 
@@ -70,9 +107,9 @@ export default function User() {
     return () => clearInterval(interval);
   }, []);
 
-  // ============================================
+  // =========================
   // IA REQUEST
-  // ============================================
+  // =========================
   const askAI = async (message) => {
     try {
       const res = await fetch(`${API_URL}/chat`, {
@@ -90,9 +127,9 @@ export default function User() {
     }
   };
 
-  // ============================================
-  // 🚀 GUARDAR EN BD (FIX REAL)
-  // ============================================
+  // =========================
+  // SAVE ACTIVITY (BD)
+  // =========================
   const saveActivity = async (activityName) => {
     try {
       const res = await fetch(
@@ -113,13 +150,13 @@ export default function User() {
       const data = await res.json();
       console.log("Actividad guardada:", data);
     } catch (err) {
-      console.log("ERROR SAVE ACTIVITY:", err);
+      console.log("ERROR SAVE:", err);
     }
   };
 
-  // ============================================
+  // =========================
   // SEND MESSAGE
-  // ============================================
+  // =========================
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
 
@@ -192,21 +229,28 @@ export default function User() {
     setLoading(false);
   };
 
-  // ============================================
+  // =========================
   // OPTIONS HANDLER
-  // ============================================
+  // =========================
   const handleOptionClick = async (opt) => {
     setMessages((prev) => [...prev, { role: "user", text: opt }]);
 
     if (opt === "No") {
-      setMessages((prev) => [...prev, { role: "ai", text: "🤍 Estoy contigo." }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: "🤍 Estoy contigo." },
+      ]);
       return;
     }
 
     if (opt === "Sí") {
       setMessages((prev) => [
         ...prev,
-        { role: "ai", text: "✨ Elige una categoría:", options: mainOptions },
+        {
+          role: "ai",
+          text: "✨ Elige una categoría:",
+          options: mainOptions,
+        },
       ]);
       return;
     }
@@ -214,7 +258,11 @@ export default function User() {
     if (subOptions[opt]) {
       setMessages((prev) => [
         ...prev,
-        { role: "ai", text: `✨ Opciones de ${opt}:`, options: subOptions[opt] },
+        {
+          role: "ai",
+          text: `✨ Opciones de ${opt}:`,
+          options: subOptions[opt],
+        },
       ]);
       return;
     }
@@ -242,9 +290,9 @@ export default function User() {
     }, 1500);
   };
 
-  // ============================================
+  // =========================
   // UI
-  // ============================================
+  // =========================
   return (
     <div className="app-layout">
 
@@ -253,12 +301,13 @@ export default function User() {
         <div className="quote-box">{frase}</div>
 
         <div style={{ marginTop: 20, color: "#00e5ff" }}>
-          👤 {user?.nombre}
+          👤 {user.nombre}
         </div>
       </div>
 
       <div className="center-panel">
         <ChatBox messages={messages} onOptionClick={handleOptionClick} />
+
         <InputBox
           input={input}
           setInput={setInput}
