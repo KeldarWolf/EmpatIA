@@ -34,8 +34,8 @@ export default function Rutina() {
   const [hora, setHora] = useState("09:00");
   const [horaFin, setHoraFin] = useState("10:00");
   const [duracion, setDuracion] = useState(60);
-  const [repeticion, setRepeticion] = useState("dia");
 
+  const [repeticion, setRepeticion] = useState("dia");
   const [loading, setLoading] = useState(true);
 
   const months = [
@@ -129,7 +129,9 @@ export default function Rutina() {
     await fetch(`${API_URL}/api/rutina-eventos/${evento.id_evento}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ completado: !evento.completado }),
+      body: JSON.stringify({
+        completado: !evento.completado,
+      }),
     });
 
     setEventos((prev) =>
@@ -147,7 +149,9 @@ export default function Rutina() {
       method: "DELETE",
     });
 
-    setEventos((prev) => prev.filter((e) => e.id_evento !== id));
+    setEventos((prev) =>
+      prev.filter((e) => e.id_evento !== id)
+    );
   };
 
   /* ========================= EVENTS DAY ========================= */
@@ -163,19 +167,30 @@ export default function Rutina() {
 
     monday.setDate(base.getDate() - (day === 0 ? 6 : day - 1));
 
-    return Array.from({ length: 7 }).map((_, i) => {
+    const week = [];
+
+    for (let i = 0; i < 7; i++) {
       const d = new Date(monday);
       d.setDate(monday.getDate() + i);
 
-      return {
+      week.push({
         date: d.toISOString().split("T")[0],
         name: daysShort[i],
         full: daysFull[i],
-      };
-    });
+      });
+    }
+
+    return week;
   }, [selectedDate]);
 
-  if (loading) return <div className="loading">Cargando rutina...</div>;
+  /* ========================= LOADING ========================= */
+  if (loading) {
+    return (
+      <div className="loading">
+        Cargando rutina...
+      </div>
+    );
+  }
 
   /* ========================= UI ========================= */
   return (
@@ -188,8 +203,11 @@ export default function Rutina() {
           <p>Organiza actividades por día, semana o mes</p>
         </div>
 
-        <button className="backBtn" onClick={() => navigate("/user")}>
-          Volver
+        <button
+          onClick={() => navigate("/user")}
+          className="backBtn"
+        >
+          ⬅ Volver
         </button>
       </div>
 
@@ -197,17 +215,17 @@ export default function Rutina() {
 
         {/* LEFT */}
         <div className="left">
-          <h3>Actividades</h3>
+          <h3>🎯 Actividades</h3>
 
           {actividades.map((act) => {
-            const active = selectedActivities.some(
+            const selected = selectedActivities.find(
               (a) => a.id_registro === act.id_registro
             );
 
             return (
               <div
                 key={act.id_registro}
-                className={`activityCard ${active ? "active" : ""}`}
+                className={`activityCard ${selected ? "active" : ""}`}
                 onClick={() => toggleActivity(act)}
               >
                 <b>{act.nombre_actividad}</b>
@@ -218,7 +236,7 @@ export default function Rutina() {
 
           <hr />
 
-          <h3>Días seleccionados</h3>
+          <h3>📅 Días seleccionados</h3>
 
           <div className="selectedContainer">
             {selectedDays.map((d) => (
@@ -234,7 +252,7 @@ export default function Rutina() {
 
           <hr />
 
-          <h3>Configuración</h3>
+          <h3>⏰ Configuración</h3>
 
           <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} />
           <input type="time" value={horaFin} onChange={(e) => setHoraFin(e.target.value)} />
@@ -244,38 +262,88 @@ export default function Rutina() {
             onChange={(e) => setDuracion(Number(e.target.value))}
           />
 
-          <select value={repeticion} onChange={(e) => setRepeticion(e.target.value)}>
+          <select
+            value={repeticion}
+            onChange={(e) => setRepeticion(e.target.value)}
+          >
             <option value="dia">Diario</option>
             <option value="semana">Semanal</option>
             <option value="mes">Mensual</option>
           </select>
 
           <button className="createBtn" onClick={crearEventos}>
-            Crear rutina
+            ✅ Crear rutina
           </button>
         </div>
 
         {/* CENTER */}
         <div className="center">
-          <h2>📅 Planificación del día</h2>
+          <div className="centerHeader">
+            <div>
+              <h2>📅 Planificación del día</h2>
+              <p>
+                {
+                  daysFull[
+                    new Date(selectedDate).getDay() === 0
+                      ? 6
+                      : new Date(selectedDate).getDay() - 1
+                  ]
+                }
+              </p>
+            </div>
+
+            <div className="dateBadge">
+              {selectedDate}
+            </div>
+          </div>
 
           <div className="timeline">
             {eventosDelDia.length === 0 ? (
-              <div className="empty">Día libre 😴</div>
+              <div className="emptyDay">
+                <h3>😴 Día libre</h3>
+                <p>No hay actividades planificadas</p>
+              </div>
             ) : (
               eventosDelDia.map((evento) => (
-                <div key={evento.id_evento} className="eventCard">
-                  <input
-                    type="checkbox"
-                    checked={evento.completado}
-                    onChange={() => toggleComplete(evento)}
-                  />
+                <div
+                  key={evento.id_evento}
+                  className="eventCard"
+                  style={{
+                    opacity: evento.completado ? 0.6 : 1,
+                    borderLeft: evento.completado
+                      ? "6px solid #22c55e"
+                      : "6px solid #2563eb",
+                  }}
+                >
+                  <div className="eventLeft">
+                    <input
+                      type="checkbox"
+                      checked={evento.completado}
+                      onChange={() => toggleComplete(evento)}
+                    />
 
-                  <div>
-                    <h3>{evento.titulo}</h3>
-                    <p>{evento.hora} → {evento.hora_fin}</p>
-                    <p>{evento.duracion} min</p>
-                    {evento.descripcion && <p>{evento.descripcion}</p>}
+                    <div>
+                      <h3
+                        style={{
+                          textDecoration: evento.completado
+                            ? "line-through"
+                            : "none",
+                        }}
+                      >
+                        {evento.titulo}
+                      </h3>
+
+                      <p>⏰ {evento.hora} → {evento.hora_fin}</p>
+                      <p>🕒 {evento.duracion} min</p>
+
+                      {evento.descripcion && (
+                        <p>{evento.descripcion}</p>
+                      )}
+
+                      <div className="repeatBadge">
+                        🔁 {evento.repeticion}
+                      </div>
+                    </div>
                   </div>
 
                   <button onClick={() => deleteEvent(evento.id_evento)}>
@@ -289,18 +357,89 @@ export default function Rutina() {
 
         {/* RIGHT */}
         <div className="right">
-          <h3>Calendario</h3>
+          <div className="calendarHeader">
+            <select value={month} onChange={(e) => setMonth(Number(e.target.value))}>
+              {months.map((m, i) => (
+                <option key={i} value={i}>{m}</option>
+              ))}
+            </select>
 
-          <div className="calendar">
-            {currentWeek.map((d) => (
-              <div
-                key={d.date}
-                className={`dayCell ${selectedDate === d.date ? "active" : ""}`}
-                onClick={() => setSelectedDate(d.date)}
-              >
-                {d.date?.slice(8)}
-              </div>
+            <select value={year} onChange={(e) => setYear(Number(e.target.value))}>
+              {[2025, 2026, 2027].map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
+
+          <h2 style={{ textAlign: "center" }}>
+            {months[month]} {year}
+          </h2>
+
+          <div className="weekHeader">
+            {daysShort.map((d) => (
+              <div key={d} className="weekDay">{d}</div>
             ))}
+          </div>
+
+          {getWeeksForMonth(month, year).map((week, i) => (
+            <div key={i} className="weekRow">
+              {week.map((date, j) => {
+                const active = selectedDate === date;
+                const selected = selectedDays.includes(date);
+
+                return (
+                  <div
+                    key={j}
+                    className="dayCell"
+                    onClick={() => {
+                      if (!date) return;
+                      setSelectedDate(date);
+                      toggleDay(date);
+                    }}
+                    style={{
+                      background: active
+                        ? "#2563eb"
+                        : selected
+                        ? "#22c55e"
+                        : "#111827",
+                    }}
+                  >
+                    {date ? parseInt(date.slice(8)) : ""}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+
+          <hr />
+
+          <h3>📅 Semana actual</h3>
+
+          <div className="weekContainer">
+            {currentWeek.map((d) => {
+              const count = eventos.filter(
+                (e) => e.fecha?.split("T")[0] === d.date
+              ).length;
+
+              return (
+                <div
+                  key={d.date}
+                  className="weekCard"
+                  onClick={() => setSelectedDate(d.date)}
+                  style={{
+                    background:
+                      selectedDate === d.date ? "#2563eb" : "#111827",
+                  }}
+                >
+                  <div>
+                    <b>{d.name}</b>
+                    <p>{d.date}</p>
+                  </div>
+
+                  <span>{count} act.</span>
+                </div>
+              );
+            })}
           </div>
         </div>
 
