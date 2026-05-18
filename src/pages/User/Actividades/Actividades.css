@@ -1,208 +1,275 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import "./Actividades.css";
+* {
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+}
 
-const API_URL = "https://empatia-backend.onrender.com";
+.layout {
+  display: flex;
+  height: 100vh;
+  color: #e5e7eb;
+}
 
-export default function Actividades() {
-  const navigate = useNavigate();
+/* =========================
+   LEFT - EDITOR
+========================= */
 
-  const storedUser = JSON.parse(sessionStorage.getItem("usuario") || "null");
+.left {
+  width: 24%;
+  padding: 18px;
+  background: #0f172a;
 
-  const user = {
-    id_usuario:
-      storedUser?.id_usuario ||
-      storedUser?.user?.id_usuario ||
-      storedUser?.id ||
-      null,
-  };
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 
-  const [actividades, setActividades] = useState([]);
-  const [selected, setSelected] = useState(null);
+  border-right: 1px solid #1f2937;
+}
 
-  const [gusto, setGusto] = useState(5);
-  const [instrucciones, setInstrucciones] = useState("");
+.empty {
+  margin-top: 16px;
+  opacity: 0.55;
+  font-size: 13px;
+}
 
-  /* =========================
-     LOAD
-  ========================= */
-  const loadActivities = async () => {
-    try {
-      const res = await fetch(
-        `${API_URL}/api/registro-actividad/usuario/${user.id_usuario}`
-      );
+/* editor blocks */
+.cardEdit {
+  background: #111827;
+  padding: 13px;
+  border-radius: 12px;
 
-      const data = await res.json();
+  border: 1px solid #1f2937;
+}
 
-      setActividades(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.log(err);
-    }
-  };
+/* rating */
+.ratingBox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+}
 
-  useEffect(() => {
-    if (user?.id_usuario) {
-      loadActivities();
-    }
-  }, []);
+.ratingBox button {
+  width: 38px;
+  height: 38px;
 
-  /* =========================
-     SELECT
-  ========================= */
-  const selectActivity = (act) => {
-    setSelected(act);
-    setGusto(act.puntaje_agrado || 5);
-    setInstrucciones(act.instrucciones_usuario || "");
-  };
+  border: none;
+  border-radius: 10px;
 
-  /* =========================
-     UPDATE
-  ========================= */
-  const updateActivity = async () => {
-    if (!selected) return;
+  background: #1d4ed8;
+  color: white;
 
-    try {
-      await fetch(
-        `${API_URL}/api/registro-actividad/${selected.id_registro}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            puntaje_agrado: Number(gusto),
-            instrucciones_usuario: instrucciones,
-          }),
-        }
-      );
+  font-size: 16px;
+  cursor: pointer;
 
-      setActividades((prev) =>
-        prev.map((a) =>
-          a.id_registro === selected.id_registro
-            ? {
-                ...a,
-                puntaje_agrado: Number(gusto),
-                instrucciones_usuario: instrucciones,
-              }
-            : a
-        )
-      );
+  transition: 0.15s;
+}
 
-      setSelected(null);
-    } catch (err) {
-      console.log(err);
-    }
-  };
+.ratingBox button:hover {
+  background: #2563eb;
+}
 
-  return (
-    <div className="layout">
-      {/* LEFT */}
-      <div className="left">
-        <h3>✏️ Editor</h3>
+.ratingBox button:active {
+  transform: scale(0.92);
+}
 
-        {!selected ? (
-          <div className="empty">
-            👈 Selecciona una actividad
-          </div>
-        ) : (
-          <>
-            <div className="cardEdit">
-              <h4>{selected.nombre_actividad}</h4>
+.bigNumber {
+  font-size: 30px;
+  font-weight: 700;
+  color: #93c5fd;
+}
 
-              <p>⭐ Puntaje: {gusto}/10</p>
+/* slider */
+.slider {
+  width: 100%;
+  margin-top: 12px;
 
-              <div className="ratingBox">
-                <button
-                  onClick={() => setGusto(Math.max(1, gusto - 1))}
-                >
-                  ➖
-                </button>
+  appearance: none;
+  height: 6px;
+  border-radius: 20px;
 
-                <div className="bigNumber">
-                  {gusto}
-                </div>
+  background: #1f2937;
+}
 
-                <button
-                  onClick={() => setGusto(Math.min(10, gusto + 1))}
-                >
-                  ➕
-                </button>
-              </div>
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
 
-              <input
-                type="range"
-                min="1"
-                max="10"
-                value={gusto}
-                onChange={(e) =>
-                  setGusto(Number(e.target.value))
-                }
-                className="slider"
-              />
-            </div>
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+}
 
-            <div className="cardEdit">
-              <h4>🧠 Instrucciones</h4>
+/* textarea */
+.textarea {
+  width: 100%;
+  height: 105px;
 
-              <textarea
-                value={instrucciones}
-                onChange={(e) =>
-                  setInstrucciones(e.target.value)
-                }
-                className="textarea"
-                placeholder="Escribe instrucciones..."
-              />
-            </div>
+  margin-top: 8px;
+  padding: 10px;
 
-            <button
-              onClick={updateActivity}
-              className="saveBtn"
-            >
-              💾 Guardar cambios
-            </button>
-          </>
-        )}
-      </div>
+  border-radius: 10px;
+  border: 1px solid #1f2937;
 
-      {/* CENTER */}
-      <div className="center">
-        <h2>🎯 Actividades</h2>
+  background: #0b1220;
+  color: #e5e7eb;
 
-        <div className="grid">
-          {actividades.map((act) => (
-            <div
-              key={act.id_registro}
-              className={`card ${
-                selected?.id_registro === act.id_registro
-                  ? "selected"
-                  : ""
-              }`}
-              onClick={() => selectActivity(act)}
-            >
-              <h3>{act.nombre_actividad}</h3>
+  resize: none;
 
-              <p>
-                ⭐ {act.puntaje_agrado}/10
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
+  font-size: 13px;
+}
 
-      {/* RIGHT */}
-      <div className="right">
-        <button onClick={() => navigate("/rutina")}>
-          🧘 Rutina
-        </button>
+.textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
 
-        <button onClick={() => navigate("/actividades")}>
-          🎯 Actividades
-        </button>
+/* save */
+.saveBtn {
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
 
-        <button onClick={() => navigate("/estadisticas")}>
-          📊 Estadísticas
-        </button>
-      </div>
-    </div>
-  );
+  background: #1d4ed8;
+  color: white;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.saveBtn:hover {
+  background: #2563eb;
+  transform: translateY(-2px);
+}
+
+.saveBtn:active {
+  transform: scale(0.97);
+}
+
+/* =========================
+   CENTER
+========================= */
+
+.center {
+  flex: 1;
+  padding: 18px;
+  overflow-y: auto;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+  gap: 10px;
+}
+
+/* card */
+.card {
+  background: #0f172a;
+
+  padding: 13px;
+  border-radius: 12px;
+
+  cursor: pointer;
+
+  border: 1px solid #1f2937;
+
+  transition: 0.18s;
+}
+
+.card h3 {
+  font-size: 14px;
+  margin-bottom: 6px;
+  color: #e5e7eb;
+}
+
+.card p {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* hover */
+.card:hover {
+  transform: translateY(-3px);
+  border-color: #2563eb;
+  background: #111827;
+}
+
+/* selected */
+.card.selected {
+  border: 1px solid #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* =========================
+   RIGHT NAV
+========================= */
+
+.right {
+  width: 19%;
+  padding: 18px;
+  background: #0f172a;
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  border-left: 1px solid #1f2937;
+}
+
+.right button {
+  padding: 12px;
+
+  border: 1px solid #1f2937;
+  border-radius: 10px;
+
+  background: #111827;
+  color: #e5e7eb;
+
+  cursor: pointer;
+
+  display: flex;
+  gap: 8px;
+  align-items: center;
+
+  font-size: 13px;
+
+  transition: 0.2s;
+}
+
+.right button:hover {
+  background: #1d4ed8;
+  border-color: #2563eb;
+  transform: translateX(2px);
+}
+
+.right button:active {
+  transform: scale(0.97);
+}
+
+/* =========================
+   UX DETAILS
+========================= */
+
+.card,
+.cardEdit {
+  transition: 0.18s ease;
+}
+
+.card:hover,
+.cardEdit:hover {
+  transform: translateY(-2px);
+}
+
+/* scrollbar */
+.center::-webkit-scrollbar {
+  width: 6px;
+}
+
+.center::-webkit-scrollbar-thumb {
+  background: #1d4ed8;
+  border-radius: 10px;
 }
