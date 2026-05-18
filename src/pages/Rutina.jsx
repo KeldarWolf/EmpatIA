@@ -6,8 +6,24 @@ const API_URL = "https://empatia-backend.onrender.com";
 export default function Rutina() {
   const navigate = useNavigate();
 
-  const user = JSON.parse(sessionStorage.getItem("usuario") || "null");
+  /* =========================
+     USER FIX
+  ========================= */
+  const storedUser = JSON.parse(
+    sessionStorage.getItem("usuario") || "null"
+  );
 
+  const user = {
+    id_usuario:
+      storedUser?.id_usuario ||
+      storedUser?.user?.id_usuario ||
+      storedUser?.id ||
+      null,
+  };
+
+  /* =========================
+     STATES
+  ========================= */
   const [rutinas, setRutinas] = useState([]);
   const [actividades, setActividades] = useState([]);
 
@@ -34,18 +50,39 @@ export default function Rutina() {
   ========================= */
   const loadData = async () => {
     try {
+      if (!user?.id_usuario) {
+        console.log("No existe id_usuario");
+        return;
+      }
+
       setLoading(true);
+
+      console.log("USER:", user);
 
       const [rutinasRes, actividadesRes] = await Promise.all([
         fetch(`${API_URL}/api/rutina/${user.id_usuario}`),
-        fetch(`${API_URL}/api/registro-actividad/usuario/${user.id_usuario}`),
+        fetch(
+          `${API_URL}/api/registro-actividad/usuario/${user.id_usuario}`
+        ),
       ]);
 
       const rutinasData = await rutinasRes.json();
       const actividadesData = await actividadesRes.json();
 
-      setRutinas(Array.isArray(rutinasData) ? rutinasData : []);
-      setActividades(Array.isArray(actividadesData) ? actividadesData : []);
+      console.log("RUTINAS:", rutinasData);
+      console.log("ACTIVIDADES:", actividadesData);
+
+      setRutinas(
+        Array.isArray(rutinasData)
+          ? rutinasData
+          : rutinasData.data || []
+      );
+
+      setActividades(
+        Array.isArray(actividadesData)
+          ? actividadesData
+          : actividadesData.data || []
+      );
     } catch (err) {
       console.log(err);
     } finally {
@@ -54,7 +91,7 @@ export default function Rutina() {
   };
 
   useEffect(() => {
-    if (user?.id_usuario) loadData();
+    loadData();
   }, []);
 
   /* =========================
@@ -66,7 +103,9 @@ export default function Rutina() {
     try {
       const res = await fetch(`${API_URL}/api/rutina`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           id_usuario: user.id_usuario,
           nombre,
@@ -78,6 +117,7 @@ export default function Rutina() {
       const data = await res.json();
 
       setRutinas((prev) => [data, ...prev]);
+
       setNombre("");
       setDescripcion("");
     } catch (err) {
@@ -88,13 +128,13 @@ export default function Rutina() {
   /* =========================
      SELECT RUTINA
   ========================= */
-  const selectRutina = (r) => {
-    setSelectedRutina(r);
+  const selectRutina = (rutina) => {
+    setSelectedRutina(rutina);
     setDiasSeleccionados([]);
   };
 
   /* =========================
-     TOGGLE DIA
+     TOGGLE DAY
   ========================= */
   const toggleDia = (index) => {
     setDiasSeleccionados((prev) =>
@@ -119,26 +159,30 @@ export default function Rutina() {
     try {
       await fetch(`${API_URL}/api/rutina/dias`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           id_rutina: selectedRutina.id_rutina,
           dias: diasPayload,
         }),
       });
 
-      alert("✔ Rutina actualizada");
+      alert("✔ Rutina guardada");
     } catch (err) {
       console.log(err);
     }
   };
 
   /* =========================
-     UI LOADING
+     LOADING
   ========================= */
   if (loading) {
     return (
       <div style={styles.loading}>
-        Cargando rutina...
+        <div style={styles.loaderCard}>
+          ⏳ Cargando rutina...
+        </div>
       </div>
     );
   }
@@ -148,9 +192,17 @@ export default function Rutina() {
 
       {/* HEADER */}
       <div style={styles.header}>
-        <h2>🧘 Rutina Pro</h2>
+        <div>
+          <h2 style={{ margin: 0 }}>🧘 Rutina Pro</h2>
+          <small style={{ opacity: 0.7 }}>
+            Organiza tu semana
+          </small>
+        </div>
 
-        <button onClick={() => navigate("/user")} style={styles.back}>
+        <button
+          onClick={() => navigate("/user")}
+          style={styles.backBtn}
+        >
           ⬅ Volver
         </button>
       </div>
@@ -159,74 +211,105 @@ export default function Rutina() {
 
         {/* ================= LEFT ================= */}
         <div style={styles.left}>
-          <h3>➕ Crear rutina</h3>
+
+          <h3>➕ Nueva rutina</h3>
 
           <input
-            placeholder="Nombre"
+            placeholder="Nombre rutina"
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
             style={styles.input}
           />
 
           <textarea
-            placeholder="Descripción"
+            placeholder="Descripción..."
             value={descripcion}
             onChange={(e) => setDescripcion(e.target.value)}
             style={styles.textarea}
           />
 
-          <button onClick={createRutina} style={styles.btn}>
-            Crear
+          <button
+            onClick={createRutina}
+            style={styles.createBtn}
+          >
+            Crear rutina
           </button>
 
-          <hr />
+          <div style={styles.separator} />
 
-          <h3>📋 Rutinas</h3>
+          <h3>📋 Mis rutinas</h3>
 
-          {rutinas.map((r) => (
-            <div
-              key={r.id_rutina}
-              onClick={() => selectRutina(r)}
-              style={{
-                ...styles.card,
-                border:
-                  selectedRutina?.id_rutina === r.id_rutina
-                    ? "2px solid #22c55e"
-                    : "none",
-              }}
-            >
-              <b>{r.nombre}</b>
-              <p style={{ opacity: 0.7, fontSize: 12 }}>
-                {r.descripcion}
-              </p>
-            </div>
-          ))}
+          {rutinas.length === 0 ? (
+            <p style={{ opacity: 0.6 }}>
+              No tienes rutinas
+            </p>
+          ) : (
+            rutinas.map((r) => (
+              <div
+                key={r.id_rutina}
+                onClick={() => selectRutina(r)}
+                style={{
+                  ...styles.card,
+                  border:
+                    selectedRutina?.id_rutina === r.id_rutina
+                      ? "2px solid #22c55e"
+                      : "2px solid transparent",
+                }}
+              >
+                <h4 style={{ margin: 0 }}>
+                  {r.nombre}
+                </h4>
+
+                <p style={styles.cardDesc}>
+                  {r.descripcion}
+                </p>
+              </div>
+            ))
+          )}
         </div>
 
         {/* ================= CENTER ================= */}
         <div style={styles.center}>
-          <h3>📅 Calendario semanal</h3>
 
           {!selectedRutina ? (
-            <p>Selecciona una rutina</p>
+            <div style={styles.emptyCenter}>
+              <h2>📅 Calendario semanal</h2>
+
+              <p style={{ opacity: 0.7 }}>
+                Selecciona una rutina para comenzar
+              </p>
+            </div>
           ) : (
             <>
-              <h4>{selectedRutina.nombre}</h4>
+              <div style={styles.centerHeader}>
+                <div>
+                  <h2 style={{ margin: 0 }}>
+                    {selectedRutina.nombre}
+                  </h2>
 
-              <p style={styles.counter}>
-                Días seleccionados: {diasSeleccionados.length}
-              </p>
+                  <small style={{ opacity: 0.7 }}>
+                    {selectedRutina.descripcion}
+                  </small>
+                </div>
 
-              <div style={styles.days}>
+                <div style={styles.counter}>
+                  {diasSeleccionados.length} días
+                </div>
+              </div>
+
+              <div style={styles.daysGrid}>
                 {diasSemana.map((dia, i) => (
                   <div
                     key={i}
                     onClick={() => toggleDia(i)}
                     style={{
-                      ...styles.day,
+                      ...styles.dayCard,
                       background: diasSeleccionados.includes(i)
                         ? "#22c55e"
-                        : "#0b0f14",
+                        : "#111827",
+                      transform: diasSeleccionados.includes(i)
+                        ? "scale(1.03)"
+                        : "scale(1)",
                     }}
                   >
                     {dia}
@@ -235,13 +318,18 @@ export default function Rutina() {
               </div>
 
               {diasSeleccionados.length > 0 && (
-                <p style={{ opacity: 0.7 }}>
-                  ✔ {diasSeleccionados.map(i => diasSemana[i]).join(", ")}
-                </p>
+                <div style={styles.selectedBox}>
+                  ✔ {diasSeleccionados
+                    .map((i) => diasSemana[i])
+                    .join(", ")}
+                </div>
               )}
 
-              <button onClick={saveDias} style={styles.btn}>
-                Guardar rutina
+              <button
+                onClick={saveDias}
+                style={styles.saveBtn}
+              >
+                💾 Guardar rutina
               </button>
             </>
           )}
@@ -249,17 +337,31 @@ export default function Rutina() {
 
         {/* ================= RIGHT ================= */}
         <div style={styles.right}>
+
           <h3>🎯 Actividades</h3>
 
           {actividades.length === 0 ? (
-            <p style={{ opacity: 0.6 }}>Sin actividades</p>
+            <div style={styles.emptyActivity}>
+              Sin actividades
+            </div>
           ) : (
             actividades.map((a) => (
-              <div key={a.id_registro} style={styles.activity}>
-                <b>{a.nombre_actividad}</b>
-                <p>⭐ {a.puntaje_agrado}/10</p>
-                <small>
-                  {a.instrucciones_usuario?.slice(0, 60)}
+              <div
+                key={a.id_registro}
+                style={styles.activity}
+              >
+                <h4 style={{ margin: 0 }}>
+                  {a.nombre_actividad}
+                </h4>
+
+                <p style={styles.score}>
+                  ⭐ {a.puntaje_agrado || 0}/10
+                </p>
+
+                <small style={{ opacity: 0.7 }}>
+                  {a.instrucciones_usuario
+                    ? a.instrucciones_usuario.slice(0, 70)
+                    : "Sin instrucciones"}
                 </small>
               </div>
             ))
@@ -272,11 +374,11 @@ export default function Rutina() {
 }
 
 /* =========================
-   STYLES PRO UX
+   STYLES
 ========================= */
 const styles = {
   page: {
-    height: "100vh",
+    minHeight: "100vh",
     background: "#0f172a",
     color: "white",
     fontFamily: "Arial",
@@ -284,117 +386,181 @@ const styles = {
 
   loading: {
     height: "100vh",
+    background: "#0f172a",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    color: "white",
-    background: "#0f172a",
+  },
+
+  loaderCard: {
+    background: "#111827",
+    padding: 30,
+    borderRadius: 15,
   },
 
   header: {
     display: "flex",
     justifyContent: "space-between",
-    padding: 15,
+    alignItems: "center",
+    padding: 20,
     borderBottom: "1px solid #1f2937",
   },
 
+  backBtn: {
+    background: "#1f2937",
+    color: "white",
+    border: "none",
+    padding: "10px 16px",
+    borderRadius: 10,
+    cursor: "pointer",
+  },
+
   grid: {
-    display: "flex",
-    gap: 10,
-    padding: 10,
+    display: "grid",
+    gridTemplateColumns: "28% 1fr 28%",
+    gap: 15,
+    padding: 15,
   },
 
   left: {
-    width: "28%",
     background: "#111827",
     padding: 15,
-    borderRadius: 10,
+    borderRadius: 15,
   },
 
   center: {
-    flex: 1,
     background: "#111827",
-    padding: 15,
-    borderRadius: 10,
+    padding: 20,
+    borderRadius: 15,
+    minHeight: 600,
   },
 
   right: {
-    width: "28%",
     background: "#111827",
     padding: 15,
-    borderRadius: 10,
+    borderRadius: 15,
   },
 
   input: {
     width: "100%",
-    padding: 10,
+    padding: 12,
     marginBottom: 10,
+    borderRadius: 10,
+    border: "1px solid #374151",
     background: "#0b0f14",
     color: "white",
-    border: "none",
-    borderRadius: 6,
   },
 
   textarea: {
     width: "100%",
-    padding: 10,
-    marginBottom: 10,
+    height: 100,
+    padding: 12,
+    borderRadius: 10,
+    border: "1px solid #374151",
     background: "#0b0f14",
     color: "white",
-    border: "none",
-    borderRadius: 6,
+    marginBottom: 10,
   },
 
-  btn: {
+  createBtn: {
     width: "100%",
-    padding: 10,
+    padding: 12,
     background: "#22c55e",
     border: "none",
     color: "white",
-    borderRadius: 8,
+    borderRadius: 10,
     cursor: "pointer",
+    fontWeight: "bold",
+  },
+
+  separator: {
+    height: 1,
+    background: "#1f2937",
+    margin: "20px 0",
   },
 
   card: {
-    padding: 10,
-    marginBottom: 8,
     background: "#0b0f14",
-    borderRadius: 8,
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 10,
     cursor: "pointer",
+    transition: "0.2s",
   },
 
-  day: {
-    padding: 10,
-    textAlign: "center",
-    borderRadius: 6,
-    cursor: "pointer",
-    userSelect: "none",
+  cardDesc: {
+    opacity: 0.7,
+    fontSize: 13,
   },
 
-  days: {
-    display: "grid",
-    gridTemplateColumns: "repeat(7,1fr)",
-    gap: 5,
-    margin: "10px 0",
+  emptyCenter: {
+    height: "100%",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
   },
 
-  activity: {
-    padding: 10,
-    marginBottom: 8,
-    background: "#0b0f14",
-    borderRadius: 8,
+  centerHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
   },
 
   counter: {
-    opacity: 0.7,
+    background: "#1e293b",
+    padding: "8px 14px",
+    borderRadius: 20,
+  },
+
+  daysGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(7,1fr)",
+    gap: 10,
+    marginBottom: 20,
+  },
+
+  dayCard: {
+    padding: 15,
+    borderRadius: 12,
+    textAlign: "center",
+    cursor: "pointer",
+    transition: "0.2s",
+    userSelect: "none",
+  },
+
+  selectedBox: {
+    background: "#052e16",
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 20,
+  },
+
+  saveBtn: {
+    width: "100%",
+    padding: 14,
+    borderRadius: 12,
+    border: "none",
+    background: "#2563eb",
+    color: "white",
+    cursor: "pointer",
+    fontWeight: "bold",
+  },
+
+  activity: {
+    background: "#0b0f14",
+    padding: 12,
+    borderRadius: 12,
     marginBottom: 10,
   },
 
-  back: {
-    padding: "6px 12px",
-    background: "#1f2937",
-    color: "white",
-    border: "none",
-    borderRadius: 6,
+  score: {
+    color: "#facc15",
+  },
+
+  emptyActivity: {
+    opacity: 0.6,
+    marginTop: 20,
   },
 };
