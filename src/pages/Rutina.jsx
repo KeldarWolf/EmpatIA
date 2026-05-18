@@ -6,7 +6,6 @@ const API_URL = "https://empatia-backend.onrender.com";
 export default function Rutina() {
   const navigate = useNavigate();
 
-  // 🔥 SESIÓN CORRECTA (igual que backend/frontend)
   const user = JSON.parse(sessionStorage.getItem("usuario") || "null");
 
   const [rutinas, setRutinas] = useState([]);
@@ -14,6 +13,8 @@ export default function Rutina() {
   const [descripcion, setDescripcion] = useState("");
 
   const [selectedRutina, setSelectedRutina] = useState(null);
+
+  // 🔥 CALENDARIO (RESTAURADO)
   const [diasSeleccionados, setDiasSeleccionados] = useState([]);
 
   const diasSemana = [
@@ -27,7 +28,7 @@ export default function Rutina() {
   ];
 
   /* =========================
-     LOAD RUTINAS BD
+     LOAD RUTINAS
   ========================= */
   const loadRutinas = async () => {
     try {
@@ -40,7 +41,7 @@ export default function Rutina() {
       const data = await res.json();
       setRutinas(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.log("ERROR LOAD RUTINA:", err);
+      console.log(err);
     }
   };
 
@@ -69,11 +70,10 @@ export default function Rutina() {
       const data = await res.json();
 
       setRutinas((prev) => [data, ...prev]);
-
       setNombre("");
       setDescripcion("");
     } catch (err) {
-      console.log("ERROR CREATE:", err);
+      console.log(err);
     }
   };
 
@@ -82,11 +82,13 @@ export default function Rutina() {
   ========================= */
   const selectRutina = (r) => {
     setSelectedRutina(r);
+
+    // 🔥 reset calendario al cambiar rutina
     setDiasSeleccionados([]);
   };
 
   /* =========================
-     TOGGLE DÍAS
+     TOGGLE CALENDARIO (FIX UX)
   ========================= */
   const toggleDia = (index) => {
     setDiasSeleccionados((prev) =>
@@ -118,11 +120,9 @@ export default function Rutina() {
         }),
       });
 
-      alert("✔ Días guardados en la base de datos");
-
-      setDiasSeleccionados([]);
+      alert("✔ Días guardados en BD");
     } catch (err) {
-      console.log("ERROR SAVE DIAS:", err);
+      console.log(err);
     }
   };
 
@@ -131,7 +131,7 @@ export default function Rutina() {
 
       {/* HEADER */}
       <div style={styles.header}>
-        <h2>🧘 Rutina Personal</h2>
+        <h2>🧘 Rutina</h2>
 
         <button onClick={() => navigate("/user")} style={styles.back}>
           ⬅ Volver
@@ -140,7 +140,7 @@ export default function Rutina() {
 
       <div style={styles.grid}>
 
-        {/* ================= LEFT ================= */}
+        {/* LEFT */}
         <div style={styles.left}>
           <h3>➕ Crear Rutina</h3>
 
@@ -159,16 +159,12 @@ export default function Rutina() {
           />
 
           <button onClick={createRutina} style={styles.btn}>
-            Crear rutina
+            Crear
           </button>
 
-          <hr style={{ margin: "15px 0" }} />
+          <hr />
 
-          <h3>📋 Mis Rutinas</h3>
-
-          {rutinas.length === 0 && (
-            <p style={{ opacity: 0.6 }}>No hay rutinas aún</p>
-          )}
+          <h3>📋 Rutinas</h3>
 
           {rutinas.map((r) => (
             <div
@@ -183,23 +179,22 @@ export default function Rutina() {
               }}
             >
               <b>{r.nombre}</b>
-              <p style={{ fontSize: 12, opacity: 0.7 }}>
-                {r.descripcion}
-              </p>
+              <p>{r.descripcion}</p>
             </div>
           ))}
         </div>
 
-        {/* ================= CENTER ================= */}
+        {/* CENTER (CALENDARIO RESTAURADO COMPLETO) */}
         <div style={styles.center}>
-          <h3>📅 Días de la rutina</h3>
+          <h3>📅 Calendario de rutina</h3>
 
           {!selectedRutina ? (
             <p>👈 Selecciona una rutina</p>
           ) : (
             <>
-              <h4>Rutina: {selectedRutina.nombre}</h4>
+              <h4>{selectedRutina.nombre}</h4>
 
+              {/* 🔥 CALENDARIO VISUAL ORIGINAL RESTAURADO */}
               <div style={styles.days}>
                 {diasSemana.map((dia, i) => (
                   <div
@@ -210,6 +205,10 @@ export default function Rutina() {
                       background: diasSeleccionados.includes(i)
                         ? "#22c55e"
                         : "#111827",
+                      transform: diasSeleccionados.includes(i)
+                        ? "scale(1.05)"
+                        : "scale(1)",
+                      transition: "0.2s",
                     }}
                   >
                     {dia}
@@ -218,20 +217,28 @@ export default function Rutina() {
               </div>
 
               <button onClick={saveDias} style={styles.btn}>
-                💾 Guardar días en BD
+                💾 Guardar en BD
               </button>
+
+              {/* preview UX */}
+              {diasSeleccionados.length > 0 && (
+                <p style={{ marginTop: 10, opacity: 0.8 }}>
+                  Seleccionados:{" "}
+                  {diasSeleccionados.map((i) => diasSemana[i]).join(", ")}
+                </p>
+              )}
             </>
           )}
         </div>
 
-        {/* ================= RIGHT ================= */}
+        {/* RIGHT */}
         <div style={styles.right}>
-          <h3>ℹ Información</h3>
+          <h3>ℹ Info</h3>
 
           <p>✔ Rutinas por usuario</p>
+          <p>✔ Calendario interactivo</p>
           <p>✔ Guardado en PostgreSQL</p>
           <p>✔ Relación rutina → días</p>
-          <p>✔ Selección visual interactiva</p>
         </div>
 
       </div>
@@ -240,7 +247,7 @@ export default function Rutina() {
 }
 
 /* =========================
-   STYLES UX
+   STYLES
 ========================= */
 const styles = {
   page: {
@@ -268,7 +275,6 @@ const styles = {
     background: "#111827",
     padding: 15,
     borderRadius: 10,
-    overflowY: "auto",
   },
 
   center: {
