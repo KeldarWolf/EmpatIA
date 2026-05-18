@@ -6,9 +6,8 @@ const API_URL = "https://empatia-backend.onrender.com";
 export default function Rutina() {
   const navigate = useNavigate();
 
-  /* =========================
-     USER
-  ========================= */
+  const today = new Date();
+
   const storedUser = JSON.parse(
     sessionStorage.getItem("usuario") || "null"
   );
@@ -21,11 +20,6 @@ export default function Rutina() {
       null,
   };
 
-  /* =========================
-     DATE
-  ========================= */
-  const today = new Date();
-
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
 
@@ -33,22 +27,17 @@ export default function Rutina() {
     today.toISOString().split("T")[0]
   );
 
-  /* =========================
-     STATES
-  ========================= */
+  const [selectedDates, setSelectedDates] = useState([]);
+  const [selectedActivities, setSelectedActivities] = useState([]);
+
   const [actividades, setActividades] = useState([]);
+  const [eventos, setEventos] = useState([]);
 
-  const [calendarEvents, setCalendarEvents] = useState([]);
+  const [horaInicio, setHoraInicio] = useState("09:00");
+  const [duracion, setDuracion] = useState(30);
 
-  const [draggedActivity, setDraggedActivity] = useState(null);
+  const [repeatMode, setRepeatMode] = useState("none");
 
-  const [selectedEvent, setSelectedEvent] = useState(null);
-
-  const [loading, setLoading] = useState(true);
-
-  /* =========================
-     CALENDAR
-  ========================= */
   const months = [
     "Enero",
     "Febrero",
@@ -74,29 +63,23 @@ export default function Rutina() {
     "Dom",
   ];
 
-  const daysFull = [
-    "Lunes",
-    "Martes",
-    "Miércoles",
-    "Jueves",
-    "Viernes",
-    "Sábado",
-    "Domingo",
-  ];
-
-  /* =========================
+  /* =========================================================
      LOAD DATA
-  ========================= */
+  ========================================================= */
+
   const loadData = async () => {
     try {
-      setLoading(true);
+      const [actRes, eventRes] = await Promise.all([
+        fetch(
+          `${API_URL}/api/registro-actividad/usuario/${user.id_usuario}`
+        ),
+        fetch(
+          `${API_URL}/api/rutina-evento/${user.id_usuario}`
+        ),
+      ]);
 
-      /* ACTIVIDADES */
-      const actividadesRes = await fetch(
-        `${API_URL}/api/registro-actividad/usuario/${user.id_usuario}`
-      );
-
-      const actividadesData = await actividadesRes.json();
+      const actividadesData = await actRes.json();
+      const eventosData = await eventRes.json();
 
       setActividades(
         Array.isArray(actividadesData)
@@ -104,22 +87,13 @@ export default function Rutina() {
           : []
       );
 
-      /* EVENTOS */
-      const eventosRes = await fetch(
-        `${API_URL}/api/rutina-evento/${user.id_usuario}`
-      );
-
-      const eventosData = await eventosRes.json();
-
-      setCalendarEvents(
+      setEventos(
         Array.isArray(eventosData)
           ? eventosData
           : []
       );
     } catch (err) {
       console.log(err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -129,60 +103,133 @@ export default function Rutina() {
     }
   }, []);
 
-  /* =========================
-     HANDLE DROP
-  ========================= */
-  const handleDrop = async (dateStr) => {
-    try {
-      if (!draggedActivity) return;
+  /* =========================================================
+     MULTI SELECT ACTIVITIES
+  ========================================================= */
 
-      const hora =
-        prompt("Hora del evento", "08:00") || "08:00";
-
-      const repeticion =
-        prompt(
-          "Repetición: none | diario | semanal | mensual",
-          "none"
-        ) || "none";
-
-      const body = {
-        id_usuario: user.id_usuario,
-        id_registro: draggedActivity.id_registro,
-        titulo: draggedActivity.nombre_actividad,
-        descripcion:
-          draggedActivity.instrucciones_usuario || "",
-        fecha: dateStr,
-        hora,
-        repeticion,
-      };
-
-      const res = await fetch(
-        `${API_URL}/api/rutina-evento`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(body),
-        }
+  const toggleActivity = (activity) => {
+    setSelectedActivities((prev) => {
+      const exists = prev.find(
+        (a) => a.id_registro === activity.id_registro
       );
 
-      const data = await res.json();
+      if (exists) {
+        return prev.filter(
+          (a) => a.id_registro !== activity.id_registro
+        );
+      }
 
-      setCalendarEvents((prev) => [...prev, data]);
+      return [...prev, activity];
+    });
+  };
 
-      setDraggedActivity(null);
+  /* =========================================================
+     MULTI SELECT DATES
+  ========================================================= */
+
+  const toggleDate = (date) => {
+    setSelectedDate(date);
+
+    setSelectedDates((prev) => {
+      if (prev.includes(date)) {
+        return prev.filter((d) => d !== date);
+      }
+
+      return [...prev, date];
+    });
+  };
+
+  /* =========================================================
+     CALC HORA FIN
+  ========================================================= */
+
+  const calcularHoraFin = (inicio, mins) => {
+    const [h, m] = inicio.split(":").map(Number);
+
+    const total = h * 60 + m + mins;
+
+    const hh = String(Math.floor(total / 60)).padStart(
+      2,
+      "0"
+    );
+
+    const mm = String(total % 60).padStart(2, "0");
+
+    return `${hh}:${mm}`;
+  };
+
+  /* =========================================================
+     SAVE EVENTS
+  ========================================================= */
+
+  const guardarEventos = async () => {
+    if (selectedActivities.length === 0) {
+      return alert("Selecciona actividades");
+    }
+
+    if (selectedDates.length === 0) {
+      return alert("Selecciona días");
+    }
+
+    try {
+      const nuevos = [];
+
+      for (const fecha of selectedDates) {
+        for (const activity of selectedActivities) {
+          const horaFin = calcularHoraFin(
+            horaInicio,
+            duracion
+          );
+
+          const body = {
+            id_usuario: user.id_usuario,
+            id_registro: activity.id_registro,
+            titulo: activity.nombre_actividad,
+            descripcion:
+              activity.instrucciones_usuario || "",
+            fecha,
+            hora: horaInicio,
+            hora_fin: horaFin,
+            duracion,
+            repeticion: repeatMode,
+            completado: false,
+          };
+
+          const res = await fetch(
+            `${API_URL}/api/rutina-evento`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(body),
+            }
+          );
+
+          const data = await res.json();
+
+          nuevos.push(data);
+        }
+      }
+
+      setEventos((prev) => [...prev, ...nuevos]);
+
+      setSelectedActivities([]);
+      setSelectedDates([]);
+
+      alert("✅ Actividades agregadas");
     } catch (err) {
       console.log(err);
     }
   };
 
-  /* =========================
-     TOGGLE COMPLETADO
-  ========================= */
+  /* =========================================================
+     COMPLETE EVENT
+  ========================================================= */
+
   const toggleCompleted = async (evento) => {
     try {
-      await fetch(
+      const res = await fetch(
         `${API_URL}/api/rutina-evento/${evento.id_evento}`,
         {
           method: "PUT",
@@ -195,13 +242,12 @@ export default function Rutina() {
         }
       );
 
-      setCalendarEvents((prev) =>
+      const updated = await res.json();
+
+      setEventos((prev) =>
         prev.map((e) =>
           e.id_evento === evento.id_evento
-            ? {
-                ...e,
-                completado: !e.completado,
-              }
+            ? updated
             : e
         )
       );
@@ -210,16 +256,31 @@ export default function Rutina() {
     }
   };
 
-  /* =========================
-     EVENTS DAY
-  ========================= */
-  const dayEvents = calendarEvents
-    .filter((e) => e.fecha === selectedDate)
-    .sort((a, b) => a.hora.localeCompare(b.hora));
+  /* =========================================================
+     DELETE EVENT
+  ========================================================= */
 
-  /* =========================
-     CALENDAR LOGIC
-  ========================= */
+  const deleteEvent = async (id) => {
+    try {
+      await fetch(
+        `${API_URL}/api/rutina-evento/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      setEventos((prev) =>
+        prev.filter((e) => e.id_evento !== id)
+      );
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  /* =========================================================
+     CALENDAR
+  ========================================================= */
+
   const getWeeksForMonth = (m, y) => {
     const weeks = [];
 
@@ -265,36 +326,29 @@ export default function Rutina() {
     return weeks;
   };
 
-  const monthWeeks = getWeeksForMonth(
-    month,
-    year
-  );
+  const monthWeeks = getWeeksForMonth(month, year);
 
-  /* =========================
-     LOADING
-  ========================= */
-  if (loading) {
-    return (
-      <div style={styles.loading}>
-        ⏳ Cargando rutina...
-      </div>
+  /* =========================================================
+     EVENTOS DEL DIA
+  ========================================================= */
+
+  const eventosDelDia = eventos
+    .filter((e) => e.fecha === selectedDate)
+    .sort((a, b) =>
+      a.hora.localeCompare(b.hora)
     );
-  }
 
   return (
     <div style={styles.page}>
 
-      {/* =========================
-         HEADER
-      ========================= */}
+      {/* HEADER */}
+
       <div style={styles.header}>
         <div>
-          <h1 style={{ margin: 0 }}>
-            🧘 Rutina Inteligente
-          </h1>
+          <h1>🧘 Rutina Inteligente</h1>
 
           <p style={{ opacity: 0.7 }}>
-            Arrastra actividades al calendario
+            Organiza actividades, horarios y hábitos
           </p>
         </div>
 
@@ -306,156 +360,253 @@ export default function Rutina() {
         </button>
       </div>
 
-      {/* =========================
-         GRID
-      ========================= */}
       <div style={styles.grid}>
 
-        {/* =========================
-           LEFT
-        ========================= */}
+        {/* LEFT */}
+
         <div style={styles.left}>
 
           <h3>🎯 Actividades</h3>
 
-          {actividades.length === 0 ? (
+          <p style={styles.label}>
+            Selecciona varias actividades
+          </p>
+
+          <div style={styles.activitiesList}>
+            {actividades.map((act) => {
+              const selected =
+                selectedActivities.find(
+                  (a) =>
+                    a.id_registro ===
+                    act.id_registro
+                );
+
+              return (
+                <div
+                  key={act.id_registro}
+                  onClick={() =>
+                    toggleActivity(act)
+                  }
+                  style={{
+                    ...styles.activityCard,
+                    border: selected
+                      ? "2px solid #22c55e"
+                      : "2px solid transparent",
+
+                    background: selected
+                      ? "#14532d"
+                      : "#111827",
+                  }}
+                >
+                  <h4>
+                    {act.nombre_actividad}
+                  </h4>
+
+                  <p>
+                    ⭐ {act.puntaje_agrado}/10
+                  </p>
+
+                  <small>
+                    {act.instrucciones_usuario?.slice(
+                      0,
+                      80
+                    )}
+                  </small>
+                </div>
+              );
+            })}
+          </div>
+
+          <hr style={styles.hr} />
+
+          <h3>⏰ Configuración</h3>
+
+          <div style={styles.timeBox}>
+            <div>
+              <p style={styles.label}>
+                Hora inicio
+              </p>
+
+              <input
+                type="time"
+                value={horaInicio}
+                onChange={(e) =>
+                  setHoraInicio(
+                    e.target.value
+                  )
+                }
+                style={styles.input}
+              />
+            </div>
+
+            <div>
+              <p style={styles.label}>
+                Duración
+              </p>
+
+              <input
+                type="number"
+                value={duracion}
+                onChange={(e) =>
+                  setDuracion(
+                    Number(e.target.value)
+                  )
+                }
+                style={styles.input}
+              />
+            </div>
+          </div>
+
+          <p style={styles.label}>
+            Repetición
+          </p>
+
+          <select
+            value={repeatMode}
+            onChange={(e) =>
+              setRepeatMode(
+                e.target.value
+              )
+            }
+            style={styles.input}
+          >
+            <option value="none">
+              Sin repetir
+            </option>
+
+            <option value="daily">
+              Diario
+            </option>
+
+            <option value="weekly">
+              Semanal
+            </option>
+
+            <option value="monthly">
+              Mensual
+            </option>
+          </select>
+
+          <button
+            onClick={guardarEventos}
+            style={styles.saveBtn}
+          >
+            ✅ Agregar a rutina
+          </button>
+
+        </div>
+
+        {/* CENTER */}
+
+        <div style={styles.center}>
+
+          <h2>
+            📅 {selectedDate}
+          </h2>
+
+          <p style={styles.label}>
+            Eventos del día
+          </p>
+
+          {eventosDelDia.length === 0 ? (
             <div style={styles.empty}>
               No hay actividades
             </div>
           ) : (
-            actividades.map((a) => (
+            eventosDelDia.map((evento) => (
               <div
-                key={a.id_registro}
-                draggable
-                onDragStart={() =>
-                  setDraggedActivity(a)
-                }
-                style={styles.activityCard}
+                key={evento.id_evento}
+                style={{
+                  ...styles.eventCard,
+                  opacity:
+                    evento.completado
+                      ? 0.6
+                      : 1,
+                }}
               >
-                <div>
-                  <h4 style={{ margin: 0 }}>
-                    {a.nombre_actividad}
-                  </h4>
 
-                  <small style={{ opacity: 0.7 }}>
-                    ⭐ {a.puntaje_agrado || 0}/10
-                  </small>
-                </div>
+                <div style={styles.eventTop}>
 
-                <div style={styles.drag}>
-                  ☰
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* =========================
-           CENTER
-        ========================= */}
-        <div style={styles.center}>
-
-          <h2>
-            {
-              daysFull[
-                new Date(selectedDate).getDay() === 0
-                  ? 6
-                  : new Date(selectedDate).getDay() - 1
-              ]
-            }
-
-            <span style={styles.dateText}>
-              {selectedDate}
-            </span>
-          </h2>
-
-          <div style={styles.eventsContainer}>
-
-            {dayEvents.length === 0 ? (
-              <div style={styles.emptyDay}>
-                Arrastra actividades aquí
-              </div>
-            ) : (
-              dayEvents.map((e) => (
-                <div
-                  key={e.id_evento}
-                  style={{
-                    ...styles.eventCard,
-                    opacity:
-                      e.completado ? 0.5 : 1,
-                  }}
-                  onClick={() =>
-                    setSelectedEvent(e)
-                  }
-                >
-                  <div
-                    style={styles.checkbox}
-                    onClick={(ev) => {
-                      ev.stopPropagation();
-                      toggleCompleted(e);
-                    }}
-                  >
-                    {e.completado
-                      ? "✅"
-                      : "⬜"}
-                  </div>
-
-                  <div style={{ flex: 1 }}>
-                    <h4
-                      style={{
-                        margin: 0,
-                        textDecoration:
-                          e.completado
-                            ? "line-through"
-                            : "none",
-                      }}
-                    >
-                      {e.titulo}
+                  <div>
+                    <h4>
+                      {evento.titulo}
                     </h4>
 
                     <small>
-                      🕒 {e.hora}
+                      {evento.hora}
+                      {" - "}
+                      {evento.hora_fin}
                     </small>
+                  </div>
 
-                    <div style={styles.repeat}>
-                      🔁 {e.repeticion}
-                    </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                    }}
+                  >
+
+                    <button
+                      onClick={() =>
+                        toggleCompleted(
+                          evento
+                        )
+                      }
+                      style={{
+                        ...styles.doneBtn,
+                        background:
+                          evento.completado
+                            ? "#22c55e"
+                            : "#374151",
+                      }}
+                    >
+                      {evento.completado
+                        ? "✔ Hecho"
+                        : "Pendiente"}
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        deleteEvent(
+                          evento.id_evento
+                        )
+                      }
+                      style={
+                        styles.deleteBtn
+                      }
+                    >
+                      🗑
+                    </button>
+
                   </div>
                 </div>
-              ))
-            )}
-          </div>
+
+                <p
+                  style={{
+                    marginTop: 10,
+                  }}
+                >
+                  {evento.descripcion}
+                </p>
+
+              </div>
+            ))
+          )}
+
         </div>
 
-        {/* =========================
-           RIGHT
-        ========================= */}
+        {/* RIGHT */}
+
         <div style={styles.right}>
 
           <div style={styles.calendarHeader}>
-            <select
-              value={year}
-              onChange={(e) =>
-                setYear(Number(e.target.value))
-              }
-              style={styles.select}
-            >
-              {[2025, 2026, 2027, 2028].map(
-                (y) => (
-                  <option
-                    key={y}
-                    value={y}
-                  >
-                    {y}
-                  </option>
-                )
-              )}
-            </select>
 
             <select
               value={month}
               onChange={(e) =>
-                setMonth(Number(e.target.value))
+                setMonth(
+                  Number(e.target.value)
+                )
               }
               style={styles.select}
             >
@@ -468,13 +619,30 @@ export default function Rutina() {
                 </option>
               ))}
             </select>
+
+            <select
+              value={year}
+              onChange={(e) =>
+                setYear(
+                  Number(e.target.value)
+                )
+              }
+              style={styles.select}
+            >
+              {[2024, 2025, 2026, 2027].map(
+                (y) => (
+                  <option
+                    key={y}
+                    value={y}
+                  >
+                    {y}
+                  </option>
+                )
+              )}
+            </select>
+
           </div>
 
-          <h3 style={styles.monthTitle}>
-            {months[month]} {year}
-          </h3>
-
-          {/* WEEK */}
           <div style={styles.weekHeader}>
             {daysShort.map((d) => (
               <div
@@ -486,242 +654,233 @@ export default function Rutina() {
             ))}
           </div>
 
-          {/* CALENDAR */}
-          <div style={styles.calendar}>
+          <div>
             {monthWeeks.map((week, i) => (
               <div
                 key={i}
                 style={styles.weekRow}
               >
-                {week.map((dateStr, j) => {
-                  const count =
-                    calendarEvents.filter(
-                      (e) =>
-                        e.fecha === dateStr
-                    ).length;
-
-                  return (
+                {week.map(
+                  (dateStr, j) => (
                     <div
                       key={j}
                       onClick={() =>
                         dateStr &&
-                        setSelectedDate(
+                        toggleDate(
                           dateStr
                         )
                       }
-                      onDragOver={(e) =>
-                        e.preventDefault()
-                      }
-                      onDrop={() =>
-                        dateStr &&
-                        handleDrop(dateStr)
-                      }
                       style={{
                         ...styles.dayCell,
-                        background:
-                          dateStr ===
-                          selectedDate
+
+                        backgroundColor:
+                          selectedDates.includes(
+                            dateStr
+                          )
+                            ? "#22c55e"
+                            : dateStr ===
+                              selectedDate
                             ? "#2563eb"
                             : "#111827",
                       }}
                     >
-                      <div>
-                        {dateStr
-                          ? parseInt(
-                              dateStr.slice(8)
+                      {dateStr
+                        ? parseInt(
+                            dateStr.slice(
+                              8
                             )
-                          : ""}
-                      </div>
-
-                      {count > 0 && (
-                        <small
-                          style={{
-                            fontSize: 10,
-                          }}
-                        >
-                          {count}
-                        </small>
-                      )}
+                          )
+                        : ""}
                     </div>
-                  );
-                })}
+                  )
+                )}
               </div>
             ))}
+          </div>
+
+          <div style={styles.selectedInfo}>
+            <h4>
+              📌 Días seleccionados
+            </h4>
+
+            <p>
+              {selectedDates.length}
+            </p>
+          </div>
+
+          <div style={styles.selectedInfo}>
+            <h4>
+              🎯 Actividades seleccionadas
+            </h4>
+
+            <p>
+              {
+                selectedActivities.length
+              }
+            </p>
           </div>
 
         </div>
 
       </div>
-
-      {/* =========================
-         MODAL
-      ========================= */}
-      {selectedEvent && (
-        <div style={styles.modal}>
-          <div style={styles.modalContent}>
-
-            <h2>{selectedEvent.titulo}</h2>
-
-            <p>
-              📅 {selectedEvent.fecha}
-            </p>
-
-            <p>
-              🕒 {selectedEvent.hora}
-            </p>
-
-            <p>
-              🔁 {selectedEvent.repeticion}
-            </p>
-
-            <div style={styles.modalDesc}>
-              {selectedEvent.descripcion ||
-                "Sin descripción"}
-            </div>
-
-            <button
-              onClick={() =>
-                setSelectedEvent(null)
-              }
-              style={styles.closeBtn}
-            >
-              Cerrar
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
-/* =========================
+/* =========================================================
    STYLES
-========================= */
+========================================================= */
+
 const styles = {
   page: {
-    minHeight: "100vh",
+    height: "100vh",
     background: "#0b0f14",
     color: "white",
-    fontFamily: "Arial",
-  },
-
-  loading: {
-    height: "100vh",
     display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    fontSize: 24,
-    background: "#0b0f14",
+    flexDirection: "column",
+    fontFamily: "Arial",
   },
 
   header: {
     display: "flex",
     justifyContent: "space-between",
+    alignItems: "center",
     padding: 20,
     borderBottom: "1px solid #1f2937",
   },
 
   backBtn: {
-    background: "#1f2937",
+    padding: "10px 16px",
     border: "none",
-    color: "white",
-    padding: "10px 14px",
     borderRadius: 10,
+    background: "#1f2937",
+    color: "white",
     cursor: "pointer",
   },
 
   grid: {
-    display: "grid",
-    gridTemplateColumns: "280px 1fr 360px",
+    flex: 1,
+    display: "flex",
     gap: 15,
     padding: 15,
+    overflow: "hidden",
   },
 
   left: {
-    background: "#111827",
-    padding: 15,
+    width: 320,
+    background: "#0f172a",
     borderRadius: 14,
+    padding: 18,
     overflowY: "auto",
   },
 
   center: {
-    background: "#111827",
-    padding: 20,
+    flex: 1,
+    background: "#0f172a",
     borderRadius: 14,
+    padding: 20,
+    overflowY: "auto",
   },
 
   right: {
-    background: "#111827",
-    padding: 15,
+    width: 340,
+    background: "#0f172a",
     borderRadius: 14,
+    padding: 18,
+    overflowY: "auto",
   },
 
-  empty: {
-    opacity: 0.6,
-    marginTop: 20,
-  },
-
-  activityCard: {
-    background: "#1f2937",
-    padding: 14,
-    borderRadius: 12,
-    marginBottom: 10,
-    cursor: "grab",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  drag: {
-    fontSize: 20,
-    opacity: 0.5,
-  },
-
-  dateText: {
-    marginLeft: 10,
-    opacity: 0.6,
-    fontSize: 16,
-  },
-
-  eventsContainer: {
-    marginTop: 20,
+  activitiesList: {
     display: "flex",
     flexDirection: "column",
     gap: 10,
   },
 
-  emptyDay: {
-    height: 300,
-    border: "2px dashed #374151",
-    borderRadius: 14,
+  activityCard: {
+    padding: 14,
+    borderRadius: 12,
+    cursor: "pointer",
+    transition: "0.2s",
+  },
+
+  timeBox: {
     display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
+    gap: 10,
+  },
+
+  input: {
+    width: "100%",
+    padding: 12,
+    borderRadius: 10,
+    border: "none",
+    background: "#111827",
+    color: "white",
+    marginBottom: 10,
+  },
+
+  label: {
+    fontSize: 13,
+    opacity: 0.7,
+    marginBottom: 6,
+  },
+
+  saveBtn: {
+    width: "100%",
+    padding: 14,
+    background: "#22c55e",
+    border: "none",
+    borderRadius: 12,
+    color: "white",
+    cursor: "pointer",
+    fontWeight: "bold",
+    marginTop: 10,
+  },
+
+  hr: {
+    borderColor: "#1f2937",
+    margin: "20px 0",
+  },
+
+  empty: {
+    padding: 30,
     opacity: 0.6,
+    textAlign: "center",
   },
 
   eventCard: {
-    background: "#1f2937",
-    padding: 14,
+    background: "#111827",
+    padding: 16,
     borderRadius: 12,
+    marginBottom: 12,
+  },
+
+  eventTop: {
     display: "flex",
-    gap: 12,
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  doneBtn: {
+    padding: "8px 12px",
+    border: "none",
+    borderRadius: 8,
+    color: "white",
     cursor: "pointer",
   },
 
-  checkbox: {
-    fontSize: 22,
-  },
-
-  repeat: {
-    marginTop: 5,
-    opacity: 0.7,
-    fontSize: 12,
+  deleteBtn: {
+    padding: "8px 12px",
+    border: "none",
+    borderRadius: 8,
+    background: "#ef4444",
+    color: "white",
+    cursor: "pointer",
   },
 
   calendarHeader: {
     display: "flex",
-    gap: 8,
+    gap: 10,
+    marginBottom: 15,
   },
 
   select: {
@@ -729,13 +888,8 @@ const styles = {
     padding: 10,
     borderRadius: 10,
     border: "none",
-    background: "#1f2937",
+    background: "#111827",
     color: "white",
-  },
-
-  monthTitle: {
-    textAlign: "center",
-    margin: "15px 0",
   },
 
   weekHeader: {
@@ -750,57 +904,27 @@ const styles = {
     fontSize: 12,
   },
 
-  calendar: {},
-
   weekRow: {
     display: "grid",
     gridTemplateColumns: "repeat(7,1fr)",
-    gap: 5,
-    marginBottom: 5,
+    gap: 4,
+    marginBottom: 4,
   },
 
   dayCell: {
-    height: 60,
-    borderRadius: 10,
+    height: 42,
     display: "flex",
-    flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
+    borderRadius: 8,
     cursor: "pointer",
     userSelect: "none",
   },
 
-  modal: {
-    position: "fixed",
-    inset: 0,
-    background: "rgba(0,0,0,0.8)",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  modalContent: {
+  selectedInfo: {
     background: "#111827",
-    padding: 25,
-    borderRadius: 14,
-    width: 400,
-  },
-
-  modalDesc: {
+    padding: 14,
+    borderRadius: 12,
     marginTop: 15,
-    background: "#1f2937",
-    padding: 12,
-    borderRadius: 10,
-  },
-
-  closeBtn: {
-    marginTop: 20,
-    width: "100%",
-    padding: 12,
-    border: "none",
-    borderRadius: 10,
-    background: "#ef4444",
-    color: "white",
-    cursor: "pointer",
   },
 };
