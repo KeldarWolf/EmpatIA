@@ -6,52 +6,44 @@ const API_URL = "https://empatia-backend.onrender.com";
 export default function Actividades() {
   const navigate = useNavigate();
 
-  /* =========================
-     SESSION USER FIX
-  ========================= */
-  const storedUser = JSON.parse(
-    sessionStorage.getItem("usuario") || "null"
-  );
+  const storedUser = JSON.parse(sessionStorage.getItem("usuario") || "null");
 
   const user = {
-    id_usuario:
-      storedUser?.id_usuario ||
-      storedUser?.user?.id_usuario ||
-      storedUser?.id ||
-      null,
-    nombre:
-      storedUser?.nombre ||
-      storedUser?.user?.nombre ||
-      "Usuario",
+    id_usuario: storedUser?.id_usuario || null,
+    nombre: storedUser?.nombre || "Usuario",
   };
 
-  /* =========================
-     STATES
-  ========================= */
   const [actividades, setActividades] = useState([]);
+  const [actividadDB, setActividadDB] = useState([]);
+
   const [selected, setSelected] = useState(null);
   const [gusto, setGusto] = useState(5);
 
+  const [instruction, setInstruction] = useState("");
+  const [editInstruction, setEditInstruction] = useState("");
+
   /* =========================
-     LOAD ACTIVIDADES USER
+     LOAD ACTIVIDADES
   ========================= */
   const loadActivities = async () => {
-    try {
-      const res = await fetch(
-        `${API_URL}/api/registro-actividad/usuario/${user.id_usuario}`
-      );
+    const res = await fetch(
+      `${API_URL}/api/registro-actividad/usuario/${user.id_usuario}`
+    );
 
-      const data = await res.json();
-      setActividades(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.log("ERROR:", err);
-    }
+    const data = await res.json();
+    setActividades(data || []);
+  };
+
+  const loadActividadDB = async () => {
+    const res = await fetch(`${API_URL}/api/actividad`);
+    const data = await res.json();
+    setActividadDB(data || []);
   };
 
   useEffect(() => {
-    if (user?.id_usuario) {
-      loadActivities();
-    }
+    if (!user.id_usuario) navigate("/", { replace: true });
+    loadActivities();
+    loadActividadDB();
   }, []);
 
   /* =========================
@@ -60,76 +52,109 @@ export default function Actividades() {
   const selectActivity = (act) => {
     setSelected(act);
     setGusto(act.puntaje_agrado || 5);
+
+    // 🔥 PRIORIDAD: instrucción usuario
+    const userInstruction = act.instrucciones_usuario;
+
+    if (userInstruction) {
+      setInstruction(userInstruction);
+      setEditInstruction(userInstruction);
+      return;
+    }
+
+    // fallback catálogo
+    const match = actividadDB.find(
+      (a) =>
+        a.nombre?.toLowerCase() ===
+        act.nombre_actividad?.toLowerCase()
+    );
+
+    const base = match?.instrucciones || null;
+
+    setInstruction(base);
+    setEditInstruction(base || "");
   };
 
   /* =========================
-     UPDATE SCORE FIX
+     UPDATE PUNTAJE
   ========================= */
   const updateActivity = async () => {
-    if (!selected) return;
+    await fetch(
+      `${API_URL}/api/registro-actividad/${selected.id_registro}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          puntaje_agrado: Number(gusto),
+        }),
+      }
+    );
 
-    try {
-      await fetch(
-        `${API_URL}/api/registro-actividad/${selected.id_registro}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            puntaje_agrado: Number(gusto),
-          }),
-        }
-      );
-
-      setActividades((prev) =>
-        prev.map((a) =>
-          a.id_registro === selected.id_registro
-            ? { ...a, puntaje_agrado: Number(gusto) }
-            : a
-        )
-      );
-
-      setSelected(null);
-    } catch (err) {
-      console.log(err);
-    }
+    setActividades((prev) =>
+      prev.map((a) =>
+        a.id_registro === selected.id_registro
+          ? { ...a, puntaje_agrado: gusto }
+          : a
+      )
+    );
   };
 
   /* =========================
-     INSTRUCCIÓN DESDE REGISTRO (FIX PRINCIPAL)
+     UPDATE INSTRUCCION USER
   ========================= */
-  const getInstructions = () => {
-    if (!selected) {
-      return "👈 Selecciona una actividad";
-    }
+  const saveInstruction = async () => {
+    await fetch(
+      `${API_URL}/api/registro-actividad/${selected.id_registro}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          instrucciones_usuario: editInstruction,
+        }),
+      }
+    );
 
-    // 🔥 AQUÍ ESTÁ EL FIX IMPORTANTE
-    const instruction = selected.instrucciones_usuario;
+    setInstruction(editInstruction);
 
-    if (instruction && instruction.trim() !== "") {
-      return instruction;
-    }
-
-    return "⚠️ Esta actividad no tiene una introducción guardada.";
+    setActividades((prev) =>
+      prev.map((a) =>
+        a.id_registro === selected.id_registro
+          ? {
+              ...a,
+              instrucciones_usuario: editInstruction,
+            }
+          : a
+      )
+    );
   };
 
-  /* =========================
-     UI
-  ========================= */
   return (
     <div style={styles.layout}>
-
       {/* LEFT */}
       <div style={styles.left}>
         <h3>🧠 Instrucciones</h3>
 
-        <div style={styles.box}>
-          {getInstructions()}
-        </div>
-
-        {selected && (
+        {!selected ? (
+          <div style={styles.box}>👈 Selecciona una actividad</div>
+        ) : instruction ? (
           <div style={styles.box}>
-            <p>📌 {selected.nombre_actividad}</p>
-            <p>⭐ {selected.puntaje_agrado}/10</p>
+            <p>{instruction}</p>
+
+            <textarea
+              style={styles.textarea}
+              value={editInstruction}
+              onChange={(e) =>
+                setEditInstruction(e.target.value)
+              }
+            />
+
+            <button style={styles.btn} onClick={saveInstruction}>
+              💾 Guardar instrucción
+            </button>
+          </div>
+        ) : (
+          <div style={styles.box}>
+            ⚠️ Esta actividad no tiene instrucción
           </div>
         )}
       </div>
@@ -153,19 +178,21 @@ export default function Actividades() {
 
         {selected && (
           <div style={styles.editor}>
-            <h3>✏️ Editar puntaje</h3>
+            <h3>Editar puntaje</h3>
 
             <input
               type="range"
               min="1"
               max="10"
               value={gusto}
-              onChange={(e) => setGusto(Number(e.target.value))}
+              onChange={(e) =>
+                setGusto(Number(e.target.value))
+              }
               style={{ width: "100%" }}
             />
 
             <button onClick={updateActivity} style={styles.btn}>
-              💾 Guardar
+              Guardar puntaje
             </button>
           </div>
         )}
@@ -176,72 +203,7 @@ export default function Actividades() {
         <button onClick={() => navigate("/rutina")}>🧘 Rutina</button>
         <button onClick={() => navigate("/actividades")}>🎯 Actividades</button>
         <button onClick={() => navigate("/estadisticas")}>📊 Estadísticas</button>
-        <button onClick={() => navigate("/diario")}>📓 Diario</button>
       </div>
-
     </div>
   );
 }
-
-/* =========================
-   STYLES
-========================= */
-const styles = {
-  layout: {
-    display: "flex",
-    height: "100vh",
-    background: "#0f172a",
-    color: "white",
-    fontFamily: "Arial",
-  },
-  left: {
-    width: "20%",
-    padding: 20,
-    background: "#111827",
-  },
-  center: {
-    flex: 1,
-    padding: 20,
-    overflowY: "auto",
-  },
-  right: {
-    width: "20%",
-    padding: 20,
-    background: "#111827",
-    display: "flex",
-    flexDirection: "column",
-    gap: 10,
-  },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
-    gap: 10,
-  },
-  card: {
-    background: "#1f2937",
-    padding: 15,
-    borderRadius: 10,
-    cursor: "pointer",
-  },
-  box: {
-    marginTop: 10,
-    padding: 10,
-    background: "#1f2937",
-    borderRadius: 10,
-  },
-  editor: {
-    marginTop: 20,
-    padding: 15,
-    background: "#111827",
-    borderRadius: 10,
-  },
-  btn: {
-    marginTop: 10,
-    padding: 10,
-    background: "#2563eb",
-    border: "none",
-    color: "white",
-    borderRadius: 8,
-    width: "100%",
-  },
-};
