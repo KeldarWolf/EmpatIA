@@ -6,16 +6,34 @@ const API_URL = "https://empatia-backend.onrender.com";
 export default function Actividades() {
   const navigate = useNavigate();
 
-  const user = JSON.parse(localStorage.getItem("usuario") || "null");
+  /* =========================
+     USER SESSION (FIX REAL)
+  ========================= */
+  const user = JSON.parse(
+    sessionStorage.getItem("usuario") || "null"
+  );
 
+  /* =========================
+     STATES
+  ========================= */
   const [actividades, setActividades] = useState([]);
-  const [actividadDB, setActividadDB] = useState([]); // 👈 BD de instrucciones
+  const [actividadDB, setActividadDB] = useState([]);
   const [selected, setSelected] = useState(null);
   const [gusto, setGusto] = useState(5);
+  const [loading, setLoading] = useState(true);
 
-  // =========================
-  // CARGAR ACTIVIDADES USUARIO
-  // =========================
+  /* =========================
+     PROTECCIÓN
+  ========================= */
+  useEffect(() => {
+    if (!user?.id_usuario) {
+      navigate("/", { replace: true });
+    }
+  }, [user, navigate]);
+
+  /* =========================
+     LOAD ACTIVIDADES USUARIO
+  ========================= */
   const loadActivities = async () => {
     try {
       if (!user?.id_usuario) return;
@@ -29,72 +47,93 @@ export default function Actividades() {
       setActividades(Array.isArray(data) ? data : []);
     } catch (err) {
       console.log("ERROR ACTIVIDADES:", err);
+      setActividades([]);
     }
   };
 
-  // =========================
-  // CARGAR ACTIVIDADES BD (CATÁLOGO)
-  // =========================
+  /* =========================
+     LOAD CATÁLOGO ACTIVIDADES
+  ========================= */
   const loadActividadDB = async () => {
     try {
       const res = await fetch(`${API_URL}/api/actividad`);
       const data = await res.json();
+
       setActividadDB(Array.isArray(data) ? data : []);
     } catch (err) {
       console.log("ERROR BD ACTIVIDAD:", err);
+      setActividadDB([]);
     }
   };
 
+  /* =========================
+     INIT
+  ========================= */
   useEffect(() => {
-    loadActivities();
-    loadActividadDB();
+    const init = async () => {
+      setLoading(true);
+
+      await Promise.all([
+        loadActivities(),
+        loadActividadDB(),
+      ]);
+
+      setLoading(false);
+    };
+
+    init();
   }, []);
 
-  // =========================
-  // SELECT
-  // =========================
+  /* =========================
+     SELECT ACTIVITY
+  ========================= */
   const selectActivity = (act) => {
     setSelected(act);
     setGusto(act.puntaje_agrado || 5);
   };
 
-  // =========================
-  // UPDATE
-  // =========================
+  /* =========================
+     UPDATE ACTIVITY
+  ========================= */
   const updateActivity = async () => {
     if (!selected) return;
 
-    await fetch(
-      `${API_URL}/api/registro-actividad/${selected.id_registro}`,
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          puntaje_agrado: Number(gusto),
-        }),
-      }
-    );
+    try {
+      await fetch(
+        `${API_URL}/api/registro-actividad/${selected.id_registro}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            puntaje_agrado: Number(gusto),
+          }),
+        }
+      );
 
-    setActividades((prev) =>
-      prev.map((a) =>
-        a.id_registro === selected.id_registro
-          ? { ...a, puntaje_agrado: gusto }
-          : a
-      )
-    );
+      setActividades((prev) =>
+        prev.map((a) =>
+          a.id_registro === selected.id_registro
+            ? { ...a, puntaje_agrado: gusto }
+            : a
+        )
+      );
 
-    setSelected(null);
+      setSelected(null);
+    } catch (err) {
+      console.log("ERROR UPDATE:", err);
+    }
   };
 
-  // =========================
-  // INSTRUCCIONES DESDE BD
-  // =========================
+  /* =========================
+     INSTRUCCIONES
+  ========================= */
   const getInstructions = () => {
     if (!selected) {
       return "👈 Selecciona una actividad para ver instrucciones.";
     }
 
-    const name = selected.nombre_actividad?.toLowerCase() || "";
+    const name =
+      selected.nombre_actividad?.toLowerCase() || "";
 
     const match = actividadDB.find(
       (a) => a.nombre?.toLowerCase() === name
@@ -106,19 +145,27 @@ export default function Actividades() {
     );
   };
 
-  // =========================
-  // UI
-  // =========================
+  /* =========================
+     LOADING
+  ========================= */
+  if (loading) {
+    return (
+      <div style={styles.loading}>
+        ⏳ Cargando actividades...
+      </div>
+    );
+  }
+
+  /* =========================
+     UI
+  ========================= */
   return (
     <div style={styles.layout}>
-
-      {/* IZQUIERDA */}
+      {/* LEFT */}
       <div style={styles.left}>
         <h3>🧠 Instrucciones</h3>
 
-        <div style={styles.box}>
-          {getInstructions()}
-        </div>
+        <div style={styles.box}>{getInstructions()}</div>
 
         {selected && (
           <div style={styles.box}>
@@ -128,12 +175,12 @@ export default function Actividades() {
         )}
       </div>
 
-      {/* CENTRO */}
+      {/* CENTER */}
       <div style={styles.center}>
         <h2>🎯 Mis Actividades</h2>
 
         {actividades.length === 0 && (
-          <p>No tienes actividades aún</p>
+          <p>⚠️ No tienes actividades aún</p>
         )}
 
         <div style={styles.grid}>
@@ -158,7 +205,9 @@ export default function Actividades() {
               min="1"
               max="10"
               value={gusto}
-              onChange={(e) => setGusto(e.target.value)}
+              onChange={(e) =>
+                setGusto(Number(e.target.value))
+              }
               style={{ width: "100%" }}
             />
 
@@ -169,24 +218,33 @@ export default function Actividades() {
         )}
       </div>
 
-      {/* DERECHA */}
+      {/* RIGHT */}
       <div style={styles.right}>
-        <button onClick={() => navigate("/rutina")}>🧘 Rutina</button>
-        <button onClick={() => navigate("/actividades")}>🎯 Actividades</button>
-        <button onClick={() => navigate("/estadisticas")}>📊 Estadísticas</button>
-        <button onClick={() => navigate("/diario")}>📓 Diario</button>
+        <button onClick={() => navigate("/rutina")}>
+          🧘 Rutina
+        </button>
+        <button onClick={() => navigate("/actividades")}>
+          🎯 Actividades
+        </button>
+        <button onClick={() => navigate("/estadisticas")}>
+          📊 Estadísticas
+        </button>
+        <button onClick={() => navigate("/diario")}>
+          📓 Diario
+        </button>
 
         <hr />
 
-        <button onClick={() => navigate("/user")}>🔙 Volver</button>
+        <button onClick={() => navigate("/user")}>
+          🔙 Volver
+        </button>
       </div>
-
     </div>
   );
 }
 
 /* =========================
-   ESTILOS
+   STYLES
 ========================= */
 const styles = {
   layout: {
@@ -254,5 +312,14 @@ const styles = {
     border: "none",
     color: "white",
     borderRadius: 8,
+  },
+
+  loading: {
+    height: "100vh",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    background: "#0f172a",
+    color: "white",
   },
 };
