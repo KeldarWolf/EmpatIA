@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
 import "./Rutina.css";
 
 const API_URL = "https://empatia-backend.onrender.com";
@@ -18,241 +17,318 @@ export default function Rutina() {
       null,
   };
 
-  const [fecha, setFecha] = useState("");
+  const today = new Date();
+
+  const [year, setYear] = useState(today.getFullYear());
+  const [month, setMonth] = useState(today.getMonth());
+  const [selectedDate, setSelectedDate] = useState(
+    today.toISOString().split("T")[0]
+  );
+
+  const [actividades, setActividades] = useState([]);
   const [eventos, setEventos] = useState([]);
 
-  const [form, setForm] = useState({
-    titulo: "",
-    descripcion: "",
-    hora: "",
-    duracion: 30,
-  });
+  const [selectedActivities, setSelectedActivities] = useState([]);
+  const [selectedDays, setSelectedDays] = useState([]);
 
-  // =========================
-  // LOAD EVENTOS
-  // =========================
-  const loadEventos = async () => {
-    if (!user.id_usuario) return;
+  const [hora, setHora] = useState("09:00");
+  const [horaFin, setHoraFin] = useState("10:00");
+  const [duracion, setDuracion] = useState(60);
+  const [repeticion, setRepeticion] = useState("dia");
 
+  const [loading, setLoading] = useState(true);
+
+  const months = [
+    "Enero","Febrero","Marzo","Abril","Mayo","Junio",
+    "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"
+  ];
+
+  const daysShort = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
+  const daysFull = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
+
+  /* =========================
+     LOAD DATA
+  ========================= */
+  const loadData = async () => {
     try {
-      const res = await fetch(
-        `${API_URL}/api/rutina-eventos/${user.id_usuario}`
-      );
+      setLoading(true);
 
-      const data = await res.json();
-      setEventos(Array.isArray(data) ? data : []);
+      const [actRes, eventRes] = await Promise.all([
+        fetch(`${API_URL}/api/registro-actividad/usuario/${user.id_usuario}`),
+        fetch(`${API_URL}/api/rutina-eventos/${user.id_usuario}`)
+      ]);
+
+      const actData = await actRes.json();
+      const eventData = await eventRes.json();
+
+      setActividades(Array.isArray(actData) ? actData : []);
+      setEventos(Array.isArray(eventData) ? eventData : []);
     } catch (err) {
-      console.log("ERROR LOAD:", err);
+      console.log(err);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadEventos();
+    if (user?.id_usuario) loadData();
   }, []);
 
-  // =========================
-  // FILTRAR POR FECHA
-  // =========================
-  const eventosDia = eventos.filter((e) => e.fecha === fecha);
-
-  // =========================
-  // CREAR EVENTO
-  // =========================
-  const crearEvento = async () => {
-    if (!form.titulo || !fecha) return;
-
-    try {
-      const res = await fetch(`${API_URL}/api/rutina-eventos`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id_usuario: user.id_usuario,
-          titulo: form.titulo,
-          descripcion: form.descripcion,
-          fecha,
-          hora: form.hora,
-          duracion: form.duracion,
-          completado: false,
-        }),
-      });
-
-      const data = await res.json();
-
-      setEventos((prev) => [...prev, data]);
-
-      setForm({
-        titulo: "",
-        descripcion: "",
-        hora: "",
-        duracion: 30,
-      });
-    } catch (err) {
-      console.log("ERROR CREATE:", err);
-    }
+  /* =========================
+     TOGGLES
+  ========================= */
+  const toggleActivity = (act) => {
+    setSelectedActivities((prev) =>
+      prev.find((a) => a.id_registro === act.id_registro)
+        ? prev.filter((a) => a.id_registro !== act.id_registro)
+        : [...prev, act]
+    );
   };
 
-  // =========================
-  // COMPLETAR
-  // =========================
-  const toggleDone = async (id, actual) => {
-    try {
-      await fetch(`${API_URL}/api/rutina-eventos/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          completado: !actual,
-        }),
-      });
-
-      setEventos((prev) =>
-        prev.map((e) =>
-          e.id_evento === id
-            ? { ...e, completado: !actual }
-            : e
-        )
-      );
-    } catch (err) {
-      console.log(err);
-    }
+  const toggleDay = (day) => {
+    setSelectedDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+    );
   };
 
-  // =========================
-  // DELETE
-  // =========================
-  const eliminar = async (id) => {
-    try {
-      await fetch(`${API_URL}/api/rutina-eventos/${id}`, {
-        method: "DELETE",
-      });
+  /* =========================
+     CREATE EVENTS
+  ========================= */
+  const crearEventos = async () => {
+    if (!selectedActivities.length) return alert("Selecciona actividades");
+    if (!selectedDays.length) return alert("Selecciona días");
 
-      setEventos((prev) =>
-        prev.filter((e) => e.id_evento !== id)
-      );
-    } catch (err) {
-      console.log(err);
-    }
+    const requests = [];
+
+    selectedDays.forEach((date) => {
+      selectedActivities.forEach((act) => {
+        requests.push(
+          fetch(`${API_URL}/api/rutina-eventos`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id_usuario: user.id_usuario,
+              id_registro: act.id_registro,
+              titulo: act.nombre_actividad,
+              descripcion: act.instrucciones_usuario || "",
+              fecha: date,
+              hora,
+              hora_fin: horaFin,
+              duracion,
+              repeticion,
+            }),
+          })
+        );
+      });
+    });
+
+    await Promise.all(requests);
+
+    alert("Rutina creada");
+    setSelectedActivities([]);
+    setSelectedDays([]);
+    loadData();
   };
 
+  /* =========================
+     COMPLETE / DELETE
+  ========================= */
+  const toggleComplete = async (evento) => {
+    await fetch(`${API_URL}/api/rutina-eventos/${evento.id_evento}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ completado: !evento.completado }),
+    });
+
+    setEventos((prev) =>
+      prev.map((e) =>
+        e.id_evento === evento.id_evento
+          ? { ...e, completado: !e.completado }
+          : e
+      )
+    );
+  };
+
+  const deleteEvent = async (id) => {
+    await fetch(`${API_URL}/api/rutina-eventos/${id}`, {
+      method: "DELETE",
+    });
+
+    setEventos((prev) => prev.filter((e) => e.id_evento !== id));
+  };
+
+  /* =========================
+     EVENTOS DEL DÍA
+  ========================= */
+  const eventosDelDia = eventos
+    .filter((e) => e.fecha?.split("T")[0] === selectedDate)
+    .sort((a, b) => a.hora.localeCompare(b.hora));
+
+  /* =========================
+     WEEK
+  ========================= */
+  const currentWeek = useMemo(() => {
+    const base = new Date(selectedDate);
+    const monday = new Date(base);
+    const day = base.getDay();
+
+    monday.setDate(base.getDate() - (day === 0 ? 6 : day - 1));
+
+    return Array.from({ length: 7 }).map((_, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+
+      return {
+        date: d.toISOString().split("T")[0],
+        name: daysShort[i],
+        full: daysFull[i],
+      };
+    });
+  }, [selectedDate]);
+
+  /* =========================
+     LOADING
+  ========================= */
+  if (loading) {
+    return <div className="loading">Cargando rutina...</div>;
+  }
+
+  /* =========================
+     UI
+  ========================= */
   return (
-    <div className="rutina-layout">
+    <div className="page">
 
-      {/* ================= LEFT ================= */}
-      <div className="rutina-left">
-
-        <h2>🧘 Rutina</h2>
-
-        <input
-          type="date"
-          value={fecha}
-          onChange={(e) => setFecha(e.target.value)}
-        />
-
-        <div className="form-box">
-
-          <input
-            placeholder="Título"
-            value={form.titulo}
-            onChange={(e) =>
-              setForm({ ...form, titulo: e.target.value })
-            }
-          />
-
-          <input
-            type="time"
-            value={form.hora}
-            onChange={(e) =>
-              setForm({ ...form, hora: e.target.value })
-            }
-          />
-
-          <textarea
-            placeholder="Descripción"
-            value={form.descripcion}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                descripcion: e.target.value,
-              })
-            }
-          />
-
-          <button onClick={crearEvento}>
-            ➕ Agregar
-          </button>
-
+      {/* HEADER */}
+      <div className="header">
+        <div>
+          <h1>🧘 Rutina Inteligente</h1>
+          <p>Organiza actividades por día, semana o mes</p>
         </div>
 
-        <button onClick={() => navigate("/actividades")}>
-          🎯 Actividades
+        <button className="backBtn" onClick={() => navigate("/user")}>
+          Volver
         </button>
-
-        <button onClick={() => navigate("/estadisticas")}>
-          📊 Estadísticas
-        </button>
-
       </div>
 
-      {/* ================= CENTER ================= */}
-      <div className="rutina-center">
+      <div className="layout">
 
-        <h3>
-          📅 {fecha || "Selecciona un día"}
-        </h3>
+        {/* LEFT */}
+        <div className="left">
+          <h3>Actividades</h3>
 
-        {eventosDia.length === 0 && (
-          <p>No hay actividades en este día</p>
-        )}
+          {actividades.map((act) => {
+            const active = selectedActivities.some(
+              (a) => a.id_registro === act.id_registro
+            );
 
-        {eventosDia.map((e) => (
-          <div
-            key={e.id_evento}
-            className={`card-evento ${
-              e.completado ? "done" : ""
-            }`}
-          >
-
-            <div>
-              <h4>{e.titulo}</h4>
-              <p>{e.descripcion}</p>
-              <small>⏰ {e.hora}</small>
-            </div>
-
-            <div className="actions">
-
-              <button
-                onClick={() =>
-                  toggleDone(e.id_evento, e.completado)
-                }
+            return (
+              <div
+                key={act.id_registro}
+                className={`activityCard ${active ? "active" : ""}`}
+                onClick={() => toggleActivity(act)}
               >
-                {e.completado ? "↩️" : "✔️"}
-              </button>
+                <b>{act.nombre_actividad}</b>
+                <p>⭐ {act.puntaje_agrado}/10</p>
+              </div>
+            );
+          })}
 
-              <button onClick={() => eliminar(e.id_evento)}>
-                🗑️
-              </button>
+          <hr />
 
-            </div>
+          <h3>Días seleccionados</h3>
 
+          <div className="selectedContainer">
+            {selectedDays.map((d) => (
+              <div
+                key={d}
+                className="selectedDay"
+                onClick={() => toggleDay(d)}
+              >
+                {d}
+              </div>
+            ))}
           </div>
-        ))}
+
+          <hr />
+
+          <h3>Configuración</h3>
+
+          <label>Hora inicio</label>
+          <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} />
+
+          <label>Hora fin</label>
+          <input type="time" value={horaFin} onChange={(e) => setHoraFin(e.target.value)} />
+
+          <label>Duración</label>
+          <input
+            type="number"
+            value={duracion}
+            onChange={(e) => setDuracion(Number(e.target.value))}
+          />
+
+          <label>Repetición</label>
+          <select value={repeticion} onChange={(e) => setRepeticion(e.target.value)}>
+            <option value="dia">Diario</option>
+            <option value="semana">Semanal</option>
+            <option value="mes">Mensual</option>
+          </select>
+
+          <button className="createBtn" onClick={crearEventos}>
+            Crear rutina
+          </button>
+        </div>
+
+        {/* CENTER */}
+        <div className="center">
+          <h2>📅 Planificación del día</h2>
+
+          <div className="timeline">
+            {eventosDelDia.length === 0 ? (
+              <div className="empty">Día libre 😴</div>
+            ) : (
+              eventosDelDia.map((evento) => (
+                <div key={evento.id_evento} className="eventCard">
+                  <input
+                    type="checkbox"
+                    checked={evento.completado}
+                    onChange={() => toggleComplete(evento)}
+                  />
+
+                  <div>
+                    <h3>{evento.titulo}</h3>
+                    <p>{evento.hora} → {evento.hora_fin}</p>
+                    <p>{evento.duracion} min</p>
+                    {evento.descripcion && <p>{evento.descripcion}</p>}
+                  </div>
+
+                  <button onClick={() => deleteEvent(evento.id_evento)}>
+                    🗑
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT */}
+        <div className="right">
+          <h3>Calendario</h3>
+
+          <div className="calendar">
+            {currentWeek.map((d) => (
+              <div
+                key={d.date}
+                className={`dayCell ${selectedDate === d.date ? "active" : ""}`}
+                onClick={() => setSelectedDate(d.date)}
+              >
+                {d.date?.slice(8)}
+              </div>
+            ))}
+          </div>
+        </div>
 
       </div>
-
-      {/* ================= RIGHT ================= */}
-      <div className="rutina-right">
-        <button onClick={() => navigate("/rutina")}>
-          🧘 Rutina
-        </button>
-
-        <button onClick={() => navigate("/actividades")}>
-          🎯 Actividades
-        </button>
-
-        <button onClick={() => navigate("/estadisticas")}>
-          📊 Estadísticas
-        </button>
-      </div>
-
     </div>
   );
 }
