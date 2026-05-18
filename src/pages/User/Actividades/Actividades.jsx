@@ -24,6 +24,15 @@ export default function Actividades() {
   const [instrucciones, setInstrucciones] = useState("");
 
   /* =========================
+     MOOD SYSTEM
+  ========================= */
+  const getMood = (value) => {
+    if (value <= 3) return { color: "#ef4444", emoji: "😟" };
+    if (value <= 7) return { color: "#f59e0b", emoji: "😐" };
+    return { color: "#22c55e", emoji: "🙂" };
+  };
+
+  /* =========================
      LOAD
   ========================= */
   const loadActivities = async () => {
@@ -33,7 +42,6 @@ export default function Actividades() {
       );
 
       const data = await res.json();
-
       setActividades(Array.isArray(data) ? data : []);
     } catch (err) {
       console.log(err);
@@ -41,9 +49,7 @@ export default function Actividades() {
   };
 
   useEffect(() => {
-    if (user?.id_usuario) {
-      loadActivities();
-    }
+    if (user?.id_usuario) loadActivities();
   }, []);
 
   /* =========================
@@ -66,9 +72,7 @@ export default function Actividades() {
         `${API_URL}/api/registro-actividad/${selected.id_registro}`,
         {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             puntaje_agrado: Number(gusto),
             instrucciones_usuario: instrucciones,
@@ -96,7 +100,10 @@ export default function Actividades() {
 
   return (
     <div className="layout">
-      {/* LEFT */}
+
+      {/* =========================
+         LEFT - EDITOR
+      ========================= */}
       <div className="left">
         <h3>✏️ Editor</h3>
 
@@ -109,38 +116,66 @@ export default function Actividades() {
             <div className="cardEdit">
               <h4>{selected.nombre_actividad}</h4>
 
-              <p>⭐ Puntaje: {gusto}/10</p>
+              <p>
+                Estado: {getMood(gusto).emoji} {gusto}/10
+              </p>
 
-              <div className="ratingBox">
+              {/* =========================
+                 CONTROLES ➕ ➖
+              ========================= */}
+              <div className="ratingGame">
                 <button
-                  onClick={() => setGusto(Math.max(1, gusto - 1))}
+                  onClick={() =>
+                    setGusto(Math.max(1, gusto - 1))
+                  }
                 >
                   ➖
                 </button>
 
-                <div className="bigNumber">
-                  {gusto}
+                <div className="moodBig">
+                  <span>{getMood(gusto).emoji}</span>
+                  <strong>{gusto}</strong>
                 </div>
 
                 <button
-                  onClick={() => setGusto(Math.min(10, gusto + 1))}
+                  onClick={() =>
+                    setGusto(Math.min(10, gusto + 1))
+                  }
                 >
                   ➕
                 </button>
               </div>
 
-              <input
-                type="range"
-                min="1"
-                max="10"
-                value={gusto}
-                onChange={(e) =>
-                  setGusto(Number(e.target.value))
-                }
-                className="slider"
-              />
+              {/* =========================
+                 BARRA GAMIFICADA
+              ========================= */}
+              <div className="ratingBar">
+                {Array.from({ length: 10 }).map((_, i) => {
+                  const value = i + 1;
+                  const mood = getMood(value);
+
+                  return (
+                    <div
+                      key={i}
+                      className={`barSegment ${
+                        gusto >= value ? "active" : ""
+                      }`}
+                      style={{
+                        background:
+                          gusto >= value
+                            ? mood.color
+                            : "#1f2937",
+                      }}
+                      onClick={() => setGusto(value)}
+                    />
+                  );
+                })}
+              </div>
             </div>
 
+            {/* =========================
+               INSTRUCCIONES
+            ========================= */}
             <div className="cardEdit">
               <h4>🧠 Instrucciones</h4>
 
@@ -164,7 +199,9 @@ export default function Actividades() {
         )}
       </div>
 
-      {/* CENTER */}
+      {/* =========================
+         CENTER - LISTA
+      ========================= */}
       <div className="center">
         <h2>🎯 Actividades</h2>
 
@@ -189,7 +226,9 @@ export default function Actividades() {
         </div>
       </div>
 
-      {/* RIGHT */}
+      {/* =========================
+         RIGHT - NAV
+      ========================= */}
       <div className="right">
         <button onClick={() => navigate("/rutina")}>
           🧘 Rutina
