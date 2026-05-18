@@ -9,12 +9,12 @@ export default function Rutina() {
   const user = JSON.parse(sessionStorage.getItem("usuario") || "null");
 
   const [rutinas, setRutinas] = useState([]);
+  const [actividades, setActividades] = useState([]);
+
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
 
   const [selectedRutina, setSelectedRutina] = useState(null);
-
-  // 🔥 CALENDARIO (RESTAURADO)
   const [diasSeleccionados, setDiasSeleccionados] = useState([]);
 
   const diasSemana = [
@@ -32,8 +32,6 @@ export default function Rutina() {
   ========================= */
   const loadRutinas = async () => {
     try {
-      if (!user?.id_usuario) return;
-
       const res = await fetch(
         `${API_URL}/api/rutina/${user.id_usuario}`
       );
@@ -45,36 +43,51 @@ export default function Rutina() {
     }
   };
 
+  /* =========================
+     🔥 LOAD ACTIVIDADES DEL USUARIO (CLAVE)
+  ========================= */
+  const loadActividades = async () => {
+    try {
+      const res = await fetch(
+        `${API_URL}/api/registro-actividad/usuario/${user.id_usuario}`
+      );
+
+      const data = await res.json();
+      setActividades(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   useEffect(() => {
-    if (user?.id_usuario) loadRutinas();
+    if (user?.id_usuario) {
+      loadRutinas();
+      loadActividades();
+    }
   }, []);
 
   /* =========================
-     CREAR RUTINA
+     CREATE RUTINA
   ========================= */
   const createRutina = async () => {
     if (!nombre.trim()) return;
 
-    try {
-      const res = await fetch(`${API_URL}/api/rutina`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id_usuario: user.id_usuario,
-          nombre,
-          descripcion,
-          frecuencia: "semanal",
-        }),
-      });
+    const res = await fetch(`${API_URL}/api/rutina`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id_usuario: user.id_usuario,
+        nombre,
+        descripcion,
+        frecuencia: "semanal",
+      }),
+    });
 
-      const data = await res.json();
+    const data = await res.json();
+    setRutinas((prev) => [data, ...prev]);
 
-      setRutinas((prev) => [data, ...prev]);
-      setNombre("");
-      setDescripcion("");
-    } catch (err) {
-      console.log(err);
-    }
+    setNombre("");
+    setDescripcion("");
   };
 
   /* =========================
@@ -82,13 +95,11 @@ export default function Rutina() {
   ========================= */
   const selectRutina = (r) => {
     setSelectedRutina(r);
-
-    // 🔥 reset calendario al cambiar rutina
     setDiasSeleccionados([]);
   };
 
   /* =========================
-     TOGGLE CALENDARIO (FIX UX)
+     TOGGLE DÍAS (CALENDARIO)
   ========================= */
   const toggleDia = (index) => {
     setDiasSeleccionados((prev) =>
@@ -99,7 +110,7 @@ export default function Rutina() {
   };
 
   /* =========================
-     GUARDAR DÍAS EN BD
+     GUARDAR DÍAS
   ========================= */
   const saveDias = async () => {
     if (!selectedRutina) return;
@@ -110,20 +121,16 @@ export default function Rutina() {
       descripcion: "Rutina personalizada",
     }));
 
-    try {
-      await fetch(`${API_URL}/api/rutina/dias`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id_rutina: selectedRutina.id_rutina,
-          dias: diasPayload,
-        }),
-      });
+    await fetch(`${API_URL}/api/rutina/dias`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id_rutina: selectedRutina.id_rutina,
+        dias: diasPayload,
+      }),
+    });
 
-      alert("✔ Días guardados en BD");
-    } catch (err) {
-      console.log(err);
-    }
+    alert("✔ Días guardados");
   };
 
   return (
@@ -131,7 +138,7 @@ export default function Rutina() {
 
       {/* HEADER */}
       <div style={styles.header}>
-        <h2>🧘 Rutina</h2>
+        <h2>🧘 Rutina Completa</h2>
 
         <button onClick={() => navigate("/user")} style={styles.back}>
           ⬅ Volver
@@ -140,12 +147,12 @@ export default function Rutina() {
 
       <div style={styles.grid}>
 
-        {/* LEFT */}
+        {/* ================= LEFT ================= */}
         <div style={styles.left}>
           <h3>➕ Crear Rutina</h3>
 
           <input
-            placeholder="Nombre rutina"
+            placeholder="Nombre"
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
             style={styles.input}
@@ -184,17 +191,16 @@ export default function Rutina() {
           ))}
         </div>
 
-        {/* CENTER (CALENDARIO RESTAURADO COMPLETO) */}
+        {/* ================= CENTER ================= */}
         <div style={styles.center}>
-          <h3>📅 Calendario de rutina</h3>
+          <h3>📅 Calendario</h3>
 
           {!selectedRutina ? (
-            <p>👈 Selecciona una rutina</p>
+            <p>Selecciona una rutina</p>
           ) : (
             <>
               <h4>{selectedRutina.nombre}</h4>
 
-              {/* 🔥 CALENDARIO VISUAL ORIGINAL RESTAURADO */}
               <div style={styles.days}>
                 {diasSemana.map((dia, i) => (
                   <div
@@ -205,10 +211,6 @@ export default function Rutina() {
                       background: diasSeleccionados.includes(i)
                         ? "#22c55e"
                         : "#111827",
-                      transform: diasSeleccionados.includes(i)
-                        ? "scale(1.05)"
-                        : "scale(1)",
-                      transition: "0.2s",
                     }}
                   >
                     {dia}
@@ -217,28 +219,34 @@ export default function Rutina() {
               </div>
 
               <button onClick={saveDias} style={styles.btn}>
-                💾 Guardar en BD
+                Guardar en BD
               </button>
-
-              {/* preview UX */}
-              {diasSeleccionados.length > 0 && (
-                <p style={{ marginTop: 10, opacity: 0.8 }}>
-                  Seleccionados:{" "}
-                  {diasSeleccionados.map((i) => diasSemana[i]).join(", ")}
-                </p>
-              )}
             </>
           )}
         </div>
 
-        {/* RIGHT */}
+        {/* ================= RIGHT ================= */}
         <div style={styles.right}>
-          <h3>ℹ Info</h3>
 
-          <p>✔ Rutinas por usuario</p>
-          <p>✔ Calendario interactivo</p>
-          <p>✔ Guardado en PostgreSQL</p>
-          <p>✔ Relación rutina → días</p>
+          <h3>🎯 Actividades del usuario</h3>
+
+          {/* 🔥 AQUÍ ESTÁ LO QUE TE FALTABA */}
+          {actividades.length === 0 && (
+            <p style={{ opacity: 0.6 }}>
+              No hay actividades aún
+            </p>
+          )}
+
+          {actividades.map((a) => (
+            <div key={a.id_registro} style={styles.activityCard}>
+              <b>{a.nombre_actividad}</b>
+              <p>⭐ {a.puntaje_agrado}/10</p>
+              <small>
+                {a.instrucciones_usuario?.slice(0, 60)}
+              </small>
+            </div>
+          ))}
+
         </div>
 
       </div>
@@ -254,7 +262,6 @@ const styles = {
     height: "100vh",
     background: "#0f172a",
     color: "white",
-    fontFamily: "Arial",
   },
 
   header: {
@@ -329,19 +336,18 @@ const styles = {
     borderRadius: 8,
   },
 
+  day: {
+    padding: 10,
+    textAlign: "center",
+    borderRadius: 6,
+    cursor: "pointer",
+  },
+
   days: {
     display: "grid",
     gridTemplateColumns: "repeat(7,1fr)",
     gap: 5,
     margin: "10px 0",
-  },
-
-  day: {
-    padding: 10,
-    textAlign: "center",
-    cursor: "pointer",
-    borderRadius: 6,
-    userSelect: "none",
   },
 
   back: {
@@ -351,5 +357,12 @@ const styles = {
     border: "none",
     borderRadius: 6,
     cursor: "pointer",
+  },
+
+  activityCard: {
+    padding: 10,
+    marginBottom: 8,
+    background: "#0b0f14",
+    borderRadius: 8,
   },
 };
