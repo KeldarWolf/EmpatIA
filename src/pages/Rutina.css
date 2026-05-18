@@ -1,3 +1,6 @@
+/* =========================
+   BASE
+========================= */
 .page {
   height: 100vh;
   background: #0b0f14;
@@ -5,82 +8,220 @@
   display: flex;
   flex-direction: column;
   font-family: Arial;
+
+  /* 🔤 15% menos texto global */
   font-size: 85%;
 }
 
+/* =========================
+   HEADER
+========================= */
 .header {
   display: flex;
   justify-content: space-between;
-  padding: 16px;
+  padding: 16px; /* antes 20 */
   border-bottom: 1px solid #1f2937;
 }
 
+.backBtn {
+  padding: 8px 14px; /* reducido */
+  border-radius: 8px;
+  border: none;
+  background: #1f2937;
+  color: white;
+  cursor: pointer;
+}
+
+/* =========================
+   LAYOUT
+========================= */
 .layout {
   flex: 1;
   display: flex;
-  gap: 12px;
-  padding: 12px;
+  gap: 12px; /* antes 15 */
+  padding: 12px; /* antes 15 */
+  overflow: hidden;
 }
 
-.left, .center, .right {
+/* =========================
+   COLUMNAS
+========================= */
+.left {
+  width: 260px; /* antes 320 */
   background: #0f172a;
+  padding: 12px; /* antes 15 */
   border-radius: 10px;
-  padding: 12px;
   overflow-y: auto;
 }
 
-.left { width: 260px; }
-.right { width: 290px; }
-.center { flex: 1; }
+.center {
+  flex: 1;
+  background: #0f172a;
+  padding: 16px; /* antes 20 */
+  border-radius: 10px;
+  overflow-y: auto;
+}
 
+.right {
+  width: 290px; /* antes 360 */
+  background: #0f172a;
+  padding: 12px;
+  border-radius: 10px;
+  overflow-y: auto;
+}
+
+/* =========================
+   ACTIVIDADES
+========================= */
 .activityCard {
   background: #111827;
-  padding: 10px;
-  margin-bottom: 8px;
+  padding: 10px; /* antes 12 */
   border-radius: 8px;
+  margin-bottom: 8px; /* antes 10 */
   cursor: pointer;
+  transition: 0.2s;
+}
+
+.activityCard:hover {
+  transform: scale(1.01);
 }
 
 .activityCard.active {
   border: 2px solid #22c55e;
 }
 
-input, select {
+/* =========================
+   INPUTS
+========================= */
+input,
+select {
   width: 100%;
-  padding: 8px;
-  margin: 6px 0 12px;
+  padding: 8px; /* antes 10 */
+  margin-top: 5px;
+  margin-bottom: 12px; /* antes 15 */
   border-radius: 7px;
+  border: none;
   background: #111827;
   color: white;
-  border: none;
 }
 
+/* =========================
+   BOTONES
+========================= */
 .createBtn {
   width: 100%;
-  padding: 11px;
+  padding: 11px; /* antes 14 */
   background: #22c55e;
   border: none;
   border-radius: 8px;
+  color: white;
   font-weight: bold;
+  cursor: pointer;
 }
 
+/* =========================
+   DÍAS SELECCIONADOS
+========================= */
 .selectedContainer {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 6px; /* antes 8 */
 }
 
 .selectedDay {
   background: #22c55e;
   padding: 5px 8px;
   border-radius: 6px;
+  font-size: 0.75rem;
+}
+
+/* =========================
+   CALENDARIO
+========================= */
+.calendarHeader {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.select {
+  flex: 1;
+  padding: 8px;
+  border-radius: 7px;
+  border: none;
+  background: #111827;
+  color: white;
+}
+
+.weekHeader,
+.weekRow {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.weekHeader {
+  margin-bottom: 8px;
+}
+
+.weekDay {
+  text-align: center;
+  opacity: 0.7;
   font-size: 0.8rem;
 }
 
+.dayCell {
+  height: 38px; /* antes 45 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 7px;
+  cursor: pointer;
+  background: #111827;
+}
+
+.dayCell:hover {
+  background: #1f2937;
+}
+
+.dayCell.active {
+  background: #2563eb;
+}
+
+/* =========================
+   SEMANA
+========================= */
+.weekContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.weekCard {
+  padding: 10px; /* antes 12 */
+  border-radius: 8px;
+  background: #111827;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+/* =========================
+   CENTRO - EVENTOS
+========================= */
 .timeline {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.empty {
+  height: 250px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0.6;
 }
 
 .eventCard {
@@ -89,24 +230,65 @@ input, select {
   border-radius: 10px;
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
 }
 
-.dayCell {
-  background: #111827;
+.eventCard h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.eventCard p {
+  margin: 4px 0;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+/* =========================
+   CHECKBOX
+========================= */
+input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 4px;
+}
+
+/* =========================
+   BOTÓN DELETE
+========================= */
+.eventCard button {
+  background: #ef4444;
+  border: none;
+  color: white;
   padding: 8px;
   border-radius: 7px;
-  text-align: center;
   cursor: pointer;
 }
 
-.dayCell.active {
-  background: #2563eb;
+/* =========================
+   HR
+========================= */
+hr {
+  border: 0;
+  border-top: 1px solid #1f2937;
+  margin: 16px 0;
 }
 
-.backBtn {
-  padding: 8px 14px;
-  background: #1f2937;
-  border: none;
-  border-radius: 8px;
-  color: white;
+/* =========================
+   TEXTOS
+========================= */
+h1 {
+  font-size: 1.4rem; /* reducido */
+}
+
+h2 {
+  font-size: 1.2rem;
+}
+
+h3 {
+  font-size: 1rem;
+}
+
+p {
+  line-height: 1.4;
 }
