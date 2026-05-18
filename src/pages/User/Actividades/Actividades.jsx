@@ -7,7 +7,7 @@ export default function Actividades() {
   const navigate = useNavigate();
 
   /* =========================
-     USER SESSION FIX REAL
+     SESSION USER
   ========================= */
   const storedUser = JSON.parse(
     sessionStorage.getItem("usuario") || "null"
@@ -32,10 +32,12 @@ export default function Actividades() {
   const [actividadDB, setActividadDB] = useState([]);
   const [selected, setSelected] = useState(null);
   const [gusto, setGusto] = useState(5);
-  const [textoNueva, setTextoNueva] = useState("");
+
+  const [showAddInstruction, setShowAddInstruction] = useState(false);
+  const [newInstruction, setNewInstruction] = useState("");
 
   /* =========================
-     PROTECCIÓN SESIÓN
+     PROTECCIÓN
   ========================= */
   useEffect(() => {
     if (!user?.id_usuario) {
@@ -44,12 +46,10 @@ export default function Actividades() {
   }, []);
 
   /* =========================
-     LOAD ACTIVIDADES USER
+     LOAD ACTIVITIES
   ========================= */
   const loadActivities = async () => {
     try {
-      if (!user?.id_usuario) return;
-
       const res = await fetch(
         `${API_URL}/api/registro-actividad/usuario/${user.id_usuario}`
       );
@@ -57,76 +57,58 @@ export default function Actividades() {
       const data = await res.json();
       setActividades(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.log("ERROR LOAD:", err);
+      console.log(err);
     }
   };
 
-  /* =========================
-     LOAD CATALOGO ACTIVIDAD
-  ========================= */
   const loadActividadDB = async () => {
     try {
       const res = await fetch(`${API_URL}/api/actividad`);
       const data = await res.json();
-
       setActividadDB(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.log("ERROR DB:", err);
+      console.log(err);
     }
   };
 
-  /* =========================
-     INIT
-  ========================= */
   useEffect(() => {
     loadActivities();
     loadActividadDB();
   }, []);
 
   /* =========================
-     CREAR ACTIVIDAD (FIX BD REAL)
+     CREATE
   ========================= */
-  const createActivity = async () => {
-    if (!textoNueva.trim()) return;
-    if (!user?.id_usuario) return;
+  const createInstruction = async () => {
+    if (!selected || !newInstruction.trim()) return;
 
     try {
-      const res = await fetch(
-        `${API_URL}/api/registro-actividad`,
+      await fetch(`${API_URL}/api/actividad`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: selected.nombre_actividad,
+          instrucciones: newInstruction,
+        }),
+      });
+
+      setActividadDB((prev) => [
+        ...prev,
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            id_usuario: user.id_usuario,
-            nombre_actividad: textoNueva,
-            puntaje_agrado: 5,
-            frecuencia_deseada: null,
-            reaccion: null,
-          }),
-        }
-      );
+          nombre: selected.nombre_actividad,
+          instrucciones: newInstruction,
+        },
+      ]);
 
-      const data = await res.json();
-
-      setActividades((prev) => [data, ...prev]);
-      setTextoNueva("");
+      setShowAddInstruction(false);
+      setNewInstruction("");
     } catch (err) {
-      console.log("ERROR CREATE:", err);
+      console.log(err);
     }
   };
 
   /* =========================
-     SELECT
-  ========================= */
-  const selectActivity = (act) => {
-    setSelected(act);
-    setGusto(act.puntaje_agrado || 5);
-  };
-
-  /* =========================
-     UPDATE
+     UPDATE PUNTAJE FIX
   ========================= */
   const updateActivity = async () => {
     if (!selected) return;
@@ -135,10 +117,8 @@ export default function Actividades() {
       await fetch(
         `${API_URL}/api/registro-actividad/${selected.id_registro}`,
         {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             puntaje_agrado: Number(gusto),
           }),
@@ -148,37 +128,39 @@ export default function Actividades() {
       setActividades((prev) =>
         prev.map((a) =>
           a.id_registro === selected.id_registro
-            ? { ...a, puntaje_agrado: gusto }
+            ? { ...a, puntaje_agrado: Number(gusto) }
             : a
         )
       );
 
       setSelected(null);
     } catch (err) {
-      console.log("ERROR UPDATE:", err);
+      console.log(err);
     }
   };
 
   /* =========================
-     INSTRUCCIONES
+     INSTRUCCIONES LOGIC
   ========================= */
   const getInstructions = () => {
     if (!selected) {
-      return "👈 Selecciona una actividad para ver instrucciones.";
+      return "👈 Selecciona una actividad";
     }
 
-    const name =
-      selected.nombre_actividad?.toLowerCase() || "";
+    const name = selected.nombre_actividad?.toLowerCase().trim();
 
     const match = actividadDB.find(
-      (a) => a.nombre?.toLowerCase() === name
+      (a) => a.nombre?.toLowerCase().trim() === name
     );
 
-    return (
-      match?.instrucciones ||
-      "✨ Realiza la actividad con calma y sin presión."
-    );
+    if (match?.instrucciones) {
+      return match.instrucciones;
+    }
+
+    return null;
   };
+
+  const instruction = getInstructions();
 
   /* =========================
      UI
@@ -190,7 +172,25 @@ export default function Actividades() {
       <div style={styles.left}>
         <h3>🧠 Instrucciones</h3>
 
-        <div style={styles.box}>{getInstructions()}</div>
+        {instruction ? (
+          <div style={styles.box}>{instruction}</div>
+        ) : selected ? (
+          <div style={styles.box}>
+            <p>⚠️ Esta actividad no tiene una introducción o paso a paso.</p>
+            <p>¿Quieres agregar una?</p>
+
+            <button
+              style={styles.btn}
+              onClick={() => setShowAddInstruction(true)}
+            >
+              ➕ Agregar instrucción
+            </button>
+          </div>
+        ) : (
+          <div style={styles.box}>
+            👈 Selecciona una actividad
+          </div>
+        )}
 
         {selected && (
           <div style={styles.box}>
@@ -204,30 +204,12 @@ export default function Actividades() {
       <div style={styles.center}>
         <h2>🎯 Mis Actividades</h2>
 
-        {/* CREAR ACTIVIDAD */}
-        <div style={styles.createBox}>
-          <input
-            value={textoNueva}
-            onChange={(e) => setTextoNueva(e.target.value)}
-            placeholder="Nueva actividad..."
-            style={styles.input}
-          />
-
-          <button onClick={createActivity} style={styles.btn}>
-            ➕ Crear
-          </button>
-        </div>
-
-        {actividades.length === 0 && (
-          <p>⚠️ No tienes actividades aún</p>
-        )}
-
         <div style={styles.grid}>
           {actividades.map((act) => (
             <div
               key={act.id_registro}
               style={styles.card}
-              onClick={() => selectActivity(act)}
+              onClick={() => setSelected(act)}
             >
               <h3>{act.nombre_actividad}</h3>
               <p>⭐ {act.puntaje_agrado}/10</p>
@@ -237,16 +219,14 @@ export default function Actividades() {
 
         {selected && (
           <div style={styles.editor}>
-            <h3>✏️ Editar</h3>
+            <h3>✏️ Editar puntaje</h3>
 
             <input
               type="range"
               min="1"
               max="10"
               value={gusto}
-              onChange={(e) =>
-                setGusto(Number(e.target.value))
-              }
+              onChange={(e) => setGusto(Number(e.target.value))}
               style={{ width: "100%" }}
             />
 
@@ -255,29 +235,41 @@ export default function Actividades() {
             </button>
           </div>
         )}
+
+        {/* MODAL SIMPLE */}
+        {showAddInstruction && (
+          <div style={styles.modal}>
+            <h3>➕ Nueva instrucción</h3>
+
+            <textarea
+              value={newInstruction}
+              onChange={(e) => setNewInstruction(e.target.value)}
+              style={styles.textarea}
+              placeholder="Escribe el paso a paso..."
+            />
+
+            <button onClick={createInstruction} style={styles.btn}>
+              Guardar instrucción
+            </button>
+
+            <button
+              onClick={() => setShowAddInstruction(false)}
+              style={styles.cancel}
+            >
+              Cancelar
+            </button>
+          </div>
+        )}
       </div>
 
       {/* RIGHT */}
       <div style={styles.right}>
-        <button onClick={() => navigate("/rutina")}>
-          🧘 Rutina
-        </button>
-        <button onClick={() => navigate("/actividades")}>
-          🎯 Actividades
-        </button>
-        <button onClick={() => navigate("/estadisticas")}>
-          📊 Estadísticas
-        </button>
-        <button onClick={() => navigate("/diario")}>
-          📓 Diario
-        </button>
-
-        <hr />
-
-        <button onClick={() => navigate("/user")}>
-          🔙 Volver
-        </button>
+        <button onClick={() => navigate("/rutina")}>🧘 Rutina</button>
+        <button onClick={() => navigate("/actividades")}>🎯 Actividades</button>
+        <button onClick={() => navigate("/estadisticas")}>📊 Estadísticas</button>
+        <button onClick={() => navigate("/diario")}>📓 Diario</button>
       </div>
+
     </div>
   );
 }
@@ -319,7 +311,6 @@ const styles = {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
     gap: 10,
-    marginTop: 20,
   },
 
   card: {
@@ -329,13 +320,6 @@ const styles = {
     cursor: "pointer",
   },
 
-  editor: {
-    marginTop: 20,
-    padding: 15,
-    background: "#111827",
-    borderRadius: 10,
-  },
-
   box: {
     marginTop: 10,
     padding: 10,
@@ -343,24 +327,48 @@ const styles = {
     borderRadius: 10,
   },
 
-  createBox: {
-    display: "flex",
-    gap: 10,
-    marginBottom: 20,
-  },
-
-  input: {
-    flex: 1,
-    padding: 10,
-    borderRadius: 8,
-    border: "none",
+  editor: {
+    marginTop: 20,
+    padding: 15,
+    background: "#111827",
+    borderRadius: 10,
   },
 
   btn: {
+    marginTop: 10,
     padding: 10,
     background: "#2563eb",
     border: "none",
     color: "white",
     borderRadius: 8,
+    width: "100%",
+  },
+
+  cancel: {
+    marginTop: 10,
+    padding: 10,
+    background: "#ef4444",
+    border: "none",
+    color: "white",
+    borderRadius: 8,
+    width: "100%",
+  },
+
+  modal: {
+    position: "fixed",
+    top: "30%",
+    left: "40%",
+    background: "#0f172a",
+    padding: 20,
+    borderRadius: 10,
+    border: "1px solid #333",
+    width: 300,
+  },
+
+  textarea: {
+    width: "100%",
+    height: 100,
+    marginTop: 10,
+    marginBottom: 10,
   },
 };
