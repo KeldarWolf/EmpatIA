@@ -1,453 +1,377 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "./Rutina.css";
+
+const API_URL = "https://empatia-backend.onrender.com";
 
 export default function Rutina() {
   const navigate = useNavigate();
+
+  const storedUser = JSON.parse(
+    sessionStorage.getItem("usuario") || "null"
+  );
+
+  const user = {
+    id_usuario:
+      storedUser?.id_usuario ||
+      storedUser?.user?.id_usuario ||
+      storedUser?.id ||
+      null,
+  };
+
   const today = new Date();
 
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
-  const [selectedDate, setSelectedDate] = useState(today.toISOString().split("T")[0]);
 
-  const [note, setNote] = useState("");
-  const [time, setTime] = useState("");
-  const [tasks, setTasks] = useState([]);
-  const [savedActivities, setSavedActivities] = useState([]);
-  const [selectedTask, setSelectedTask] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(
+    today.toISOString().split("T")[0]
+  );
 
-  // Modo de agregar
-  const [addMode, setAddMode] = useState("single"); // "single" o "multiple"
-  const [selectedDaysForAdd, setSelectedDaysForAdd] = useState([]); // índices de días (0-6)
+  const [actividades, setActividades] = useState([]);
+  const [eventos, setEventos] = useState([]);
 
-  const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-  const daysShort = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
-  const daysFull = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+  const [selectedActivities, setSelectedActivities] = useState([]);
+  const [selectedDays, setSelectedDays] = useState([]);
 
-  // Cargar datos
+  const [hora, setHora] = useState("09:00");
+  const [horaFin, setHoraFin] = useState("10:00");
+  const [duracion, setDuracion] = useState(60);
+
+  const [repeticion, setRepeticion] = useState("dia");
+  const [loading, setLoading] = useState(true);
+
+  const months = [
+    "Enero","Febrero","Marzo","Abril","Mayo","Junio",
+    "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre",
+  ];
+
+  const daysShort = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
+
+  const daysFull = [
+    "Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo",
+  ];
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+
+      const [actRes, eventRes] = await Promise.all([
+        fetch(`${API_URL}/api/registro-actividad/usuario/${user.id_usuario}`),
+        fetch(`${API_URL}/api/rutina-eventos/${user.id_usuario}`),
+      ]);
+
+      const actData = await actRes.json();
+      const eventData = await eventRes.json();
+
+      setActividades(Array.isArray(actData) ? actData : []);
+      setEventos(Array.isArray(eventData) ? eventData : []);
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const rutinaData = JSON.parse(localStorage.getItem("rutinaTasks") || "[]");
-    const actividadesData = JSON.parse(localStorage.getItem("actividades") || "[]");
-
-    const tasksWithCompleted = rutinaData.map(task => ({
-      ...task,
-      completed: task.completed ?? false
-    }));
-
-    setTasks(tasksWithCompleted);
-
-    const normalized = actividadesData.map(a => ({
-      ...a,
-      gusto: a.gusto ?? 5,
-      pasos: a.pasos ?? "Realiza la actividad con calma y atención.",
-    }));
-
-    setSavedActivities(normalized);
+    if (user?.id_usuario) loadData();
   }, []);
 
-  const saveRutinaTasks = (newTasks) => {
-    setTasks(newTasks);
-    localStorage.setItem("rutinaTasks", JSON.stringify(newTasks));
+  const toggleActivity = (act) => {
+    setSelectedActivities((prev) => {
+      const exists = prev.find(
+        (a) => a.id_registro === act.id_registro
+      );
+
+      if (exists) {
+        return prev.filter(
+          (a) => a.id_registro !== act.id_registro
+        );
+      }
+
+      return [...prev, act];
+    });
   };
 
-  // Toggle completado
-  const toggleCompleted = (taskId) => {
-    const updated = tasks.map(task =>
-      task.id === taskId ? { ...task, completed: !task.completed } : task
+  const currentWeek = useMemo(() => {
+    const base = new Date(selectedDate);
+    const monday = new Date(base);
+
+    const day = base.getDay();
+
+    monday.setDate(
+      base.getDate() - (day === 0 ? 6 : day - 1)
     );
-    saveRutinaTasks(updated);
-  };
-
-  // Agregar actividad manual (single o multiple)
-  const addCustomTask = () => {
-    if (!note.trim()) return;
-
-    let newTasks = [];
-
-    if (addMode === "single") {
-      newTasks.push({
-        id: Date.now(),
-        text: note,
-        date: selectedDate,
-        dayName: daysFull[new Date(selectedDate).getDay() === 0 ? 6 : new Date(selectedDate).getDay() - 1],
-        time: time || "09:00",
-        completed: false,
-      });
-    } else {
-      // Modo múltiple
-      const weekDates = getCurrentWeekDates();
-      weekDates.forEach((dateStr, index) => {
-        if (selectedDaysForAdd.includes(index)) {
-          newTasks.push({
-            id: Date.now() + index,
-            text: note,
-            date: dateStr,
-            dayName: daysFull[index],
-            time: time || "09:00",
-            completed: false,
-          });
-        }
-      });
-    }
-
-    saveRutinaTasks([...tasks, ...newTasks]);
-    setNote("");
-    setTime("");
-    alert(addMode === "single" ? "Actividad agregada" : "Actividad agregada a los días seleccionados");
-  };
-
-  // Agregar desde Actividades guardadas
-  const addActivityToRutina = (activity) => {
-    const newTask = {
-      id: Date.now(),
-      text: activity.texto,
-      date: selectedDate,
-      dayName: daysFull[new Date(selectedDate).getDay() === 0 ? 6 : new Date(selectedDate).getDay() - 1],
-      time: time || "09:00",
-      pasos: activity.pasos,
-      gusto: activity.gusto,
-      completed: false,
-    };
-
-    saveRutinaTasks([...tasks, newTask]);
-    alert(`"${activity.texto}" agregada al día`);
-  };
-
-  const dayTasks = tasks
-    .filter(t => t.date === selectedDate)
-    .sort((a, b) => a.time.localeCompare(b.time));
-
-  const showTaskDetail = (task) => {
-    setSelectedTask(task);
-  };
-
-  // Obtener fechas de la semana actual
-  const getCurrentWeekDates = () => {
-    const date = new Date(selectedDate);
-    const startOfWeek = new Date(date);
-    const dayOfWeek = date.getDay();
-    startOfWeek.setDate(date.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
 
     const week = [];
+
     for (let i = 0; i < 7; i++) {
-      const d = new Date(startOfWeek);
-      d.setDate(startOfWeek.getDate() + i);
-      week.push(d.toISOString().split("T")[0]);
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+
+      week.push({
+        date: d.toISOString().split("T")[0],
+        name: daysShort[i],
+        full: daysFull[i],
+        index: i,
+      });
     }
+
     return week;
+  }, [selectedDate]);
+
+  const toggleDay = (day) => {
+    setSelectedDays((prev) =>
+      prev.includes(day)
+        ? prev.filter((d) => d !== day)
+        : [...prev, day]
+    );
   };
 
-  const currentWeek = getCurrentWeekDates().map((date, i) => ({
-    date,
-    short: daysShort[i],
-    full: daysFull[i],
-    index: i
-  }));
+  const crearEventos = async () => {
+    if (selectedActivities.length === 0) {
+      return alert("Selecciona actividades");
+    }
 
-  const weekWithTasks = currentWeek.map(day => ({
-    ...day,
-    tasksCount: tasks.filter(t => t.date === day.date).length
-  }));
+    if (selectedDays.length === 0) {
+      return alert("Selecciona días");
+    }
 
-  // Calendario mensual
+    const requests = [];
+
+    selectedDays.forEach((date) => {
+      selectedActivities.forEach((act) => {
+        requests.push(
+          fetch(`${API_URL}/api/rutina-eventos`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              id_usuario: user.id_usuario,
+              id_registro: act.id_registro,
+              titulo: act.nombre_actividad,
+              descripcion: act.instrucciones_usuario || "",
+              fecha: date,
+              hora,
+              hora_fin: horaFin,
+              duracion,
+              repeticion,
+            }),
+          })
+        );
+      });
+    });
+
+    await Promise.all(requests);
+
+    alert("Rutina creada");
+    setSelectedActivities([]);
+    setSelectedDays([]);
+    loadData();
+  };
+
+  const toggleComplete = async (evento) => {
+    await fetch(`${API_URL}/api/rutina-eventos/${evento.id_evento}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        completado: !evento.completado,
+      }),
+    });
+
+    setEventos((prev) =>
+      prev.map((e) =>
+        e.id_evento === evento.id_evento
+          ? { ...e, completado: !e.completado }
+          : e
+      )
+    );
+  };
+
+  const deleteEvent = async (id) => {
+    await fetch(`${API_URL}/api/rutina-eventos/${id}`, {
+      method: "DELETE",
+    });
+
+    setEventos((prev) =>
+      prev.filter((e) => e.id_evento !== id)
+    );
+  };
+
+  const eventosDelDia = eventos
+    .filter((e) => {
+      if (!e.fecha) return false;
+      return e.fecha.split("T")[0] === selectedDate;
+    })
+    .sort((a, b) => a.hora.localeCompare(b.hora));
+
   const getWeeksForMonth = (m, y) => {
     const weeks = [];
+
     const firstDay = new Date(y, m, 1);
     let current = new Date(firstDay);
-    current.setDate(current.getDate() - (current.getDay() === 0 ? 6 : current.getDay() - 1));
 
-    while (current.getMonth() === m || weeks.length === 0) {
+    current.setDate(
+      current.getDate() -
+        (current.getDay() === 0 ? 6 : current.getDay() - 1)
+    );
+
+    while (weeks.length === 0 || current.getMonth() === m) {
       const week = [];
+
       for (let i = 0; i < 7; i++) {
         const d = new Date(current);
-        if (d.getMonth() === m && d.getFullYear() === y) {
-          week.push(d.toISOString().split("T")[0]);
-        } else {
-          week.push(null);
-        }
+
+        week.push(
+          d.getMonth() === m
+            ? d.toISOString().split("T")[0]
+            : null
+        );
+
         current.setDate(current.getDate() + 1);
       }
+
       weeks.push(week);
       if (current.getMonth() !== m) break;
     }
+
     return weeks;
   };
 
   const monthWeeks = getWeeksForMonth(month, year);
 
+  if (loading) {
+    return <div className="loading">Cargando rutina...</div>;
+  }
+
   return (
-    <div style={styles.page}>
-      <div style={styles.header}>
+    <div className="page">
+
+      {/* HEADER */}
+      <div className="header">
         <div>
-          <h1>🧘 Rutina</h1>
-          <p style={{ opacity: 0.7 }}>Planifica y marca lo que completas</p>
+          <h1>🧘 Rutina Inteligente</h1>
+          <p>Organiza actividades por día, semana o mes</p>
         </div>
-        <button onClick={() => navigate("/user")} style={styles.backBtn}>⬅ Volver</button>
+
+        <button onClick={() => navigate("/user")} className="backBtn">
+          ⬅ Volver
+        </button>
       </div>
 
-      <div style={styles.grid}>
-        {/* ====================== IZQUIERDA - Agregar Actividades ====================== */}
-        <div style={styles.left}>
-          <h3>➕ Agregar Actividad</h3>
+      <div className="layout">
 
-          <div style={styles.modeSelector}>
-            <button
-              onClick={() => setAddMode("single")}
-              style={{ ...styles.modeBtn, backgroundColor: addMode === "single" ? "#1d9bf0" : "#111827" }}
-            >
-              Solo este día
-            </button>
-            <button
-              onClick={() => setAddMode("multiple")}
-              style={{ ...styles.modeBtn, backgroundColor: addMode === "multiple" ? "#1d9bf0" : "#111827" }}
-            >
-              Varios días
-            </button>
+        {/* LEFT */}
+        <div className="left">
+          <h3>🎯 Actividades</h3>
+
+          {actividades.map((act) => {
+            const selected = selectedActivities.find(
+              (a) => a.id_registro === act.id_registro
+            );
+
+            return (
+              <div
+                key={act.id_registro}
+                onClick={() => toggleActivity(act)}
+                className={`activityCard ${selected ? "selected" : ""}`}
+              >
+                <b>{act.nombre_actividad}</b>
+                <p>⭐ {act.puntaje_agrado}/10</p>
+              </div>
+            );
+          })}
+
+          <hr className="hr" />
+
+          <h3>📅 Días seleccionados</h3>
+
+          <div className="selectedContainer">
+            {selectedDays.map((d) => (
+              <div key={d} className="selectedDay">
+                {d}
+              </div>
+            ))}
           </div>
 
-          {/* Selector de días cuando es modo múltiple */}
-          {addMode === "multiple" && (
-            <div style={styles.daysSelector}>
-              <p style={{ margin: "8px 0", fontSize: 14 }}>Días de la semana:</p>
-              <div style={styles.daysGrid}>
-                {daysShort.map((day, i) => (
-                  <div
-                    key={i}
-                    onClick={() => {
-                      setSelectedDaysForAdd(prev =>
-                        prev.includes(i) ? prev.filter(d => d !== i) : [...prev, i]
-                      );
-                    }}
-                    style={{
-                      ...styles.dayToggle,
-                      backgroundColor: selectedDaysForAdd.includes(i) ? "#22c55e" : "#111827",
-                    }}
-                  >
-                    {day}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <hr className="hr" />
 
-          <input
-            placeholder="Nombre de la actividad"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            style={styles.input}
-          />
+          <h3>⏰ Configuración</h3>
 
-          <input
-            type="time"
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-            style={styles.timeInput}
-          />
+          <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} className="input" />
+          <input type="time" value={horaFin} onChange={(e) => setHoraFin(e.target.value)} className="input" />
+          <input type="number" value={duracion} onChange={(e) => setDuracion(Number(e.target.value))} className="input" />
 
-          <button onClick={addCustomTask} style={styles.addButton}>
-            Agregar Actividad
+          <select value={repeticion} onChange={(e) => setRepeticion(e.target.value)} className="input">
+            <option value="dia">Diario</option>
+            <option value="semana">Semanal</option>
+            <option value="mes">Mensual</option>
+          </select>
+
+          <button onClick={crearEventos} className="createBtn">
+            ✅ Crear rutina
           </button>
+        </div>
 
-          <hr style={{ borderColor: "#1f2a37", margin: "20px 0" }} />
+        {/* CENTER */}
+        <div className="center">
+          <h2>📅 Planificación del día</h2>
 
-          <h4>Actividades Guardadas</h4>
-          {savedActivities.map((act, i) => (
-            <div
-              key={i}
-              style={styles.activityCard}
-              onClick={() => addActivityToRutina(act)}
-            >
-              <span>{act.texto}</span>
-              <span style={{ fontSize: 12, opacity: 0.6 }}>⭐ {act.gusto}</span>
+          {eventosDelDia.length === 0 ? (
+            <div className="empty">No hay actividades</div>
+          ) : (
+            eventosDelDia.map((evento) => (
+              <div key={evento.id_evento} className="eventCard">
+                <input
+                  type="checkbox"
+                  checked={evento.completado}
+                  onChange={() => toggleComplete(evento)}
+                />
+
+                <div>
+                  <h3>{evento.titulo}</h3>
+                  <p>{evento.hora} → {evento.hora_fin}</p>
+                </div>
+
+                <button onClick={() => deleteEvent(evento.id_evento)}>
+                  🗑
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* RIGHT */}
+        <div className="right">
+          <h3>📅 Calendario</h3>
+
+          {monthWeeks.map((week, i) => (
+            <div key={i} className="weekRow">
+              {week.map((date, j) => {
+                const active = selectedDate === date;
+                const selected = selectedDays.includes(date);
+
+                return (
+                  <div
+                    key={j}
+                    onClick={() => {
+                      if (!date) return;
+                      setSelectedDate(date);
+                      toggleDay(date);
+                    }}
+                    className={`dayCell ${
+                      active ? "active" : selected ? "selectedDayCell" : ""
+                    }`}
+                  >
+                    {date ? parseInt(date.slice(8)) : ""}
+                  </div>
+                );
+              })}
             </div>
           ))}
         </div>
-
-        {/* ====================== CENTRO - Día con completado ====================== */}
-        <div style={styles.center}>
-          <h2>
-            {daysFull[new Date(selectedDate).getDay() === 0 ? 6 : new Date(selectedDate).getDay() - 1]}
-            <span style={{ fontSize: "1rem", opacity: 0.6, marginLeft: 12 }}>{selectedDate}</span>
-          </h2>
-
-          <div style={styles.taskList}>
-            {dayTasks.length === 0 ? (
-              <p style={{ opacity: 0.5, textAlign: "center", padding: "60px 0" }}>
-                No hay actividades para este día
-              </p>
-            ) : (
-              dayTasks.map((t) => (
-                <div key={t.id} style={styles.task}>
-                  <input
-                    type="checkbox"
-                    checked={t.completed}
-                    onChange={() => toggleCompleted(t.id)}
-                    style={styles.checkbox}
-                  />
-                  <span style={{
-                    ...styles.taskTime,
-                    textDecoration: t.completed ? "line-through" : "none",
-                    opacity: t.completed ? 0.6 : 1
-                  }}>
-                    {t.time}
-                  </span>
-                  <p
-                    style={{
-                      flex: 1,
-                      textDecoration: t.completed ? "line-through" : "none",
-                      opacity: t.completed ? 0.6 : 1,
-                      cursor: "pointer"
-                    }}
-                    onClick={() => showTaskDetail(t)}
-                  >
-                    {t.text}
-                  </p>
-                  {t.gusto && <span>⭐{t.gusto}</span>}
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* ====================== DERECHA - Calendario + Esta Semana ====================== */}
-        <div style={styles.right}>
-          <div style={styles.calendarHeader}>
-            <select value={year} onChange={(e) => setYear(Number(e.target.value))} style={styles.selectSmall}>
-              {[2024, 2025, 2026, 2027, 2028].map(y => <option key={y} value={y}>{y}</option>)}
-            </select>
-            <select value={month} onChange={(e) => setMonth(Number(e.target.value))} style={styles.selectSmall}>
-              {months.map((m, i) => <option key={i} value={i}>{m}</option>)}
-            </select>
-          </div>
-
-          <h3 style={{ textAlign: "center", margin: "12px 0 10px" }}>{months[month]} {year}</h3>
-
-          <div style={styles.weekHeader}>
-            {daysShort.map(d => <div key={d} style={styles.weekDayHeader}>{d}</div>)}
-          </div>
-
-          <div style={styles.calendar}>
-            {monthWeeks.map((week, i) => (
-              <div key={i} style={styles.weekRow}>
-                {week.map((dateStr, j) => (
-                  <div
-                    key={j}
-                    onClick={() => dateStr && setSelectedDate(dateStr)}
-                    style={{
-                      ...styles.dayCell,
-                      backgroundColor: dateStr === selectedDate ? "#1d9bf0" : "#111827",
-                    }}
-                  >
-                    {dateStr ? parseInt(dateStr.slice(8)) : ""}
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-
-          <h3 style={{ margin: "25px 0 10px 0" }}>📅 Esta Semana</h3>
-          <div style={styles.weekContainer}>
-            {weekWithTasks.map((day, i) => (
-              <div
-                key={i}
-                onClick={() => setSelectedDate(day.date)}
-                style={{
-                  ...styles.weekDayCard,
-                  backgroundColor: day.date === selectedDate ? "#1d9bf0" : "#111827",
-                }}
-              >
-                <div style={styles.dayInfo}>
-                  <strong>{day.short}</strong>
-                  <span style={styles.dayNumber}>{day.date.slice(8)}</span>
-                </div>
-                <span style={styles.taskCount}>{day.tasksCount} act.</span>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
-
-      {/* Modal Descripción */}
-      {selectedTask && (
-        <div style={styles.modal}>
-          <div style={styles.modalContent}>
-            <h3>{selectedTask.text}</h3>
-            <p><strong>Hora:</strong> {selectedTask.time}</p>
-            {selectedTask.pasos && (
-              <div style={{ marginTop: 15 }}>
-                <strong>Cómo hacerlo:</strong>
-                <p style={{ marginTop: 8, lineHeight: 1.6 }}>{selectedTask.pasos}</p>
-              </div>
-            )}
-            <button onClick={() => setSelectedTask(null)} style={styles.closeBtn}>
-              Cerrar
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
-
-/* ================= ESTILOS ================= */
-const styles = {
-  page: { height: "100vh", background: "#0b0f14", color: "white", display: "flex", flexDirection: "column", fontFamily: "Arial, sans-serif" },
-  header: { display: "flex", justifyContent: "space-between", padding: 20, borderBottom: "1px solid #1f2a37" },
-  backBtn: { padding: "8px 16px", borderRadius: 8, background: "#1f2937", color: "white", border: "none" },
-  grid: { flex: 1, display: "flex", gap: 15, padding: 15 },
-
-  left: { width: "290px", background: "#0f1620", padding: 18, borderRadius: 12, overflowY: "auto" },
-  center: { flex: 1, background: "#0f1620", padding: 20, borderRadius: 12, position: "relative" },
-  right: { width: "340px", background: "#0f1620", padding: 12, borderRadius: 12, overflowY: "auto" },
-
-  modeSelector: { display: "flex", gap: 8, marginBottom: 12 },
-  modeBtn: { flex: 1, padding: 10, borderRadius: 8, border: "none", color: "white", cursor: "pointer" },
-
-  daysSelector: { margin: "12px 0" },
-  daysGrid: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6 },
-  dayToggle: { padding: 9, textAlign: "center", borderRadius: 6, cursor: "pointer", fontSize: 13 },
-
-  input: { width: "100%", padding: 12, borderRadius: 8, border: "none", background: "#111827", color: "white", marginBottom: 10 },
-  timeInput: { width: "100%", padding: 12, borderRadius: 8, border: "none", background: "#111827", color: "white", marginBottom: 12 },
-  addButton: { width: "100%", padding: 14, background: "#22c55e", color: "white", border: "none", borderRadius: 8, cursor: "pointer", marginTop: 8 },
-
-  activityCard: {
-    background: "#111827",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-    cursor: "pointer",
-    display: "flex",
-    justifyContent: "space-between",
-  },
-
-  taskList: { display: "flex", flexDirection: "column", gap: 10 },
-  task: {
-    background: "#111827",
-    padding: 14,
-    borderRadius: 10,
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-  },
-  checkbox: { width: 20, height: 20, accentColor: "#22c55e", cursor: "pointer" },
-  taskTime: { minWidth: 72, fontSize: 15 },
-
-  modal: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200 },
-  modalContent: { background: "#0f1620", padding: 25, borderRadius: 12, maxWidth: 520, width: "90%" },
-  closeBtn: { marginTop: 20, padding: "10px 24px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, cursor: "pointer" },
-
-  // Calendario
-  calendarHeader: { display: "flex", gap: 8, marginBottom: 8 },
-  selectSmall: { flex: 1, padding: 8, background: "#111827", color: "white", border: "none", borderRadius: 8 },
-  weekHeader: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)", marginBottom: 6, textAlign: "center", fontSize: 12, opacity: 0.7 },
-  weekDayHeader: { padding: 2 },
-  calendar: {},
-  weekRow: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 3, marginBottom: 3 },
-  dayCell: { padding: 7, textAlign: "center", borderRadius: 5, fontSize: 13, height: 36, display: "flex", alignItems: "center", justifyContent: "center" },
-
-  weekContainer: { display: "flex", flexDirection: "column", gap: 6 },
-  weekDayCard: { padding: 10, borderRadius: 9, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" },
-  dayInfo: { display: "flex", flexDirection: "column" },
-  dayNumber: { fontSize: 16, fontWeight: "bold" },
-  taskCount: { fontSize: 12, opacity: 0.75 },
-};
