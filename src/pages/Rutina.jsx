@@ -69,7 +69,7 @@ export default function Rutina() {
   ];
 
   /* =====================================================
-     LOAD DATA
+     LOAD
   ===================================================== */
   const loadData = async () => {
     try {
@@ -146,7 +146,6 @@ export default function Rutina() {
         date: d.toISOString().split("T")[0],
         name: daysShort[i],
         full: daysFull[i],
-        index: i,
       });
     }
 
@@ -274,8 +273,18 @@ export default function Rutina() {
      EVENTOS DEL DÍA
   ===================================================== */
   const eventosDelDia = eventos
-    .filter((e) => e.fecha === selectedDate)
-    .sort((a, b) => a.hora.localeCompare(b.hora));
+    .filter((e) => {
+      if (!e.fecha) return false;
+
+      const fechaEvento = e.fecha
+        .split("T")[0]
+        .trim();
+
+      return fechaEvento === selectedDate;
+    })
+    .sort((a, b) =>
+      a.hora.localeCompare(b.hora)
+    );
 
   /* =====================================================
      CALENDARIO
@@ -398,6 +407,21 @@ export default function Rutina() {
 
           <hr style={styles.hr} />
 
+          <h3>📅 Días seleccionados</h3>
+
+          <div style={styles.selectedContainer}>
+            {selectedDays.map((d) => (
+              <div
+                key={d}
+                style={styles.selectedDay}
+              >
+                {d}
+              </div>
+            ))}
+          </div>
+
+          <hr style={styles.hr} />
+
           <h3>⏰ Configuración</h3>
 
           <label>Hora inicio</label>
@@ -422,7 +446,7 @@ export default function Rutina() {
             style={styles.input}
           />
 
-          <label>Duración (min)</label>
+          <label>Duración</label>
 
           <input
             type="number"
@@ -471,84 +495,142 @@ export default function Rutina() {
             CENTER
         ===================================================== */}
         <div style={styles.center}>
-          <h2>
-            📅 Planificación del día
-          </h2>
+          <div style={styles.centerHeader}>
+            <div>
+              <h2>
+                📅 Planificación del día
+              </h2>
 
-          <div style={styles.selectedDate}>
-            {selectedDate}
+              <p style={{ opacity: 0.7 }}>
+                {
+                  daysFull[
+                    new Date(
+                      selectedDate
+                    ).getDay() === 0
+                      ? 6
+                      : new Date(
+                          selectedDate
+                        ).getDay() - 1
+                  ]
+                }
+              </p>
+            </div>
+
+            <div style={styles.dateBadge}>
+              {selectedDate}
+            </div>
           </div>
 
-          {eventosDelDia.length === 0 ? (
-            <div style={styles.empty}>
-              No hay actividades
-            </div>
-          ) : (
-            eventosDelDia.map((evento) => (
-              <div
-                key={evento.id_evento}
-                style={{
-                  ...styles.eventCard,
-                  opacity: evento.completado
-                    ? 0.6
-                    : 1,
-                }}
-              >
+          <div style={styles.timeline}>
+            {eventosDelDia.length === 0 ? (
+              <div style={styles.emptyDay}>
+                <h3>😴 Día libre</h3>
+
+                <p>
+                  No hay actividades
+                  planificadas
+                </p>
+              </div>
+            ) : (
+              eventosDelDia.map((evento) => (
                 <div
+                  key={evento.id_evento}
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
+                    ...styles.eventCard,
+                    opacity:
+                      evento.completado
+                        ? 0.6
+                        : 1,
+                    borderLeft:
+                      evento.completado
+                        ? "6px solid #22c55e"
+                        : "6px solid #2563eb",
                   }}
                 >
-                  <input
-                    type="checkbox"
-                    checked={
-                      evento.completado
-                    }
-                    onChange={() =>
-                      toggleComplete(
-                        evento
+                  <div style={styles.eventLeft}>
+                    <input
+                      type="checkbox"
+                      checked={
+                        evento.completado
+                      }
+                      onChange={() =>
+                        toggleComplete(
+                          evento
+                        )
+                      }
+                      style={
+                        styles.checkbox
+                      }
+                    />
+
+                    <div>
+                      <h3
+                        style={{
+                          margin: 0,
+                          textDecoration:
+                            evento.completado
+                              ? "line-through"
+                              : "none",
+                        }}
+                      >
+                        {evento.titulo}
+                      </h3>
+
+                      <p
+                        style={
+                          styles.eventTime
+                        }
+                      >
+                        ⏰ {evento.hora} →{" "}
+                        {evento.hora_fin}
+                      </p>
+
+                      <p
+                        style={
+                          styles.eventDuration
+                        }
+                      >
+                        🕒{" "}
+                        {evento.duracion} min
+                      </p>
+
+                      {evento.descripcion && (
+                        <p
+                          style={
+                            styles.eventDescription
+                          }
+                        >
+                          {
+                            evento.descripcion
+                          }
+                        </p>
+                      )}
+
+                      <div
+                        style={
+                          styles.repeatBadge
+                        }
+                      >
+                        🔁{" "}
+                        {evento.repeticion}
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() =>
+                      deleteEvent(
+                        evento.id_evento
                       )
                     }
-                  />
-
-                  <div>
-                    <h3
-                      style={{
-                        textDecoration:
-                          evento.completado
-                            ? "line-through"
-                            : "none",
-                      }}
-                    >
-                      {evento.titulo}
-                    </h3>
-
-                    <p>
-                      ⏰ {evento.hora} -{" "}
-                      {evento.hora_fin}
-                    </p>
-
-                    <p>
-                      🕒 {evento.duracion} min
-                    </p>
-                  </div>
+                    style={styles.deleteBtn}
+                  >
+                    🗑
+                  </button>
                 </div>
-
-                <button
-                  onClick={() =>
-                    deleteEvent(
-                      evento.id_evento
-                    )
-                  }
-                  style={styles.deleteBtn}
-                >
-                  🗑
-                </button>
-              </div>
-            ))
-          )}
+              ))
+            )}
+          </div>
         </div>
 
         {/* =====================================================
@@ -560,7 +642,9 @@ export default function Rutina() {
               value={month}
               onChange={(e) =>
                 setMonth(
-                  Number(e.target.value)
+                  Number(
+                    e.target.value
+                  )
                 )
               }
               style={styles.select}
@@ -579,12 +663,14 @@ export default function Rutina() {
               value={year}
               onChange={(e) =>
                 setYear(
-                  Number(e.target.value)
+                  Number(
+                    e.target.value
+                  )
                 )
               }
               style={styles.select}
             >
-              {[2025, 2026, 2027, 2028].map(
+              {[2025, 2026, 2027].map(
                 (y) => (
                   <option
                     key={y}
@@ -601,7 +687,6 @@ export default function Rutina() {
             {months[month]} {year}
           </h2>
 
-          {/* DIAS */}
           <div style={styles.weekHeader}>
             {daysShort.map((d) => (
               <div
@@ -613,20 +698,19 @@ export default function Rutina() {
             ))}
           </div>
 
-          {/* CALENDARIO */}
           {monthWeeks.map((week, i) => (
             <div
               key={i}
               style={styles.weekRow}
             >
               {week.map((date, j) => {
+                const active =
+                  selectedDate === date;
+
                 const selected =
                   selectedDays.includes(
                     date
                   );
-
-                const active =
-                  selectedDate === date;
 
                 return (
                   <div
@@ -662,27 +746,15 @@ export default function Rutina() {
 
           <hr style={styles.hr} />
 
-          <h3>📌 Días seleccionados</h3>
-
-          <div style={styles.selectedContainer}>
-            {selectedDays.map((d) => (
-              <div
-                key={d}
-                style={styles.selectedDay}
-              >
-                {d}
-              </div>
-            ))}
-          </div>
-
-          <hr style={styles.hr} />
-
           <h3>📅 Semana actual</h3>
 
           <div style={styles.weekContainer}>
             {currentWeek.map((d) => {
               const count = eventos.filter(
-                (e) => e.fecha === d.date
+                (e) =>
+                  e.fecha?.split(
+                    "T"
+                  )[0] === d.date
               ).length;
 
               return (
@@ -740,7 +812,6 @@ const styles = {
     justifyContent: "center",
     alignItems: "center",
     background: "#0b0f14",
-    color: "white",
   },
 
   header: {
@@ -812,39 +883,6 @@ const styles = {
     cursor: "pointer",
   },
 
-  eventCard: {
-    background: "#111827",
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 12,
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  deleteBtn: {
-    background: "#ef4444",
-    border: "none",
-    color: "white",
-    padding: 10,
-    borderRadius: 8,
-    cursor: "pointer",
-  },
-
-  selectedDate: {
-    background: "#111827",
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 20,
-    marginTop: 10,
-  },
-
-  empty: {
-    padding: 40,
-    textAlign: "center",
-    opacity: 0.6,
-  },
-
   calendarHeader: {
     display: "flex",
     gap: 10,
@@ -886,14 +924,12 @@ const styles = {
     alignItems: "center",
     borderRadius: 8,
     cursor: "pointer",
-    userSelect: "none",
   },
 
   selectedContainer: {
     display: "flex",
     flexWrap: "wrap",
     gap: 8,
-    marginTop: 10,
   },
 
   selectedDay: {
@@ -929,6 +965,90 @@ const styles = {
     border: "none",
     background: "#1f2937",
     color: "white",
+    cursor: "pointer",
+  },
+
+  centerHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+
+  dateBadge: {
+    background: "#111827",
+    padding: "10px 14px",
+    borderRadius: 10,
+    fontWeight: "bold",
+  },
+
+  timeline: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 15,
+  },
+
+  emptyDay: {
+    height: 300,
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+    opacity: 0.6,
+  },
+
+  eventCard: {
+    background: "#111827",
+    padding: 15,
+    borderRadius: 12,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+
+  eventLeft: {
+    display: "flex",
+    gap: 15,
+    alignItems: "flex-start",
+  },
+
+  checkbox: {
+    width: 22,
+    height: 22,
+    marginTop: 4,
+  },
+
+  eventTime: {
+    marginTop: 6,
+    opacity: 0.8,
+  },
+
+  eventDuration: {
+    opacity: 0.7,
+    fontSize: 14,
+  },
+
+  eventDescription: {
+    marginTop: 10,
+    lineHeight: 1.5,
+    opacity: 0.8,
+  },
+
+  repeatBadge: {
+    marginTop: 10,
+    background: "#1e293b",
+    display: "inline-block",
+    padding: "6px 10px",
+    borderRadius: 8,
+    fontSize: 12,
+  },
+
+  deleteBtn: {
+    background: "#ef4444",
+    border: "none",
+    color: "white",
+    padding: 10,
+    borderRadius: 8,
     cursor: "pointer",
   },
 };
