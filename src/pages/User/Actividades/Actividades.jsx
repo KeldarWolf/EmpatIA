@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "./Actividades.css";
 
 const API_URL = "https://empatia-backend.onrender.com";
 
@@ -30,7 +31,9 @@ export default function Actividades() {
       const res = await fetch(
         `${API_URL}/api/registro-actividad/usuario/${user.id_usuario}`
       );
+
       const data = await res.json();
+
       setActividades(Array.isArray(data) ? data : []);
     } catch (err) {
       console.log(err);
@@ -38,7 +41,9 @@ export default function Actividades() {
   };
 
   useEffect(() => {
-    if (user?.id_usuario) loadActivities();
+    if (user?.id_usuario) {
+      loadActivities();
+    }
   }, []);
 
   /* =========================
@@ -61,7 +66,9 @@ export default function Actividades() {
         `${API_URL}/api/registro-actividad/${selected.id_registro}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({
             puntaje_agrado: Number(gusto),
             instrucciones_usuario: instrucciones,
@@ -88,34 +95,36 @@ export default function Actividades() {
   };
 
   return (
-    <div style={styles.layout}>
-
-      {/* =========================
-         LEFT - EDITOR (NUEVO UX)
-      ========================= */}
-      <div style={styles.left}>
+    <div className="layout">
+      {/* LEFT */}
+      <div className="left">
         <h3>✏️ Editor</h3>
 
         {!selected ? (
-          <div style={styles.empty}>
+          <div className="empty">
             👈 Selecciona una actividad
           </div>
         ) : (
           <>
-            <div style={styles.cardEdit}>
+            <div className="cardEdit">
               <h4>{selected.nombre_actividad}</h4>
 
               <p>⭐ Puntaje: {gusto}/10</p>
 
-              {/* UX MEJORADO PUNTAJE */}
-              <div style={styles.ratingBox}>
-                <button onClick={() => setGusto(Math.max(1, gusto - 1))}>
+              <div className="ratingBox">
+                <button
+                  onClick={() => setGusto(Math.max(1, gusto - 1))}
+                >
                   ➖
                 </button>
 
-                <div style={styles.bigNumber}>{gusto}</div>
+                <div className="bigNumber">
+                  {gusto}
+                </div>
 
-                <button onClick={() => setGusto(Math.min(10, gusto + 1))}>
+                <button
+                  onClick={() => setGusto(Math.min(10, gusto + 1))}
+                >
                   ➕
                 </button>
               </div>
@@ -125,165 +134,75 @@ export default function Actividades() {
                 min="1"
                 max="10"
                 value={gusto}
-                onChange={(e) => setGusto(Number(e.target.value))}
-                style={styles.slider}
+                onChange={(e) =>
+                  setGusto(Number(e.target.value))
+                }
+                className="slider"
               />
             </div>
 
-            <div style={styles.cardEdit}>
+            <div className="cardEdit">
               <h4>🧠 Instrucciones</h4>
 
               <textarea
                 value={instrucciones}
-                onChange={(e) => setInstrucciones(e.target.value)}
-                style={styles.textarea}
+                onChange={(e) =>
+                  setInstrucciones(e.target.value)
+                }
+                className="textarea"
                 placeholder="Escribe instrucciones..."
               />
             </div>
 
-            <button onClick={updateActivity} style={styles.saveBtn}>
+            <button
+              onClick={updateActivity}
+              className="saveBtn"
+            >
               💾 Guardar cambios
             </button>
           </>
         )}
       </div>
 
-      {/* =========================
-         CENTER - LISTA
-      ========================= */}
-      <div style={styles.center}>
+      {/* CENTER */}
+      <div className="center">
         <h2>🎯 Actividades</h2>
 
-        <div style={styles.grid}>
+        <div className="grid">
           {actividades.map((act) => (
             <div
               key={act.id_registro}
-              style={{
-                ...styles.card,
-                border:
-                  selected?.id_registro === act.id_registro
-                    ? "2px solid #2563eb"
-                    : "none",
-              }}
+              className={`card ${
+                selected?.id_registro === act.id_registro
+                  ? "selected"
+                  : ""
+              }`}
               onClick={() => selectActivity(act)}
             >
               <h3>{act.nombre_actividad}</h3>
-              <p>⭐ {act.puntaje_agrado}/10</p>
+
+              <p>
+                ⭐ {act.puntaje_agrado}/10
+              </p>
             </div>
           ))}
         </div>
       </div>
 
-      {/* =========================
-         RIGHT - NAV
-      ========================= */}
-      <div style={styles.right}>
-        <button onClick={() => navigate("/rutina")}>🧘 Rutina</button>
-        <button onClick={() => navigate("/actividades")}>🎯 Actividades</button>
-        <button onClick={() => navigate("/estadisticas")}>📊 Estadísticas</button>
+      {/* RIGHT */}
+      <div className="right">
+        <button onClick={() => navigate("/rutina")}>
+          🧘 Rutina
+        </button>
+
+        <button onClick={() => navigate("/actividades")}>
+          🎯 Actividades
+        </button>
+
+        <button onClick={() => navigate("/estadisticas")}>
+          📊 Estadísticas
+        </button>
       </div>
     </div>
   );
 }
-
-/* =========================
-   UX STYLES
-========================= */
-const styles = {
-  layout: {
-    display: "flex",
-    height: "100vh",
-    background: "#0f172a",
-    color: "white",
-  },
-
-  /* LEFT EDITOR */
-  left: {
-    width: "25%",
-    padding: 20,
-    background: "#111827",
-    display: "flex",
-    flexDirection: "column",
-    gap: 15,
-  },
-
-  empty: {
-    marginTop: 20,
-    opacity: 0.6,
-  },
-
-  cardEdit: {
-    background: "#1f2937",
-    padding: 15,
-    borderRadius: 12,
-  },
-
-  ratingBox: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 10,
-  },
-
-  bigNumber: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#60a5fa",
-  },
-
-  slider: {
-    width: "100%",
-    marginTop: 10,
-  },
-
-  textarea: {
-    width: "100%",
-    height: 120,
-    borderRadius: 8,
-    padding: 10,
-    marginTop: 10,
-    background: "#0f172a",
-    color: "white",
-    border: "1px solid #374151",
-  },
-
-  saveBtn: {
-    padding: 12,
-    background: "#2563eb",
-    border: "none",
-    color: "white",
-    borderRadius: 10,
-    cursor: "pointer",
-  },
-
-  /* CENTER */
-  center: {
-    flex: 1,
-    padding: 20,
-    overflowY: "auto",
-  },
-
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
-    gap: 10,
-  },
-
-  card: {
-    background: "#1f2937",
-    padding: 15,
-    borderRadius: 10,
-    cursor: "pointer",
-    transition: "0.2s",
-  },
-
-  /* RIGHT */
-  right: {
-    width: "20%",
-    padding: 20,
-    background: "#111827",
-    display: "flex",
-    flexDirection: "column",
-    gap: 10,
-  },
-};
