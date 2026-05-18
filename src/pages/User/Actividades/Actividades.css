@@ -1,3 +1,59 @@
+* {
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+}
+
+.layout {
+  display: flex;
+  height: 100vh;
+  color: #e5e7eb;
+  background: #0b0f19;
+}
+
+/* =========================
+   LEFT - EDITOR
+========================= */
+
+.left {
+  width: 24%;
+  padding: 16px;
+
+  background: rgba(17, 24, 39, 0.65);
+  backdrop-filter: blur(12px);
+
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.empty {
+  margin-top: 12px;
+  opacity: 0.55;
+  font-size: 13px;
+}
+
+/* editor cards */
+.cardEdit {
+  background: rgba(31, 41, 55, 0.55);
+
+  border: 1px solid rgba(255, 255, 255, 0.06);
+
+  padding: 12px;
+  border-radius: 14px;
+
+  transition: 0.2s;
+}
+
+.cardEdit:hover {
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
+/* =========================
+   RATING GAME UX
+========================= */
+
 .ratingGame {
   display: flex;
   align-items: center;
@@ -5,6 +61,29 @@
 
   margin-top: 10px;
   gap: 10px;
+}
+
+.ratingGame button {
+  width: 36px;
+  height: 36px;
+
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  background: rgba(59, 130, 246, 0.12);
+  color: #93c5fd;
+
+  cursor: pointer;
+
+  transition: 0.15s;
+}
+
+.ratingGame button:hover {
+  background: rgba(59, 130, 246, 0.25);
+}
+
+.ratingGame button:active {
+  transform: scale(0.92);
 }
 
 .moodBig {
@@ -15,20 +94,22 @@
 }
 
 .moodBig span {
-  font-size: 28px;
+  font-size: 26px;
 }
 
 .moodBig strong {
-  font-size: 20px;
+  font-size: 18px;
+  color: #e5e7eb;
 }
 
 /* =========================
-   BARRA TIPO JUEGO
+   BARRA GAMIFICADA
 ========================= */
 
 .ratingBar {
   display: flex;
   gap: 3px;
+
   margin-top: 12px;
 }
 
@@ -41,6 +122,7 @@
   cursor: pointer;
 
   transition: 0.15s;
+
   opacity: 0.6;
 }
 
@@ -52,4 +134,172 @@
 .barSegment.active {
   opacity: 1;
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.08);
+}
+
+/* =========================
+   TEXTAREA
+========================= */
+
+.textarea {
+  width: 100%;
+  height: 100px;
+
+  margin-top: 8px;
+  padding: 10px;
+
+  border-radius: 12px;
+
+  background: rgba(15, 23, 42, 0.75);
+  color: #e5e7eb;
+
+  border: 1px solid rgba(255, 255, 255, 0.06);
+
+  resize: none;
+
+  font-size: 13px;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* =========================
+   SAVE BUTTON
+========================= */
+
+.saveBtn {
+  padding: 12px;
+
+  border: none;
+  border-radius: 12px;
+
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+
+  color: white;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.saveBtn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+.saveBtn:active {
+  transform: scale(0.97);
+}
+
+/* =========================
+   CENTER
+========================= */
+
+.center {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+  gap: 10px;
+}
+
+/* CARD MODERNA */
+.card {
+  padding: 12px;
+  border-radius: 14px;
+
+  background: rgba(17, 24, 39, 0.6);
+
+  border: 1px solid rgba(255, 255, 255, 0.06);
+
+  cursor: pointer;
+
+  transition: 0.2s;
+
+  position: relative;
+  overflow: hidden;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
+.card.selected {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.card h3 {
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+.card p {
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+/* =========================
+   RIGHT NAV
+========================= */
+
+.right {
+  width: 20%;
+  padding: 16px;
+
+  background: rgba(17, 24, 39, 0.65);
+  backdrop-filter: blur(12px);
+
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.right button {
+  padding: 12px;
+
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+
+  background: rgba(31, 41, 55, 0.5);
+  color: #e5e7eb;
+
+  cursor: pointer;
+
+  font-size: 13px;
+
+  display: flex;
+  gap: 8px;
+  align-items: center;
+
+  transition: 0.2s;
+}
+
+.right button:hover {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.4);
+  transform: translateX(2px);
+}
+
+/* =========================
+   SCROLLBAR
+========================= */
+
+.center::-webkit-scrollbar {
+  width: 6px;
+}
+
+.center::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.4);
+  border-radius: 10px;
 }
