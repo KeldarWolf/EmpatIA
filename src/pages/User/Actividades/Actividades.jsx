@@ -6,9 +6,6 @@ const API_URL = "https://empatia-backend.onrender.com";
 export default function Actividades() {
   const navigate = useNavigate();
 
-  /* =========================
-     SESSION USER FIX
-  ========================= */
   const storedUser = JSON.parse(
     sessionStorage.getItem("usuario") || "null"
   );
@@ -19,21 +16,16 @@ export default function Actividades() {
       storedUser?.user?.id_usuario ||
       storedUser?.id ||
       null,
-    nombre:
-      storedUser?.nombre ||
-      storedUser?.user?.nombre ||
-      "Usuario",
   };
 
-  /* =========================
-     STATES
-  ========================= */
   const [actividades, setActividades] = useState([]);
   const [selected, setSelected] = useState(null);
+
   const [gusto, setGusto] = useState(5);
+  const [instrucciones, setInstrucciones] = useState("");
 
   /* =========================
-     LOAD ACTIVIDADES USER
+     LOAD ACTIVIDADES
   ========================= */
   const loadActivities = async () => {
     try {
@@ -44,26 +36,25 @@ export default function Actividades() {
       const data = await res.json();
       setActividades(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.log("ERROR:", err);
+      console.log(err);
     }
   };
 
   useEffect(() => {
-    if (user?.id_usuario) {
-      loadActivities();
-    }
+    if (user?.id_usuario) loadActivities();
   }, []);
 
   /* =========================
-     SELECT ACTIVITY
+     SELECT ACTIVIDAD
   ========================= */
   const selectActivity = (act) => {
     setSelected(act);
     setGusto(act.puntaje_agrado || 5);
+    setInstrucciones(act.instrucciones_usuario || "");
   };
 
   /* =========================
-     UPDATE SCORE FIX
+     UPDATE ACTIVIDAD
   ========================= */
   const updateActivity = async () => {
     if (!selected) return;
@@ -76,6 +67,7 @@ export default function Actividades() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             puntaje_agrado: Number(gusto),
+            instrucciones_usuario: instrucciones,
           }),
         }
       );
@@ -83,7 +75,11 @@ export default function Actividades() {
       setActividades((prev) =>
         prev.map((a) =>
           a.id_registro === selected.id_registro
-            ? { ...a, puntaje_agrado: Number(gusto) }
+            ? {
+                ...a,
+                puntaje_agrado: Number(gusto),
+                instrucciones_usuario: instrucciones,
+              }
             : a
         )
       );
@@ -95,36 +91,23 @@ export default function Actividades() {
   };
 
   /* =========================
-     INSTRUCCIÓN DESDE REGISTRO (FIX PRINCIPAL)
+     INSTRUCCIONES VIEW
   ========================= */
   const getInstructions = () => {
-    if (!selected) {
-      return "👈 Selecciona una actividad";
-    }
+    if (!selected) return "👈 Selecciona una actividad";
 
-    // 🔥 AQUÍ ESTÁ EL FIX IMPORTANTE
-    const instruction = selected.instrucciones_usuario;
-
-    if (instruction && instruction.trim() !== "") {
-      return instruction;
-    }
-
-    return "⚠️ Esta actividad no tiene una introducción guardada.";
+    return selected.instrucciones_usuario?.trim()
+      ? selected.instrucciones_usuario
+      : "⚠️ Sin instrucciones";
   };
 
-  /* =========================
-     UI
-  ========================= */
   return (
     <div style={styles.layout}>
 
       {/* LEFT */}
       <div style={styles.left}>
         <h3>🧠 Instrucciones</h3>
-
-        <div style={styles.box}>
-          {getInstructions()}
-        </div>
+        <div style={styles.box}>{getInstructions()}</div>
 
         {selected && (
           <div style={styles.box}>
@@ -136,7 +119,7 @@ export default function Actividades() {
 
       {/* CENTER */}
       <div style={styles.center}>
-        <h2>🎯 Mis Actividades</h2>
+        <h2>🎯 Actividades</h2>
 
         <div style={styles.grid}>
           {actividades.map((act) => (
@@ -153,8 +136,9 @@ export default function Actividades() {
 
         {selected && (
           <div style={styles.editor}>
-            <h3>✏️ Editar puntaje</h3>
+            <h3>✏️ Editar actividad</h3>
 
+            <p>Puntaje</p>
             <input
               type="range"
               min="1"
@@ -164,8 +148,20 @@ export default function Actividades() {
               style={{ width: "100%" }}
             />
 
+            <p>🧠 Instrucciones</p>
+            <textarea
+              value={instrucciones}
+              onChange={(e) => setInstrucciones(e.target.value)}
+              style={{
+                width: "100%",
+                height: 120,
+                borderRadius: 8,
+                padding: 10,
+              }}
+            />
+
             <button onClick={updateActivity} style={styles.btn}>
-              💾 Guardar
+              💾 Guardar cambios
             </button>
           </div>
         )}
@@ -176,9 +172,7 @@ export default function Actividades() {
         <button onClick={() => navigate("/rutina")}>🧘 Rutina</button>
         <button onClick={() => navigate("/actividades")}>🎯 Actividades</button>
         <button onClick={() => navigate("/estadisticas")}>📊 Estadísticas</button>
-        <button onClick={() => navigate("/diario")}>📓 Diario</button>
       </div>
-
     </div>
   );
 }
@@ -192,7 +186,6 @@ const styles = {
     height: "100vh",
     background: "#0f172a",
     color: "white",
-    fontFamily: "Arial",
   },
   left: {
     width: "20%",
@@ -237,11 +230,11 @@ const styles = {
   },
   btn: {
     marginTop: 10,
+    width: "100%",
     padding: 10,
     background: "#2563eb",
-    border: "none",
     color: "white",
+    border: 0,
     borderRadius: 8,
-    width: "100%",
   },
 };
