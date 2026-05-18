@@ -7,11 +7,23 @@ export default function Actividades() {
   const navigate = useNavigate();
 
   /* =========================
-     USER SESSION (FIX REAL)
+     USER SESSION FIX REAL
   ========================= */
-  const user = JSON.parse(
+  const storedUser = JSON.parse(
     sessionStorage.getItem("usuario") || "null"
   );
+
+  const user = {
+    id_usuario:
+      storedUser?.id_usuario ||
+      storedUser?.user?.id_usuario ||
+      storedUser?.id ||
+      null,
+    nombre:
+      storedUser?.nombre ||
+      storedUser?.user?.nombre ||
+      "Usuario",
+  };
 
   /* =========================
      STATES
@@ -20,19 +32,19 @@ export default function Actividades() {
   const [actividadDB, setActividadDB] = useState([]);
   const [selected, setSelected] = useState(null);
   const [gusto, setGusto] = useState(5);
-  const [loading, setLoading] = useState(true);
+  const [textoNueva, setTextoNueva] = useState("");
 
   /* =========================
-     PROTECCIÓN
+     PROTECCIÓN SESIÓN
   ========================= */
   useEffect(() => {
     if (!user?.id_usuario) {
       navigate("/", { replace: true });
     }
-  }, [user, navigate]);
+  }, []);
 
   /* =========================
-     LOAD ACTIVIDADES USUARIO
+     LOAD ACTIVIDADES USER
   ========================= */
   const loadActivities = async () => {
     try {
@@ -43,16 +55,14 @@ export default function Actividades() {
       );
 
       const data = await res.json();
-
       setActividades(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.log("ERROR ACTIVIDADES:", err);
-      setActividades([]);
+      console.log("ERROR LOAD:", err);
     }
   };
 
   /* =========================
-     LOAD CATÁLOGO ACTIVIDADES
+     LOAD CATALOGO ACTIVIDAD
   ========================= */
   const loadActividadDB = async () => {
     try {
@@ -61,8 +71,7 @@ export default function Actividades() {
 
       setActividadDB(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.log("ERROR BD ACTIVIDAD:", err);
-      setActividadDB([]);
+      console.log("ERROR DB:", err);
     }
   };
 
@@ -70,22 +79,46 @@ export default function Actividades() {
      INIT
   ========================= */
   useEffect(() => {
-    const init = async () => {
-      setLoading(true);
-
-      await Promise.all([
-        loadActivities(),
-        loadActividadDB(),
-      ]);
-
-      setLoading(false);
-    };
-
-    init();
+    loadActivities();
+    loadActividadDB();
   }, []);
 
   /* =========================
-     SELECT ACTIVITY
+     CREAR ACTIVIDAD (FIX BD REAL)
+  ========================= */
+  const createActivity = async () => {
+    if (!textoNueva.trim()) return;
+    if (!user?.id_usuario) return;
+
+    try {
+      const res = await fetch(
+        `${API_URL}/api/registro-actividad`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            id_usuario: user.id_usuario,
+            nombre_actividad: textoNueva,
+            puntaje_agrado: 5,
+            frecuencia_deseada: null,
+            reaccion: null,
+          }),
+        }
+      );
+
+      const data = await res.json();
+
+      setActividades((prev) => [data, ...prev]);
+      setTextoNueva("");
+    } catch (err) {
+      console.log("ERROR CREATE:", err);
+    }
+  };
+
+  /* =========================
+     SELECT
   ========================= */
   const selectActivity = (act) => {
     setSelected(act);
@@ -93,7 +126,7 @@ export default function Actividades() {
   };
 
   /* =========================
-     UPDATE ACTIVITY
+     UPDATE
   ========================= */
   const updateActivity = async () => {
     if (!selected) return;
@@ -103,7 +136,9 @@ export default function Actividades() {
         `${API_URL}/api/registro-actividad/${selected.id_registro}`,
         {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({
             puntaje_agrado: Number(gusto),
           }),
@@ -146,21 +181,11 @@ export default function Actividades() {
   };
 
   /* =========================
-     LOADING
-  ========================= */
-  if (loading) {
-    return (
-      <div style={styles.loading}>
-        ⏳ Cargando actividades...
-      </div>
-    );
-  }
-
-  /* =========================
      UI
   ========================= */
   return (
     <div style={styles.layout}>
+
       {/* LEFT */}
       <div style={styles.left}>
         <h3>🧠 Instrucciones</h3>
@@ -178,6 +203,20 @@ export default function Actividades() {
       {/* CENTER */}
       <div style={styles.center}>
         <h2>🎯 Mis Actividades</h2>
+
+        {/* CREAR ACTIVIDAD */}
+        <div style={styles.createBox}>
+          <input
+            value={textoNueva}
+            onChange={(e) => setTextoNueva(e.target.value)}
+            placeholder="Nueva actividad..."
+            style={styles.input}
+          />
+
+          <button onClick={createActivity} style={styles.btn}>
+            ➕ Crear
+          </button>
+        </div>
 
         {actividades.length === 0 && (
           <p>⚠️ No tienes actividades aún</p>
@@ -304,22 +343,24 @@ const styles = {
     borderRadius: 10,
   },
 
-  btn: {
-    marginTop: 10,
+  createBox: {
+    display: "flex",
+    gap: 10,
+    marginBottom: 20,
+  },
+
+  input: {
+    flex: 1,
     padding: 10,
-    width: "100%",
+    borderRadius: 8,
+    border: "none",
+  },
+
+  btn: {
+    padding: 10,
     background: "#2563eb",
     border: "none",
     color: "white",
     borderRadius: 8,
-  },
-
-  loading: {
-    height: "100vh",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    background: "#0f172a",
-    color: "white",
   },
 };
