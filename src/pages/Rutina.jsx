@@ -1,34 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import "./Rutina.css";
+
 const API_URL = "https://empatia-backend.onrender.com";
-
-const diasSemana = [
-  "lunes",
-  "martes",
-  "miercoles",
-  "jueves",
-  "viernes",
-  "sabado",
-  "domingo",
-];
-
-const actividadesBase = [
-  "Yoga",
-  "Caminar",
-  "Meditar",
-  "Respirar",
-  "Estiramientos",
-  "Música",
-  "Ducha relajante",
-];
 
 export default function Rutina() {
   const navigate = useNavigate();
 
-  const storedUser = JSON.parse(
-    sessionStorage.getItem("usuario") || "null"
-  );
+  const storedUser = JSON.parse(sessionStorage.getItem("usuario") || "null");
 
   const user = {
     id_usuario:
@@ -38,266 +18,241 @@ export default function Rutina() {
       null,
   };
 
-  // =========================
-  // STATES
-  // =========================
+  const [fecha, setFecha] = useState("");
+  const [eventos, setEventos] = useState([]);
 
-  const [selectedDias, setSelectedDias] = useState([]);
-  const [selectedActs, setSelectedActs] = useState([]);
-
-  const [hora, setHora] = useState("08:00");
-  const [horaFin, setHoraFin] = useState("09:00");
-
-  const [diaActivo, setDiaActivo] = useState("lunes");
-  const [rutinaDia, setRutinaDia] = useState([]);
+  const [form, setForm] = useState({
+    titulo: "",
+    descripcion: "",
+    hora: "",
+    duracion: 30,
+  });
 
   // =========================
-  // TOGGLES
+  // LOAD EVENTOS
   // =========================
+  const loadEventos = async () => {
+    if (!user.id_usuario) return;
 
-  const toggleDia = (dia) => {
-    setSelectedDias((prev) =>
-      prev.includes(dia)
-        ? prev.filter((d) => d !== dia)
-        : [...prev, dia]
-    );
+    try {
+      const res = await fetch(
+        `${API_URL}/api/rutina-eventos/${user.id_usuario}`
+      );
+
+      const data = await res.json();
+      setEventos(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.log("ERROR LOAD:", err);
+    }
   };
 
-  const toggleAct = (act) => {
-    setSelectedActs((prev) =>
-      prev.includes(act)
-        ? prev.filter((a) => a !== act)
-        : [...prev, act]
-    );
-  };
+  useEffect(() => {
+    loadEventos();
+  }, []);
 
   // =========================
-  // SAVE RUTINA
+  // FILTRAR POR FECHA
   // =========================
+  const eventosDia = eventos.filter((e) => e.fecha === fecha);
 
-  const saveRutina = async () => {
+  // =========================
+  // CREAR EVENTO
+  // =========================
+  const crearEvento = async () => {
+    if (!form.titulo || !fecha) return;
+
     try {
       const res = await fetch(`${API_URL}/api/rutina-eventos`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id_usuario: user.id_usuario,
-          dias: selectedDias,
-          actividades: selectedActs,
-          hora,
-          hora_fin: horaFin,
-          duracion: 60,
-          titulo: "Rutina",
-          descripcion: "",
+          titulo: form.titulo,
+          descripcion: form.descripcion,
+          fecha,
+          hora: form.hora,
+          duracion: form.duracion,
+          completado: false,
         }),
       });
 
       const data = await res.json();
 
-      console.log("✅ GUARDADO:", data);
-      alert("Rutina guardada");
+      setEventos((prev) => [...prev, data]);
+
+      setForm({
+        titulo: "",
+        descripcion: "",
+        hora: "",
+        duracion: 30,
+      });
     } catch (err) {
-      console.log(err);
+      console.log("ERROR CREATE:", err);
     }
   };
 
   // =========================
-  // LOAD DIA
+  // COMPLETAR
   // =========================
-
-  const loadDia = async (dia) => {
-    setDiaActivo(dia);
-
+  const toggleDone = async (id, actual) => {
     try {
-      const res = await fetch(
-        `${API_URL}/api/rutina-eventos/${user.id_usuario}/${dia}`
-      );
+      await fetch(`${API_URL}/api/rutina-eventos/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          completado: !actual,
+        }),
+      });
 
-      const data = await res.json();
-      setRutinaDia(Array.isArray(data) ? data : []);
+      setEventos((prev) =>
+        prev.map((e) =>
+          e.id_evento === id
+            ? { ...e, completado: !actual }
+            : e
+        )
+      );
     } catch (err) {
       console.log(err);
     }
   };
 
-  useEffect(() => {
-    if (user.id_usuario) loadDia("lunes");
-  }, []);
-
   // =========================
-  // TOGGLE DONE
+  // DELETE
   // =========================
-
-  const toggleDone = async (item) => {
+  const eliminar = async (id) => {
     try {
-      await fetch(
-        `${API_URL}/api/rutina-eventos/${item.id_evento}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            completado: !item.completado,
-          }),
-        }
-      );
+      await fetch(`${API_URL}/api/rutina-eventos/${id}`, {
+        method: "DELETE",
+      });
 
-      loadDia(diaActivo);
+      setEventos((prev) =>
+        prev.filter((e) => e.id_evento !== id)
+      );
     } catch (err) {
       console.log(err);
     }
   };
-
-  // =========================
-  // UI
-  // =========================
 
   return (
-    <div className="rutina-page">
+    <div className="rutina-layout">
 
-      <h2>🧘 Rutina</h2>
+      {/* ================= LEFT ================= */}
+      <div className="rutina-left">
 
-      {/* =========================
-          DÍAS
-      ========================= */}
-      <div className="rutina-box">
-        <h4>Días</h4>
-
-        <div className="rutina-row">
-          {diasSemana.map((d) => (
-            <button
-              key={d}
-              onClick={() => toggleDia(d)}
-              className={`rutina-btn ${
-                selectedDias.includes(d)
-                  ? "active-green"
-                  : ""
-              }`}
-            >
-              {d}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* =========================
-          ACTIVIDADES
-      ========================= */}
-      <div className="rutina-box">
-        <h4>Actividades</h4>
-
-        <div className="rutina-row">
-          {actividadesBase.map((a) => (
-            <button
-              key={a}
-              onClick={() => toggleAct(a)}
-              className={`rutina-btn ${
-                selectedActs.includes(a)
-                  ? "active-blue"
-                  : ""
-              }`}
-            >
-              {a}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* =========================
-          HORARIO
-      ========================= */}
-      <div className="rutina-box">
-        <h4>Horario</h4>
+        <h2>🧘 Rutina</h2>
 
         <input
-          type="time"
-          value={hora}
-          onChange={(e) => setHora(e.target.value)}
+          type="date"
+          value={fecha}
+          onChange={(e) => setFecha(e.target.value)}
         />
 
-        <input
-          type="time"
-          value={horaFin}
-          onChange={(e) => setHoraFin(e.target.value)}
-        />
-      </div>
+        <div className="form-box">
 
-      {/* SAVE */}
-      <button
-        onClick={saveRutina}
-        className="rutina-save"
-      >
-        💾 Guardar rutina
-      </button>
+          <input
+            placeholder="Título"
+            value={form.titulo}
+            onChange={(e) =>
+              setForm({ ...form, titulo: e.target.value })
+            }
+          />
 
-      {/* =========================
-          SELECT DÍA
-      ========================= */}
-      <div className="rutina-box">
-        <h4>Ver día</h4>
+          <input
+            type="time"
+            value={form.hora}
+            onChange={(e) =>
+              setForm({ ...form, hora: e.target.value })
+            }
+          />
 
-        <div className="rutina-row">
-          {diasSemana.map((d) => (
-            <button
-              key={d}
-              onClick={() => loadDia(d)}
-              className={`rutina-day-btn ${
-                diaActivo === d
-                  ? "rutina-day-active"
-                  : ""
-              }`}
-            >
-              {d}
-            </button>
-          ))}
+          <textarea
+            placeholder="Descripción"
+            value={form.descripcion}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                descripcion: e.target.value,
+              })
+            }
+          />
+
+          <button onClick={crearEvento}>
+            ➕ Agregar
+          </button>
+
         </div>
+
+        <button onClick={() => navigate("/actividades")}>
+          🎯 Actividades
+        </button>
+
+        <button onClick={() => navigate("/estadisticas")}>
+          📊 Estadísticas
+        </button>
+
       </div>
 
-      {/* =========================
-          LISTA DÍA
-      ========================= */}
-      <div className="rutina-box">
-        <h4>📅 {diaActivo}</h4>
+      {/* ================= CENTER ================= */}
+      <div className="rutina-center">
 
-        {rutinaDia.length === 0 && (
-          <p>No hay actividades</p>
+        <h3>
+          📅 {fecha || "Selecciona un día"}
+        </h3>
+
+        {eventosDia.length === 0 && (
+          <p>No hay actividades en este día</p>
         )}
 
-        {rutinaDia.map((r) => (
+        {eventosDia.map((e) => (
           <div
-            key={r.id_evento}
-            className="rutina-card"
+            key={e.id_evento}
+            className={`card-evento ${
+              e.completado ? "done" : ""
+            }`}
           >
+
             <div>
-              <b>{r.actividad}</b>
-              <p>
-                {r.hora} - {r.hora_fin}
-              </p>
+              <h4>{e.titulo}</h4>
+              <p>{e.descripcion}</p>
+              <small>⏰ {e.hora}</small>
             </div>
 
-            <button
-              onClick={() => toggleDone(r)}
-              className="rutina-done"
-              style={{
-                background: r.completado
-                  ? "#22c55e"
-                  : "#ef4444",
-              }}
-            >
-              {r.completado ? "Hecho" : "Pendiente"}
-            </button>
+            <div className="actions">
+
+              <button
+                onClick={() =>
+                  toggleDone(e.id_evento, e.completado)
+                }
+              >
+                {e.completado ? "↩️" : "✔️"}
+              </button>
+
+              <button onClick={() => eliminar(e.id_evento)}>
+                🗑️
+              </button>
+
+            </div>
+
           </div>
         ))}
+
       </div>
 
-      <button
-        onClick={() => navigate("/")}
-        style={{
-          marginTop: 20,
-          padding: 10,
-        }}
-      >
-        ⬅ Volver
-      </button>
+      {/* ================= RIGHT ================= */}
+      <div className="rutina-right">
+        <button onClick={() => navigate("/rutina")}>
+          🧘 Rutina
+        </button>
+
+        <button onClick={() => navigate("/actividades")}>
+          🎯 Actividades
+        </button>
+
+        <button onClick={() => navigate("/estadisticas")}>
+          📊 Estadísticas
+        </button>
+      </div>
+
     </div>
   );
 }
