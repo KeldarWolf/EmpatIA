@@ -46,9 +46,7 @@ export default function Rutina() {
   const daysShort = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
   const daysFull = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
 
-  /* =========================
-     LOAD DATA
-  ========================= */
+  /* ========================= LOAD ========================= */
   const loadData = async () => {
     try {
       setLoading(true);
@@ -63,8 +61,6 @@ export default function Rutina() {
 
       setActividades(Array.isArray(actData) ? actData : []);
       setEventos(Array.isArray(eventData) ? eventData : []);
-    } catch (err) {
-      console.log(err);
     } finally {
       setLoading(false);
     }
@@ -74,9 +70,7 @@ export default function Rutina() {
     if (user?.id_usuario) loadData();
   }, []);
 
-  /* =========================
-     TOGGLES
-  ========================= */
+  /* ========================= TOGGLES ========================= */
   const toggleActivity = (act) => {
     setSelectedActivities((prev) =>
       prev.find((a) => a.id_registro === act.id_registro)
@@ -87,13 +81,13 @@ export default function Rutina() {
 
   const toggleDay = (day) => {
     setSelectedDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+      prev.includes(day)
+        ? prev.filter((d) => d !== day)
+        : [...prev, day]
     );
   };
 
-  /* =========================
-     CREATE EVENTS
-  ========================= */
+  /* ========================= CREATE ========================= */
   const crearEventos = async () => {
     if (!selectedActivities.length) return alert("Selecciona actividades");
     if (!selectedDays.length) return alert("Selecciona días");
@@ -130,9 +124,7 @@ export default function Rutina() {
     loadData();
   };
 
-  /* =========================
-     COMPLETE / DELETE
-  ========================= */
+  /* ========================= COMPLETE ========================= */
   const toggleComplete = async (evento) => {
     await fetch(`${API_URL}/api/rutina-eventos/${evento.id_evento}`, {
       method: "PUT",
@@ -149,6 +141,7 @@ export default function Rutina() {
     );
   };
 
+  /* ========================= DELETE ========================= */
   const deleteEvent = async (id) => {
     await fetch(`${API_URL}/api/rutina-eventos/${id}`, {
       method: "DELETE",
@@ -157,16 +150,12 @@ export default function Rutina() {
     setEventos((prev) => prev.filter((e) => e.id_evento !== id));
   };
 
-  /* =========================
-     EVENTOS DEL DÍA
-  ========================= */
+  /* ========================= EVENTS DAY ========================= */
   const eventosDelDia = eventos
     .filter((e) => e.fecha?.split("T")[0] === selectedDate)
     .sort((a, b) => a.hora.localeCompare(b.hora));
 
-  /* =========================
-     WEEK
-  ========================= */
+  /* ========================= WEEK ========================= */
   const currentWeek = useMemo(() => {
     const base = new Date(selectedDate);
     const monday = new Date(base);
@@ -186,16 +175,9 @@ export default function Rutina() {
     });
   }, [selectedDate]);
 
-  /* =========================
-     LOADING
-  ========================= */
-  if (loading) {
-    return <div className="loading">Cargando rutina...</div>;
-  }
+  if (loading) return <div className="loading">Cargando rutina...</div>;
 
-  /* =========================
-     UI
-  ========================= */
+  /* ========================= UI ========================= */
   return (
     <div className="page">
 
@@ -254,20 +236,14 @@ export default function Rutina() {
 
           <h3>Configuración</h3>
 
-          <label>Hora inicio</label>
           <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} />
-
-          <label>Hora fin</label>
           <input type="time" value={horaFin} onChange={(e) => setHoraFin(e.target.value)} />
-
-          <label>Duración</label>
           <input
             type="number"
             value={duracion}
             onChange={(e) => setDuracion(Number(e.target.value))}
           />
 
-          <label>Repetición</label>
           <select value={repeticion} onChange={(e) => setRepeticion(e.target.value)}>
             <option value="dia">Diario</option>
             <option value="semana">Semanal</option>
