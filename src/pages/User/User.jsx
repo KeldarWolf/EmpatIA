@@ -376,40 +376,47 @@ export default function User() {
     // ============================================
     // DETECTA ACTIVIDAD
     // ============================================
+// ============================================
+// DETECTA ACTIVIDAD
+// ============================================
 
-    if (detected) {
+if (detected) {
 
-      const randomActivityPrompt =
-        activityPrompts[
-          Math.floor(
-            Math.random() * activityPrompts.length
-          )
-        ];
+  const randomActivityPrompt =
+    activityPrompts[
+      Math.floor(
+        Math.random() * activityPrompts.length
+      )
+    ];
 
-      const randomContinuePrompt =
-        continuePrompts[
-          Math.floor(
-            Math.random() * continuePrompts.length
-          )
-        ];
+  const randomContinuePrompt =
+    continuePrompts[
+      Math.floor(
+        Math.random() * continuePrompts.length
+      )
+    ];
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
+  const aiReply =
+    response.reply ||
+    "🤍 Estoy aquí contigo.";
 
-          text: `${
-            response.reply || randomContinuePrompt
-          }\n\n${randomActivityPrompt}`,
+  setMessages((prev) => [
+    ...prev,
+    {
+      role: "ai",
 
-          options: ["Sí", "No"],
-        },
-      ]);
+      text:
+        `${aiReply}\n\n` +
+        `${randomContinuePrompt}\n\n` +
+        `${randomActivityPrompt}`,
 
-      setLoading(false);
-      return;
-    }
+      options: ["Sí", "No"],
+    },
+  ]);
 
+  setLoading(false);
+  return;
+}
     // ============================================
     // RESPUESTA NORMAL
     // ============================================
