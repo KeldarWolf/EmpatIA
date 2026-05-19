@@ -56,19 +56,30 @@ const subOptions = {
 // ============================================
 
 const activityPrompts = [
-  "🤍 ¿Te gustaría hacer una actividad para sentirte mejor?",
+  "🤍 ¿Te gustaría probar una actividad?",
 
-  "🤍 ¿Quieres que hagamos una actividad juntos?",
+  "🌱 A veces ayuda hacer algo pequeño, ¿quieres intentar una actividad?",
 
-  "✨ Quizás una actividad podría ayudarte un poco, ¿quieres intentar una?",
+  "✨ Podemos probar una actividad para distraerte un rato, ¿te gustaría?",
 
-  "🤍 Podemos probar una actividad pequeña para despejar la mente, ¿te gustaría?",
+  "🤍 Quizás una actividad podría ayudarte un poco, ¿quieres probar?",
 
-  "🌱 A veces una pequeña actividad ayuda bastante, ¿quieres probar una?",
+  "🌿 Podemos hacer algo tranquilo juntos, ¿te gustaría?",
+];
 
-  "🤍 ¿Te gustaría intentar una actividad para distraerte un poco?",
+// ============================================
+// FRASES CONTINUAR CONVERSACIÓN
+// ============================================
 
-  "🤍 ¿Quieres que te recomiende una actividad?",
+const continuePrompts = [
+  "🤍 Entiendo, podemos seguir hablando.",
+
+  "🌱 comprendo, cuéntame un poco más.",
+
+  "🤍 Estoy aquí contigo, si quieres seguir conversando te leo.",
+
+  "🌿 Entiendo, Podemos conversar un rato si quieres.",
+
 ];
 
 export default function User() {
@@ -368,10 +379,17 @@ export default function User() {
 
     if (detected) {
 
-      const randomPrompt =
+      const randomActivityPrompt =
         activityPrompts[
           Math.floor(
             Math.random() * activityPrompts.length
+          )
+        ];
+
+      const randomContinuePrompt =
+        continuePrompts[
+          Math.floor(
+            Math.random() * continuePrompts.length
           )
         ];
 
@@ -381,13 +399,10 @@ export default function User() {
           role: "ai",
 
           text: `${
-            response.reply || "🤍 Estoy aquí contigo."
-          }\n\n${randomPrompt}`,
+            response.reply || randomContinuePrompt
+          }\n\n${randomActivityPrompt}`,
 
-          options: [
-            ...(response.options || []),
-            "✨ Quiero una actividad",
-          ],
+          options: ["Sí", "No"],
         },
       ]);
 
@@ -429,11 +444,19 @@ export default function User() {
     // ============================================
 
     if (opt === "No") {
+
+      const randomContinuePrompt =
+        continuePrompts[
+          Math.floor(
+            Math.random() * continuePrompts.length
+          )
+        ];
+
       setMessages((prev) => [
         ...prev,
         {
           role: "ai",
-          text: "🤍 Estoy contigo.",
+          text: randomContinuePrompt,
         },
       ]);
 
@@ -441,13 +464,10 @@ export default function User() {
     }
 
     // ============================================
-    // SI O ACTIVIDAD
+    // SI
     // ============================================
 
-    if (
-      opt === "Sí" ||
-      opt === "✨ Quiero una actividad"
-    ) {
+    if (opt === "Sí") {
       setMessages((prev) => [
         ...prev,
         {
