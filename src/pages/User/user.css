@@ -1,125 +1,475 @@
-/* Layout general */
-.app-layout {
-  display: flex;
-  height: 100vh;
-  background: #0f172a; /* oscuro elegante */
-  color: #fff;
+/* =========================================
+   RESET GLOBAL
+========================================= */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100dvh;
+  overflow-x: hidden;
+
+  background: #050505;
+
   font-family: Arial, sans-serif;
 }
 
-/* Panel izquierdo */
+/* =========================================
+   LAYOUT GENERAL
+========================================= */
+
+.app-layout {
+  display: flex;
+
+  width: 100%;
+
+  min-height: 100dvh;
+
+  overflow: hidden;
+
+  color: white;
+
+  background:
+    radial-gradient(
+      circle at top,
+      rgba(37,99,235,0.12),
+      transparent 35%
+    ),
+    linear-gradient(
+      180deg,
+      #0f172a 0%,
+      #020617 100%
+    );
+}
+
+/* =========================================
+   PANEL IZQUIERDO
+========================================= */
+
 .left-panel {
   width: 20%;
-  background: #111827;
-  padding: 20px;
-  border-right: 1px solid #1f2937;
-}
 
-.left-panel h4 {
-  margin-bottom: 10px;
-}
+  min-width: 240px;
 
-.quote-box {
-  margin-top: 20px;
-  padding: 15px;
-  background: #1f2937;
-  border-radius: 10px;
-  font-size: 14px;
-  opacity: 0.9;
-}
+  background:
+    rgba(17, 24, 39, 0.85);
 
-/* Panel central */
-.center-panel {
-  width: 60%;
+  border-right:
+    1px solid rgba(255,255,255,0.05);
+
+  padding:
+    clamp(16px, 3vw, 26px);
+
+  backdrop-filter: blur(14px);
+
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
 
-/* Chat */
-.chat-box {
-  flex: 1;
-  padding: 20px;
+  flex-direction: column;
+
+  gap: 22px;
+
   overflow-y: auto;
 }
 
-/* Mensajes */
+.left-panel h4 {
+  font-size:
+    clamp(18px, 2vw, 24px);
+
+  color: #60a5fa;
+
+  font-weight: bold;
+}
+
+/* Quote Box */
+
+.quote-box {
+  padding:
+    clamp(14px, 2vw, 20px);
+
+  background:
+    rgba(31, 41, 55, 0.75);
+
+  border-radius:
+    clamp(14px, 2vw, 18px);
+
+  font-size:
+    clamp(13px, 2vw, 15px);
+
+  line-height: 1.6;
+
+  opacity: 0.95;
+
+  border:
+    1px solid rgba(255,255,255,0.05);
+
+  box-shadow:
+    0 0 clamp(10px, 2vw, 24px)
+    rgba(96,165,250,0.08);
+}
+
+/* =========================================
+   PANEL CENTRAL
+========================================= */
+
+.center-panel {
+  flex: 1;
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: space-between;
+
+  min-width: 0;
+}
+
+/* =========================================
+   CHAT
+========================================= */
+
+.chat-box {
+  flex: 1;
+
+  padding:
+    clamp(16px, 3vw, 30px);
+
+  overflow-y: auto;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 12px;
+
+  scroll-behavior: smooth;
+}
+
+/* Scrollbar */
+
+.chat-box::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat-box::-webkit-scrollbar-thumb {
+  background:
+    rgba(255,255,255,0.12);
+
+  border-radius: 20px;
+}
+
+/* =========================================
+   MENSAJES
+========================================= */
+
 .msg {
-  max-width: 70%;
-  padding: 10px 14px;
-  margin-bottom: 10px;
-  border-radius: 12px;
-  line-height: 1.4;
+  max-width:
+    min(75%, 720px);
+
+  padding:
+    clamp(12px, 2vw, 16px);
+
+  border-radius:
+    clamp(14px, 2vw, 18px);
+
+  line-height: 1.6;
+
+  font-size:
+    clamp(14px, 2vw, 16px);
+
+  word-break: break-word;
+
+  animation:
+    fadeIn 0.25s ease;
 }
 
 /* Usuario */
+
 .msg.user {
-  background: #2563eb;
+  background:
+    linear-gradient(
+      135deg,
+      #2563eb,
+      #1d4ed8
+    );
+
   margin-left: auto;
+
   text-align: right;
+
+  box-shadow:
+    0 0 clamp(10px, 2vw, 24px)
+    rgba(37,99,235,0.25);
 }
 
 /* IA */
+
 .msg.ai {
-  background: #374151;
+  background:
+    rgba(55, 65, 81, 0.92);
+
   margin-right: auto;
+
+  box-shadow:
+    0 0 clamp(10px, 2vw, 20px)
+    rgba(255,255,255,0.05);
+}
+
+/* =========================================
+   INPUT BOX
+========================================= */
+
+.input-box {
+  display: flex;
+
+  gap: 12px;
+
+  padding:
+    clamp(14px, 2vw, 20px);
+
+  border-top:
+    1px solid rgba(255,255,255,0.05);
+
+  background:
+    rgba(17, 24, 39, 0.88);
+
+  backdrop-filter: blur(12px);
 }
 
 /* Input */
-.input-box {
-  display: flex;
-  padding: 15px;
-  border-top: 1px solid #1f2937;
-  background: #111827;
-}
 
 .input-box input {
   flex: 1;
-  padding: 10px;
-  border-radius: 8px;
-  border: none;
+
+  padding:
+    clamp(12px, 2vw, 15px);
+
+  border-radius:
+    clamp(12px, 2vw, 16px);
+
+  border:
+    1px solid rgba(255,255,255,0.08);
+
   outline: none;
-  margin-right: 10px;
-  background: #1f2937;
+
+  background:
+    rgba(31, 41, 55, 0.95);
+
   color: white;
+
+  font-size:
+    clamp(14px, 2vw, 16px);
+
+  transition: 0.25s ease;
 }
 
-/* Botón */
-.input-box button {
-  padding: 10px 20px;
+.input-box input:focus {
+  border-color: #2563eb;
+
+  box-shadow:
+    0 0 15px rgba(37,99,235,0.22);
+}
+
+/* =========================================
+   BOTONES
+========================================= */
+
+.input-box button,
+.right-panel button {
+  padding:
+    clamp(12px, 2vw, 15px);
+
   border: none;
-  border-radius: 8px;
-  background: #2563eb;
+
+  border-radius:
+    clamp(12px, 2vw, 16px);
+
+  background:
+    linear-gradient(
+      135deg,
+      #2563eb,
+      #1d4ed8
+    );
+
   color: white;
+
   cursor: pointer;
-  transition: 0.2s;
+
+  transition: 0.25s ease;
+
+  font-size:
+    clamp(13px, 2vw, 15px);
+
+  font-weight: bold;
+
+  white-space: nowrap;
 }
 
-.input-box button:hover {
-  background: #1d4ed8;
+.input-box button:hover,
+.right-panel button:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 0 18px rgba(37,99,235,0.35);
 }
 
-/* Panel derecho */
+/* =========================================
+   PANEL DERECHO
+========================================= */
+
 .right-panel {
   width: 20%;
-  background: #111827;
-  padding: 20px;
-  border-left: 1px solid #1f2937;
+
+  min-width: 240px;
+
+  background:
+    rgba(17, 24, 39, 0.85);
+
+  border-left:
+    1px solid rgba(255,255,255,0.05);
+
+  padding:
+    clamp(16px, 3vw, 26px);
+
   display: flex;
+
   flex-direction: column;
-  gap: 10px;
+
+  gap: 12px;
+
+  backdrop-filter: blur(14px);
+
+  overflow-y: auto;
 }
 
-.right-panel button {
-  padding: 10px;
-  border-radius: 8px;
-  border: none;
-  background: #1f2937;
-  color: white;
-  cursor: pointer;
-  transition: 0.2s;
+/* =========================================
+   ANIMACION
+========================================= */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.right-panel button:hover {
-  background: #374151;
+/* =========================================
+   LAPTOP PEQUEÑO
+========================================= */
+
+@media (max-width: 1200px) {
+  .left-panel,
+  .right-panel {
+    min-width: 200px;
+  }
+
+  .msg {
+    max-width: 85%;
+  }
+}
+
+/* =========================================
+   TABLET
+========================================= */
+
+@media (max-width: 900px) {
+  .app-layout {
+    flex-direction: column;
+  }
+
+  .left-panel,
+  .right-panel {
+    width: 100%;
+
+    min-width: unset;
+
+    border: none;
+
+    padding: 16px;
+  }
+
+  .left-panel {
+    border-bottom:
+      1px solid rgba(255,255,255,0.05);
+  }
+
+  .right-panel {
+    border-top:
+      1px solid rgba(255,255,255,0.05);
+
+    flex-direction: row;
+
+    flex-wrap: wrap;
+  }
+
+  .right-panel button {
+    flex: 1 1 calc(50% - 10px);
+  }
+
+  .msg {
+    max-width: 92%;
+  }
+}
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 600px) {
+  .chat-box {
+    padding: 14px;
+  }
+
+  .msg {
+    max-width: 96%;
+
+    padding: 11px 13px;
+
+    font-size: 14px;
+  }
+
+  .input-box {
+    flex-direction: column;
+  }
+
+  .input-box button {
+    width: 100%;
+  }
+
+  .right-panel button {
+    flex: 1 1 100%;
+  }
+}
+
+/* =========================================
+   MOBILE PEQUEÑO
+========================================= */
+
+@media (max-width: 400px) {
+  .left-panel,
+  .right-panel {
+    padding: 12px;
+  }
+
+  .chat-box {
+    padding: 10px;
+  }
+
+  .msg {
+    font-size: 13px;
+  }
+
+  .input-box {
+    padding: 12px;
+  }
 }
