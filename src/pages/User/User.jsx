@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
- 
+
 import "./user.css";
 
 import ChatBox from "./ChatBox";
@@ -75,10 +75,12 @@ export default function User() {
       "Usuario",
   };
 
+  // ============================================
   // FIX LOGIN
+  // ============================================
+
   useEffect(() => {
     if (!user.id_usuario) {
-      console.log("❌ NO HAY USUARIO");
       navigate("/", { replace: true });
     }
   }, []);
@@ -90,7 +92,9 @@ export default function User() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [writingActivity, setWritingActivity] = useState(false);
+  const [writingActivity, setWritingActivity] =
+    useState(false);
+
   const [frase, setFrase] = useState("");
 
   // ============================================
@@ -130,9 +134,11 @@ export default function User() {
     try {
       const res = await fetch(`${API_URL}/chat`, {
         method: "POST",
+
         headers: {
           "Content-Type": "application/json",
         },
+
         body: JSON.stringify({
           message,
         }),
@@ -144,7 +150,7 @@ export default function User() {
 
       return {
         reply: "🤍 No puedo responder ahora.",
-        options: ["Sí", "No"],
+        options: [],
       };
     }
   };
@@ -155,8 +161,6 @@ export default function User() {
 
   const saveActivity = async (activityName) => {
     try {
-      console.log("🟢 GUARDANDO ACTIVIDAD");
-
       const payload = {
         id_usuario: Number(user.id_usuario),
         nombre_actividad: activityName,
@@ -165,22 +169,20 @@ export default function User() {
         reaccion: "",
       };
 
-      console.log("📦 PAYLOAD:", payload);
-
       const res = await fetch(
         `${API_URL}/api/registro-actividad`,
         {
           method: "POST",
+
           headers: {
             "Content-Type": "application/json",
           },
+
           body: JSON.stringify(payload),
         }
       );
 
       const data = await res.json();
-
-      console.log("✅ RESPUESTA:", data);
 
       if (!res.ok) {
         throw new Error(data.error || "error");
@@ -188,7 +190,7 @@ export default function User() {
 
       return data;
     } catch (err) {
-      console.log("❌ ERROR SAVE ACTIVITY:", err);
+      console.log(err);
 
       setMessages((prev) => [
         ...prev,
@@ -230,40 +232,75 @@ export default function User() {
 
     const triggerWords = [
       "actividad",
-      "triste",
-      "solo",
-      "vacío",
-      "deprimido",
-      "ansioso",
-      "estresado",
-      "ayuda",
-      "mal",
-      "aburrido",
-      "aburrida",
+      "actividades",
+      "activdad",
+      "hacer algo",
+      "algo para hacer",
+      "qué hago",
+      "que hago",
+      "q hago",
       "no sé qué hacer",
+      "no se que hacer",
+      "nose que hacer",
+      "nose",
+      "que puedo hacer",
+      "q puedo hacer",
+      "quiero hacer algo",
+      "algo entretenido",
+      "algo divertido",
+      "panorama",
+      "panoramas",
+      "plan",
+      "planes",
+      "salir",
+      "quiero salir",
+      "distraerme",
+      "quiero distraerme",
+      "despejarme",
+      "quiero despejarme",
+      "relajarme",
+      "quiero relajarme",
+      "pasatiempo",
+      "hobby",
+      "recomiendame algo",
+      "recomienda algo",
+      "dame ideas",
+      "ideas",
+      "algo nuevo",
+      "que actividad hago",
+      "actividad para hoy",
+      "actividad para hacer",
+      "que hago hoy",
+      "hacer alguna cosa",
+      "quiero un panorama",
+      "algo interesante",
+      "algo distinto",
+
+      // MODISMOS CHILENOS
+      "toy pato",
+      "toy libre",
+      "que se hace",
+      "que se puede hacer",
+      "sus panoramas",
+      "algun panorama",
+      "alguna actividad",
+      "apañar",
+      "quien apaña",
+      "algo piola",
+      "algo tranqui",
+      "algo pa hacer",
+      "panorama piola",
+      "panorama tranqui",
+      "salir un rato",
+      "hacer alguna wea",
+      "algo pa hoy",
+      "que hay pa hacer",
+      "que hay para hacer",
     ];
 
     const detected = triggerWords.some((w) =>
       lower.includes(w)
     );
-
-    // ============================================
-    // DETECTA ACTIVIDAD
-    // ============================================
-
-    if (detected) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text: "🤍 ¿Deseas iniciar una actividad?",
-          options: ["Sí", "No"],
-        },
-      ]);
-
-      setLoading(false);
-      return;
-    }
 
     // ============================================
     // ESCRIBIR ACTIVIDAD
@@ -303,6 +340,33 @@ export default function User() {
     // ============================================
 
     const response = await askAI(text);
+
+    // ============================================
+    // DETECTA ACTIVIDAD
+    // ============================================
+
+    if (detected) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text:
+            response.reply ||
+            "🤍 Quizás una actividad podría ayudarte.",
+          options: [
+            ...(response.options || []),
+            "✨ Quiero una actividad",
+          ],
+        },
+      ]);
+
+      setLoading(false);
+      return;
+    }
+
+    // ============================================
+    // RESPUESTA NORMAL
+    // ============================================
 
     setMessages((prev) => [
       ...prev,
@@ -346,10 +410,13 @@ export default function User() {
     }
 
     // ============================================
-    // SI
+    // SI O ACTIVIDAD
     // ============================================
 
-    if (opt === "Sí") {
+    if (
+      opt === "Sí" ||
+      opt === "✨ Quiero una actividad"
+    ) {
       setMessages((prev) => [
         ...prev,
         {
@@ -398,7 +465,28 @@ export default function User() {
     }
 
     // ============================================
-    // GUARDAR ACTIVIDAD DIRECTA
+    // NO SÉ CUÁL
+    // ============================================
+
+    if (opt === "❓ No sé cuál") {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text:
+            "🤍 Podrías probar algo suave como escuchar música o caminar un rato.",
+          options: [
+            "🎵 Música",
+            "🏃 Actividad física",
+          ],
+        },
+      ]);
+
+      return;
+    }
+
+    // ============================================
+    // GUARDAR ACTIVIDAD
     // ============================================
 
     const saved = await saveActivity(opt);
