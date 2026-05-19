@@ -274,7 +274,6 @@ export default function User() {
       "no sé qué hacer",
       "no se que hacer",
       "nose que hacer",
-      "nose",
       "que puedo hacer",
       "q puedo hacer",
       "quiero hacer algo",
