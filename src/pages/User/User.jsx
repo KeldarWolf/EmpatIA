@@ -51,6 +51,26 @@ const subOptions = {
   ],
 };
 
+// ============================================
+// FRASES ACTIVIDAD
+// ============================================
+
+const activityPrompts = [
+  "🤍 ¿Te gustaría hacer una actividad para sentirte mejor?",
+
+  "🤍 ¿Quieres que hagamos una actividad juntos?",
+
+  "✨ Quizás una actividad podría ayudarte un poco, ¿quieres intentar una?",
+
+  "🤍 Podemos probar una actividad pequeña para despejar la mente, ¿te gustaría?",
+
+  "🌱 A veces una pequeña actividad ayuda bastante, ¿quieres probar una?",
+
+  "🤍 ¿Te gustaría intentar una actividad para distraerte un poco?",
+
+  "🤍 ¿Quieres que te recomiende una actividad?",
+];
+
 export default function User() {
   const navigate = useNavigate();
 
@@ -92,6 +112,7 @@ export default function User() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+
   const [writingActivity, setWritingActivity] =
     useState(false);
 
@@ -336,7 +357,7 @@ export default function User() {
     }
 
     // ============================================
-    // IA NORMAL
+    // IA
     // ============================================
 
     const response = await askAI(text);
@@ -346,13 +367,23 @@ export default function User() {
     // ============================================
 
     if (detected) {
+
+      const randomPrompt =
+        activityPrompts[
+          Math.floor(
+            Math.random() * activityPrompts.length
+          )
+        ];
+
       setMessages((prev) => [
         ...prev,
         {
           role: "ai",
-          text:
-            response.reply ||
-            "🤍 Quizás una actividad podría ayudarte.",
+
+          text: `${
+            response.reply || "🤍 Estoy aquí contigo."
+          }\n\n${randomPrompt}`,
+
           options: [
             ...(response.options || []),
             "✨ Quiero una actividad",
