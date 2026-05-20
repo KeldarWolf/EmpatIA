@@ -1,726 +1,310 @@
-// ============================================
-// src/pages/User/User.jsx
-// ============================================
-
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "./Estadisticas.css";
 
-import "./user.css";
- 
-import ChatBox from "./ChatBox";
-import InputBox from "./InputBox";
-import frases from "./frases";
+const API_URL = "https://empatia-backend.onrender.com";
 
-const API_URL =
-  "https://empatia-backend.onrender.com";
-
-// ============================================
-// MENÚS
-// ============================================
-
-const mainOptions = [
-  "🎵 Música",
-  "🧘 Relajación",
-  "🏃 Actividad física",
-  "✍️ Escribir actividad",
-  "❓ No sé cuál",
-];
-
-const subOptions = {
-  "🎵 Música": [
-    "Lo-fi",
-    "Piano suave",
-    "Música relajante",
-    "Sonidos lluvia",
-    "Cantar",
-  ],
-
-  "🧘 Relajación": [
-    "Respirar profundo",
-    "Meditar",
-    "Estiramientos",
-    "Cerrar ojos",
-    "Ducha relajante",
-  ],
-
-  "🏃 Actividad física": [
-    "Caminar",
-    "Yoga",
-    "Bailar",
-    "Mover cuerpo",
-    "Trotar suave",
-  ],
-};
-
-// ============================================
-// FRASES ACTIVIDAD
-// ============================================
-
-const activityPrompts = [
-  "🤍 ¿Te gustaría probar una actividad?",
-  "🌱 A veces ayuda hacer algo pequeño, ¿quieres intentar una actividad?",
-  "✨ Podemos probar una actividad para distraerte un rato, ¿te gustaría?",
-  "🤍 Quizás una actividad podría ayudarte un poco, ¿quieres probar?",
-  "🌿 Podemos hacer algo tranquilo juntos, ¿te gustaría?",
-];
-
-// ============================================
-// FRASES CONTINUAR
-// ============================================
-
-const continuePrompts = [
-  "🤍 Entiendo, podemos seguir hablando.",
-  "🌱 Comprendo, cuéntame un poco más.",
-  "🤍 Estoy aquí contigo, si quieres seguir conversando te leo.",
-  "🌿 Entiendo, podemos conversar un rato si quieres.",
-];
-
-export default function User() {
-
-  const navigate =
-    useNavigate();
-
-  // ============================================
-  // MENUS MOBILE
-  // ============================================
-
-  const [leftOpen, setLeftOpen] =
-    useState(false);
-
-  const [rightOpen, setRightOpen] =
-    useState(false);
-
-  // ============================================
-  // SESSION
-  // ============================================
+export default function Estadisticas() {
+  const navigate = useNavigate();
 
   const storedUser = JSON.parse(
-    sessionStorage.getItem(
-      "usuario"
-    ) || "null"
+    sessionStorage.getItem("usuario") || "null"
   );
 
-  const user = {
+  const id_usuario =
+    storedUser?.id_usuario ||
+    storedUser?.user?.id_usuario ||
+    storedUser?.id;
 
-    id_usuario:
-      storedUser?.id_usuario ||
-      storedUser?.user
-        ?.id_usuario ||
-      storedUser?.id ||
-      null,
+  const [loading, setLoading] = useState(true);
 
-    nombre:
-      storedUser?.nombre ||
-      storedUser?.user
-        ?.nombre ||
-      "Usuario",
-  };
+  const [data, setData] = useState({
+    totalTareas: 0,
+    completadas: 0,
+    pendientes: 0,
+    diasActivos: 0,
+    emocionesPositivas: 0,
+    emocionesNeutras: 0,
+    emocionesBajas: 0,
+    actividadFavorita: "Sin datos",
+    bienestar: 0,
+  });
 
-  // ============================================
-  // FIX LOGIN
-  // ============================================
-
-  useEffect(() => {
-
-    const stored =
-      sessionStorage.getItem(
-        "usuario"
-      );
-
-    console.log(
-      "SESSION:",
-      stored
-    );
-
-    if (!stored) {
-
-      navigate("/", {
-        replace: true,
-      });
-
-      return;
-    }
-
+  /* =========================
+     LOAD STATS
+  ========================= */
+  const loadStats = async () => {
     try {
-
-      const parsed =
-        JSON.parse(stored);
-
-      const id =
-        parsed?.id_usuario ||
-        parsed?.user
-          ?.id_usuario ||
-        parsed?.id;
-
-      if (!id) {
-
-        navigate("/", {
-          replace: true,
-        });
-      }
-
-    } catch (err) {
-
-      console.log(err);
-
-      navigate("/", {
-        replace: true,
-      });
-    }
-
-  }, [navigate]);
-
-  // ============================================
-  // STATES
-  // ============================================
-
-  const [messages, setMessages] =
-    useState([]);
-
-  const [input, setInput] =
-    useState("");
-
-  const [loading, setLoading] =
-    useState(false);
-
-  const [
-    writingActivity,
-    setWritingActivity,
-  ] = useState(false);
-
-  const [frase, setFrase] =
-    useState("");
-
-  // ============================================
-  // INIT
-  // ============================================
-
-  useEffect(() => {
-
-    setMessages([
-      {
-        role: "ai",
-        text:
-          `Hola ${user.nombre}, estoy aquí contigo.`,
-      },
-      {
-        role: "ai",
-        text:
-          "Cuéntame cómo te sientes...",
-      },
-    ]);
-
-    setFrase(
-      frases[
-        Math.floor(
-          Math.random() *
-            frases.length
-        )
-      ]
-    );
-
-    const interval =
-      setInterval(() => {
-
-        setFrase(
-          frases[
-            Math.floor(
-              Math.random() *
-                frases.length
-            )
-          ]
-        );
-
-      }, 8000);
-
-    return () =>
-      clearInterval(interval);
-
-  }, []);
-
-  // ============================================
-  // IA REQUEST
-  // ============================================
-
-  const askAI = async (
-    message
-  ) => {
-
-    try {
-
-      const res =
-        await fetch(
-          `${API_URL}/chat`,
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-
-            body: JSON.stringify({
-              message,
-            }),
-          }
-        );
-
-      return await res.json();
-
-    } catch (err) {
-
-      console.log(err);
-
-      return {
-        reply:
-          "🤍 No puedo responder ahora.",
-        options: [],
-      };
-    }
-  };
-
-  // ============================================
-  // SAVE ACTIVITY
-  // ============================================
-
-  const saveActivity =
-    async (
-      activityName
-    ) => {
-
-      try {
-
-        const payload = {
-
-          id_usuario:
-            Number(
-              user.id_usuario
-            ),
-
-          nombre_actividad:
-            activityName,
-
-          puntaje_agrado: 5,
-
-          frecuencia_deseada:
-            "media",
-
-          reaccion: "",
-        };
-
-        const res =
-          await fetch(
-            `${API_URL}/api/registro-actividad`,
-            {
-              method: "POST",
-
-              headers: {
-                "Content-Type":
-                  "application/json",
-              },
-
-              body:
-                JSON.stringify(
-                  payload
-                ),
-            }
-          );
-
-        const data =
-          await res.json();
-
-        if (!res.ok) {
-
-          throw new Error(
-            data.error ||
-              "error"
-          );
-        }
-
-        return data;
-
-      } catch (err) {
-
-        console.log(err);
-
-        setMessages(
-          (prev) => [
-            ...prev,
-            {
-              role: "ai",
-              text:
-                "❌ No pude guardar la actividad",
-            },
-          ]
-        );
-
-        return null;
-      }
-    };
-
-  // ============================================
-  // SEND
-  // ============================================
-
-  const sendMessage =
-    async () => {
-
-      if (
-        !input.trim() ||
-        loading
-      )
-        return;
-
-      const text =
-        input.trim();
-
-      setMessages(
-        (prev) => [
-          ...prev,
-          {
-            role: "user",
-            text,
-          },
-        ]
-      );
-
-      setInput("");
-
       setLoading(true);
 
-      const response =
-        await askAI(text);
-
-      setMessages(
-        (prev) => [
-          ...prev,
-          {
-            role: "ai",
-            text:
-              response.reply,
-            options:
-              response.options ||
-              [],
-          },
-        ]
+      const res = await fetch(
+        `${API_URL}/api/stats/${id_usuario}`
       );
 
+      const result = await res.json();
+
+      setData(result);
+    } catch (err) {
+      console.log(err);
+    } finally {
       setLoading(false);
-    };
+    }
+  };
 
-  // ============================================
-  // OPTIONS
-  // ============================================
+  useEffect(() => {
+    if (id_usuario) {
+      loadStats();
+    }
+  }, [id_usuario]);
 
-  const handleOptionClick =
-    async (opt) => {
+  /* =========================
+     INSIGHTS IA
+  ========================= */
+  const insights = useMemo(() => {
+    const arr = [];
 
-      setMessages(
-        (prev) => [
-          ...prev,
-          {
-            role: "user",
-            text: opt,
-          },
-        ]
+    if (data.bienestar >= 80) {
+      arr.push(
+        "✨ Excelente progreso emocional y constancia en tus rutinas."
       );
+    }
 
-      setLeftOpen(false);
-      setRightOpen(false);
+    if (data.bienestar >= 50 && data.bienestar < 80) {
+      arr.push(
+        "📈 Tu progreso es positivo, sigue manteniendo tus hábitos."
+      );
+    }
 
-      if (opt === "No") {
+    if (data.bienestar < 50) {
+      arr.push(
+        "🧠 Intenta completar más actividades para mejorar tu bienestar."
+      );
+    }
 
-        const randomContinuePrompt =
-          continuePrompts[
-            Math.floor(
-              Math.random() *
-                continuePrompts.length
-            )
-          ];
+    if (
+      data.emocionesPositivas >
+      data.emocionesBajas
+    ) {
+      arr.push(
+        "😊 Tus actividades generan más emociones positivas."
+      );
+    }
 
-        setMessages(
-          (prev) => [
-            ...prev,
-            {
-              role: "ai",
-              text:
-                randomContinuePrompt,
-            },
-          ]
-        );
+    if (
+      data.emocionesBajas >
+      data.emocionesPositivas
+    ) {
+      arr.push(
+        "💙 Considera actividades más relajantes o motivadoras."
+      );
+    }
 
-        return;
-      }
+    if (data.diasActivos >= 5) {
+      arr.push(
+        "🔥 Has tenido una excelente constancia esta semana."
+      );
+    }
 
-      if (opt === "Sí") {
+    if (data.actividadFavorita !== "Sin datos") {
+      arr.push(
+        `⭐ Tu actividad favorita es: ${data.actividadFavorita}`
+      );
+    }
 
-        setMessages(
-          (prev) => [
-            ...prev,
-            {
-              role: "ai",
-              text:
-                "✨ Elige una categoría:",
-              options:
-                mainOptions,
-            },
-          ]
-        );
+    return arr;
+  }, [data]);
 
-        return;
-      }
-
-      if (subOptions[opt]) {
-
-        setMessages(
-          (prev) => [
-            ...prev,
-            {
-              role: "ai",
-
-              text:
-                `✨ Opciones de ${opt}:`,
-
-              options:
-                subOptions[
-                  opt
-                ],
-            },
-          ]
-        );
-
-        return;
-      }
-
-      if (
-        opt.includes(
-          "Escribir"
-        )
-      ) {
-
-        setWritingActivity(
-          true
-        );
-
-        setMessages(
-          (prev) => [
-            ...prev,
-            {
-              role: "ai",
-              text:
-                "✍️ Escribe tu actividad:",
-            },
-          ]
-        );
-
-        return;
-      }
-
-      if (
-        opt ===
-        "❓ No sé cuál"
-      ) {
-
-        setMessages(
-          (prev) => [
-            ...prev,
-            {
-              role: "ai",
-
-              text:
-                "🤍 Podrías probar escuchar música o caminar un rato.",
-
-              options: [
-                "🎵 Música",
-                "🏃 Actividad física",
-              ],
-            },
-          ]
-        );
-
-        return;
-      }
-
-      const saved =
-        await saveActivity(
-          opt
-        );
-
-      if (saved) {
-
-        setMessages(
-          (prev) => [
-            ...prev,
-            {
-              role: "ai",
-              text:
-                `✅ Guardado: ${opt}`,
-            },
-            {
-              role: "ai",
-              text:
-                "⏳ Redirigiendo...",
-            },
-          ]
-        );
-
-        setTimeout(() => {
-
-          navigate(
-            "/actividades",
-            {
-              replace: true,
-            }
-          );
-
-        }, 1200);
-      }
-    };
-
-  // ============================================
-  // UI
-  // ============================================
+  /* =========================
+     LOADING
+  ========================= */
+  if (loading) {
+    return (
+      <div className="stats-page">
+        <div className="loading-box">
+          <div className="loader"></div>
+          <p>Cargando estadísticas...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
+    <div className="stats-page">
 
-    <div className="app-layout">
+      {/* HEADER */}
+      <div className="stats-header">
 
-      {/* MENU LEFT */}
+        <div>
+          <h1>📊 Estadísticas</h1>
 
-      <button
-        className="menu-left"
-        onClick={() =>
-          setLeftOpen(true)
-        }
-      >
-        ☰
-      </button>
-
-      {/* MENU RIGHT */}
-
-      <button
-        className="menu-right"
-        onClick={() =>
-          setRightOpen(true)
-        }
-      >
-        ⚙
-      </button>
-
-      {/* OVERLAY */}
-
-      {(leftOpen ||
-        rightOpen) && (
-
-        <div
-          className="overlay"
-          onClick={() => {
-
-            setLeftOpen(false);
-
-            setRightOpen(false);
-          }}
-        />
-      )}
-
-      {/* LEFT */}
-
-      <div
-        className={`left-panel ${
-          leftOpen
-            ? "open"
-            : ""
-        }`}
-      >
-
-        <h4>
-          💡 Acompañamiento
-        </h4>
-
-        <div className="quote-box">
-          {frase}
+          <p>
+            Seguimiento emocional y progreso personal
+          </p>
         </div>
 
-        <div
-          style={{
-            marginTop: 20,
-            color: "#00e5ff",
-          }}
+        <button
+          className="back-btn"
+          onClick={() => navigate("/user")}
         >
-          👤 {user.nombre}
+          ⬅ Volver
+        </button>
+      </div>
+
+      {/* MAIN GRID */}
+      <div className="stats-grid">
+
+        {/* LEFT */}
+        <div className="stats-column">
+
+          <div className="glass-card emotion-card positive">
+            <span>😊 Positivas</span>
+            <h2>{data.emocionesPositivas}</h2>
+          </div>
+
+          <div className="glass-card emotion-card neutral">
+            <span>😐 Neutras</span>
+            <h2>{data.emocionesNeutras}</h2>
+          </div>
+
+          <div className="glass-card emotion-card negative">
+            <span>💙 Bajas</span>
+            <h2>{data.emocionesBajas}</h2>
+          </div>
+
+          <div className="glass-card favorite-card">
+            <span>⭐ Actividad favorita</span>
+
+            <h3>
+              {data.actividadFavorita}
+            </h3>
+          </div>
+
         </div>
 
-      </div>
+        {/* CENTER */}
+        <div className="stats-center">
 
-      {/* CENTER */}
+          {/* WELLBEING */}
+          <div className="glass-card wellbeing-card">
 
-      <div className="center-panel">
+            <div className="wellbeing-top">
 
-        <ChatBox
-          messages={messages}
-          onOptionClick={
-            handleOptionClick
-          }
-        />
+              <div>
+                <h2>🧠 Bienestar general</h2>
 
-        <InputBox
-          input={input}
-          setInput={setInput}
-          sendMessage={sendMessage}
-          loading={loading}
-        />
+                <p>
+                  Basado en actividades completadas
+                </p>
+              </div>
 
-      </div>
+              <div className="wellbeing-number">
+                {data.bienestar}%
+              </div>
 
-      {/* RIGHT */}
+            </div>
 
-      <div
-        className={`right-panel ${
-          rightOpen
-            ? "open"
-            : ""
-        }`}
-      >
+            <div className="progress-container">
 
-        <button
-          onClick={() =>
-            navigate(
-              "/rutina"
-            )
-          }
-        >
-          🧘 Rutina
-        </button>
+              <div
+                className="progress-bar"
+                style={{
+                  width: `${data.bienestar}%`,
+                }}
+              />
 
-        <button
-          onClick={() =>
-            navigate(
-              "/actividades"
-            )
-          }
-        >
-          🎯 Actividades
-        </button>
+            </div>
 
-        <button
-          onClick={() =>
-            navigate(
-              "/estadisticas"
-            )
-          }
-        >
-          📊 Estadísticas
-        </button>
+          </div>
 
-        <button
-          onClick={() =>
-            navigate(
-              "/diario"
-            )
-          }
-        >
-          📓 Diario
-        </button>
+          {/* SUMMARY */}
+          <div className="summary-grid">
+
+            <div className="summary-card">
+              <h2>{data.totalTareas}</h2>
+              <p>Total tareas</p>
+            </div>
+
+            <div className="summary-card">
+              <h2>{data.completadas}</h2>
+              <p>Completadas</p>
+            </div>
+
+            <div className="summary-card">
+              <h2>{data.pendientes}</h2>
+              <p>Pendientes</p>
+            </div>
+
+            <div className="summary-card">
+              <h2>{data.diasActivos}</h2>
+              <p>Días activos</p>
+            </div>
+
+          </div>
+
+          {/* EXTRA */}
+          <div className="glass-card extra-card">
+
+            <h3>📈 Resumen</h3>
+
+            <div className="extra-grid">
+
+              <div className="mini-box">
+                <span>✔ Completadas</span>
+
+                <strong>
+                  {data.completadas}
+                </strong>
+              </div>
+
+              <div className="mini-box">
+                <span>⏳ Pendientes</span>
+
+                <strong>
+                  {data.pendientes}
+                </strong>
+              </div>
+
+              <div className="mini-box">
+                <span>🔥 Constancia</span>
+
+                <strong>
+                  {data.diasActivos} días
+                </strong>
+              </div>
+
+              <div className="mini-box">
+                <span>💯 Bienestar</span>
+
+                <strong>
+                  {data.bienestar}%
+                </strong>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* RIGHT */}
+        <div className="stats-column">
+
+          <div className="glass-card insights-card">
+
+            <h3>🤖 Insights IA</h3>
+
+            {insights.map((tip, i) => (
+              <div
+                key={i}
+                className="insight-item"
+              >
+                {tip}
+              </div>
+            ))}
+
+          </div>
+
+        </div>
 
       </div>
 
