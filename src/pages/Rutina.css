@@ -73,7 +73,18 @@ body,
 /* ==================== OVERLAY ==================== */
 
 .overlay {
-  display: none;
+  position: fixed;
+
+  inset: 0;
+
+  background:
+    rgba(0,0,0,0.45);
+
+  z-index: 300;
+
+  opacity: 1;
+
+  pointer-events: auto;
 }
 
 /* ==================== LAYOUT ==================== */
@@ -431,7 +442,7 @@ body,
     justify-content: center;
     align-items: center;
 
-    z-index: 500;
+    z-index: 700;
 
     cursor: pointer;
   }
@@ -442,21 +453,6 @@ body,
 
   .right-toggle {
     right: 12px;
-  }
-
-  /* OVERLAY */
-
-  .overlay {
-    display: block;
-
-    position: fixed;
-
-    inset: 0;
-
-    background:
-      rgba(0,0,0,0.45);
-
-    z-index: 200;
   }
 
   /* LEFT PANEL */
@@ -475,12 +471,11 @@ body,
 
     border-radius: 0;
 
-    z-index: 400;
+    z-index: 600;
 
     transform:
       translateX(-100%);
 
-    /* IMPORTANTE */
     pointer-events: none;
   }
 
@@ -507,12 +502,11 @@ body,
 
     border-radius: 0;
 
-    z-index: 400;
+    z-index: 600;
 
     transform:
       translateX(100%);
 
-    /* IMPORTANTE */
     pointer-events: none;
   }
 
