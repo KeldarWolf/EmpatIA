@@ -1,57 +1,122 @@
-
 /* ====================== Rutina.css ====================== */
 
 * {
   box-sizing: border-box;
 }
 
-.page {
-  height: 100vh;
-  background: #0b0f14;
-  color: white;
-  display: flex;
-  flex-direction: column;
-  font-family: Arial, sans-serif;
+html,
+body,
+#root {
+  margin: 0;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
 }
 
-.loading {
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #0b0f14;
+.page {
+  height: 100dvh;
+
+  background:
+    linear-gradient(
+      180deg,
+      #0b0f14 0%,
+      #020617 100%
+    );
+
   color: white;
+
+  display: flex;
+
+  flex-direction: column;
+
+  font-family: Arial, sans-serif;
+
+  overflow: hidden;
+
+  position: relative;
+}
+
+/* ==================== LOADING ==================== */
+
+.loading {
+  height: 100dvh;
+
+  display: flex;
+
+  justify-content: center;
+
+  align-items: center;
+
+  background: #0b0f14;
+
+  color: white;
+
   font-size: 1.3rem;
 }
 
+/* ==================== MOBILE BUTTONS ==================== */
+
+.left-toggle,
+.right-toggle {
+  display: none;
+}
+
+/* ==================== OVERLAY ==================== */
+
+.overlay {
+  display: none;
+}
+
 /* ==================== HEADER ==================== */
+
 .header {
   display: flex;
+
   justify-content: space-between;
+
   align-items: center;
+
   padding: 20px;
-  border-bottom: 1px solid #1f2937;
+
+  border-bottom:
+    1px solid #1f2937;
+
+  background:
+    rgba(15,23,42,0.82);
+
+  backdrop-filter: blur(12px);
+
+  z-index: 20;
 }
 
 .header h1 {
   margin: 0;
+
   font-size: 1.8rem;
 }
 
 .header p {
   margin: 5px 0 0 0;
+
   opacity: 0.7;
 }
 
 .back-btn {
   padding: 10px 18px;
+
   border-radius: 10px;
+
   border: none;
+
   background: #1f2937;
+
   color: white;
+
   cursor: pointer;
+
   font-size: 1rem;
+
+  transition: 0.2s;
 }
 
 .back-btn:hover {
@@ -59,111 +124,193 @@
 }
 
 /* ==================== LAYOUT ==================== */
+
 .layout {
   flex: 1;
+
   display: flex;
+
   gap: 15px;
+
   padding: 15px;
+
   overflow: hidden;
 }
 
 /* ==================== LEFT PANEL ==================== */
+
 .left-panel {
   width: 320px;
-  background: #0f172a;
+
+  min-width: 320px;
+
+  background:
+    rgba(15,23,42,0.92);
+
+  backdrop-filter: blur(12px);
+
   padding: 20px;
+
   border-radius: 12px;
+
   overflow-y: auto;
+
+  border:
+    1px solid rgba(255,255,255,0.04);
+
+  transition: 0.28s ease;
 }
 
 .left-panel h3 {
   margin: 0 0 15px 0;
+
   color: #a5b4fc;
 }
 
+/* ==================== ACTIVITY CARD ==================== */
+
 .activity-card {
   background: #111827;
+
   padding: 12px;
+
   border-radius: 10px;
+
   margin-bottom: 10px;
+
   cursor: pointer;
-  border: 2px solid transparent;
+
+  border:
+    2px solid transparent;
+
   transition: all 0.2s ease;
 }
 
 .activity-card:hover {
   background: #1e2937;
+
   transform: translateY(-2px);
 }
 
 .activity-card.selected {
   border-color: #22c55e;
+
   background: #052e16;
 }
 
+/* ==================== DIVIDER ==================== */
+
 .divider {
   border: none;
-  border-top: 1px solid #1f2937;
+
+  border-top:
+    1px solid #1f2937;
+
   margin: 20px 0;
 }
 
-/* Inputs y Select */
-.input {
+/* ==================== INPUTS ==================== */
+
+.input,
+.select {
   width: 100%;
+
   padding: 10px;
+
   margin-top: 5px;
+
   margin-bottom: 15px;
+
   border-radius: 8px;
+
   border: none;
+
   background: #111827;
+
   color: white;
+
   font-size: 1rem;
 }
 
-.input:focus {
-  outline: 2px solid #6366f1;
+.input:focus,
+.select:focus {
+  outline:
+    2px solid #6366f1;
 }
+
+/* ==================== CREATE BTN ==================== */
 
 .create-btn {
   width: 100%;
+
   padding: 14px;
+
   background: #22c55e;
+
   border: none;
+
   border-radius: 10px;
+
   color: white;
+
   font-weight: bold;
+
   font-size: 1.1rem;
+
   cursor: pointer;
+
   margin-top: 10px;
+
   transition: all 0.2s;
 }
 
 .create-btn:hover {
   background: #16a34a;
+
   transform: scale(1.02);
 }
 
 /* ==================== CENTER PANEL ==================== */
+
 .center-panel {
   flex: 1;
-  background: #0f172a;
+
+  min-width: 0;
+
+  background:
+    rgba(15,23,42,0.92);
+
+  backdrop-filter: blur(12px);
+
   padding: 20px;
+
   border-radius: 12px;
+
   overflow-y: auto;
+
+  border:
+    1px solid rgba(255,255,255,0.04);
 }
 
 .selected-date {
   background: #111827;
+
   padding: 12px 16px;
+
   border-radius: 10px;
+
   margin: 15px 0 20px 0;
+
   font-weight: bold;
+
   font-size: 1.1rem;
 }
 
 .empty {
   padding: 60px 20px;
+
   text-align: center;
+
   opacity: 0.6;
 }
 
@@ -171,71 +318,107 @@
   margin-bottom: 10px;
 }
 
-/* Event Card */
+/* ==================== EVENT CARD ==================== */
+
 .event-card {
   background: #111827;
+
   padding: 16px;
+
   border-radius: 12px;
+
   margin-bottom: 12px;
+
   display: flex;
+
   justify-content: space-between;
+
   align-items: flex-start;
-  border-left: 6px solid #2563eb;
+
+  border-left:
+    6px solid #2563eb;
+
   transition: all 0.2s;
 }
 
 .event-card.completed {
   opacity: 0.65;
+
   border-left-color: #22c55e;
 }
 
 .event-left {
   display: flex;
+
   gap: 12px;
+
   flex: 1;
 }
 
 .checkbox {
   width: 24px;
+
   height: 24px;
+
   margin-top: 4px;
+
   accent-color: #22c55e;
+
   cursor: pointer;
 }
 
 .event-time {
   margin: 6px 0;
+
   opacity: 0.85;
 }
 
 .event-duration {
   opacity: 0.7;
+
   font-size: 0.95rem;
 }
 
 .event-description {
   margin-top: 10px;
+
   line-height: 1.5;
+
   opacity: 0.8;
 }
 
 .repeat-badge {
   margin-top: 10px;
+
   background: #1e293b;
+
   display: inline-block;
+
   padding: 5px 10px;
+
   border-radius: 20px;
+
   font-size: 0.85rem;
 }
 
+/* ==================== DELETE BTN ==================== */
+
 .delete-btn {
   background: #ef4444;
+
   border: none;
+
   color: white;
+
   padding: 8px 12px;
+
   border-radius: 8px;
+
   cursor: pointer;
+
   font-size: 1.1rem;
+
+  transition: 0.2s;
 }
 
 .delete-btn:hover {
@@ -243,60 +426,88 @@
 }
 
 /* ==================== RIGHT PANEL ==================== */
+
 .right-panel {
   width: 360px;
-  background: #0f172a;
+
+  min-width: 360px;
+
+  background:
+    rgba(15,23,42,0.92);
+
+  backdrop-filter: blur(12px);
+
   padding: 20px;
+
   border-radius: 12px;
+
   overflow-y: auto;
+
+  border:
+    1px solid rgba(255,255,255,0.04);
+
+  transition: 0.28s ease;
 }
+
+/* ==================== CALENDAR ==================== */
 
 .calendar-header {
   display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
-}
 
-.select {
-  flex: 1;
-  padding: 10px;
-  border-radius: 8px;
-  border: none;
-  background: #111827;
-  color: white;
-  font-size: 1rem;
+  gap: 10px;
+
+  margin-bottom: 15px;
 }
 
 .week-header {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+
+  grid-template-columns:
+    repeat(7, 1fr);
+
   gap: 5px;
+
   margin-bottom: 10px;
+
   text-align: center;
 }
 
 .week-day {
   font-size: 0.9rem;
+
   opacity: 0.7;
+
   padding: 5px 0;
 }
 
 .week-row {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+
+  grid-template-columns:
+    repeat(7, 1fr);
+
   gap: 5px;
+
   margin-bottom: 5px;
 }
 
 .day-cell {
   height: 48px;
+
   display: flex;
+
   justify-content: center;
+
   align-items: center;
+
   border-radius: 8px;
+
   cursor: pointer;
+
   user-select: none;
+
   background: #111827;
+
   transition: all 0.2s;
 }
 
@@ -305,48 +516,71 @@
 }
 
 .day-cell.active {
-  background: #2563eb !important;
+  background:
+    #2563eb !important;
+
   font-weight: bold;
 }
 
 .day-cell.selected {
   background: #22c55e;
+
   color: black;
+
   font-weight: bold;
 }
 
-/* Selected Days */
+/* ==================== SELECTED DAYS ==================== */
+
 .selected-container {
   display: flex;
+
   flex-wrap: wrap;
+
   gap: 8px;
+
   margin-top: 10px;
 }
 
 .selected-day {
   background: #22c55e;
+
   color: black;
+
   padding: 6px 12px;
+
   border-radius: 20px;
+
   font-size: 0.85rem;
+
   font-weight: 500;
 }
 
-/* Week Cards */
+/* ==================== WEEK CARDS ==================== */
+
 .week-container {
   display: flex;
+
   flex-direction: column;
+
   gap: 10px;
 }
 
 .week-card {
   padding: 12px;
+
   border-radius: 10px;
+
   cursor: pointer;
+
   display: flex;
+
   justify-content: space-between;
+
   align-items: center;
+
   background: #111827;
+
   transition: all 0.2s;
 }
 
@@ -358,7 +592,8 @@
   background: #2563eb;
 }
 
-/* Scrollbar */
+/* ==================== SCROLLBAR ==================== */
+
 .left-panel::-webkit-scrollbar,
 .center-panel::-webkit-scrollbar,
 .right-panel::-webkit-scrollbar {
@@ -369,5 +604,207 @@
 .center-panel::-webkit-scrollbar-thumb,
 .right-panel::-webkit-scrollbar-thumb {
   background: #334155;
+
   border-radius: 10px;
+}
+
+/* ==================== TABLET ==================== */
+
+@media (max-width: 1100px) {
+
+  .left-panel {
+    width: 260px;
+    min-width: 260px;
+  }
+
+  .right-panel {
+    width: 300px;
+    min-width: 300px;
+  }
+}
+
+/* ==================== MOBILE ==================== */
+
+@media (max-width: 760px) {
+
+  /* ==================== TOGGLES ==================== */
+
+  .left-toggle,
+  .right-toggle {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    position: fixed;
+
+    top: 14px;
+
+    width: 42px;
+
+    height: 42px;
+
+    border: none;
+
+    border-radius: 12px;
+
+    background:
+      rgba(37,99,235,0.95);
+
+    color: white;
+
+    font-size: 18px;
+
+    cursor: pointer;
+
+    z-index: 300;
+
+    backdrop-filter: blur(10px);
+  }
+
+  .left-toggle {
+    left: 12px;
+  }
+
+  .right-toggle {
+    right: 12px;
+  }
+
+  /* ==================== OVERLAY ==================== */
+
+  .overlay {
+    display: block;
+
+    position: fixed;
+
+    inset: 0;
+
+    background:
+      rgba(0,0,0,0.45);
+
+    z-index: 150;
+  }
+
+  /* ==================== LEFT PANEL ==================== */
+
+  .left-panel {
+    position: fixed;
+
+    top: 0;
+    left: 0;
+
+    width: 280px;
+
+    max-width: 85vw;
+
+    height: 100dvh;
+
+    z-index: 220;
+
+    border-radius: 0;
+
+    transform: translateX(-100%);
+
+    transition:
+      transform 0.28s ease;
+  }
+
+  .left-panel.open {
+    transform: translateX(0);
+  }
+
+  /* ==================== RIGHT PANEL ==================== */
+
+  .right-panel {
+    position: fixed;
+
+    top: 0;
+    right: 0;
+
+    width: 300px;
+
+    max-width: 88vw;
+
+    height: 100dvh;
+
+    z-index: 220;
+
+    border-radius: 0;
+
+    transform: translateX(100%);
+
+    transition:
+      transform 0.28s ease;
+  }
+
+  .right-panel.open {
+    transform: translateX(0);
+  }
+
+  /* ==================== CENTER ==================== */
+
+  .center-panel {
+    width: 100%;
+
+    padding-top: 70px;
+  }
+
+  /* ==================== HEADER ==================== */
+
+  .header {
+    padding:
+      16px 60px;
+  }
+
+  .header h1 {
+    font-size: 1.3rem;
+  }
+
+  .header p {
+    font-size: 0.9rem;
+  }
+
+  .back-btn {
+    display: none;
+  }
+
+  /* ==================== EVENT ==================== */
+
+  .event-card {
+    flex-direction: column;
+
+    gap: 12px;
+  }
+
+  .delete-btn {
+    width: 100%;
+  }
+}
+
+/* ==================== SMALL MOBILE ==================== */
+
+@media (max-width: 420px) {
+
+  .left-panel {
+    width: 240px;
+  }
+
+  .right-panel {
+    width: 240px;
+  }
+
+  .day-cell {
+    height: 40px;
+
+    font-size: 0.85rem;
+  }
+
+  .selected-date {
+    font-size: 0.95rem;
+  }
+
+  .event-card {
+    padding: 12px;
+  }
 }
