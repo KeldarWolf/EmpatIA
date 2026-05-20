@@ -1,606 +1,911 @@
-/* ====================== Rutina.css ====================== */
+/* =========================================
+   GLOBAL
+========================================= */
 
-*{
-  box-sizing:border-box;
+* {
+  box-sizing: border-box;
 }
-  
+
 html,
 body,
-#root{
-  margin:0;
-  width:100%;
-  height:100%;
-  overflow:hidden;
-}
- 
-body{
-  background:#020617;
-  font-family:Arial,sans-serif;
+#root {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
 }
 
-/* ====================== PAGE ====================== */
+body {
+  background: #020617;
+  color: white;
+}
 
-.page{
-  width:100%;
-  height:100dvh;
+/* =========================================
+   PAGE
+========================================= */
+
+.page {
+  width: 100%;
+  height: 100dvh;
+
+  display: flex;
+  flex-direction: column;
 
   background:
     linear-gradient(
       180deg,
       #020617 0%,
-      #0f172a 100%
+      #081028 100%
     );
 
-  color:white;
-
-  display:flex;
-  flex-direction:column;
-
-  overflow:hidden;
+  overflow: hidden;
+  position: relative;
 }
 
-/* ====================== HEADER ====================== */
+/* =========================================
+   HEADER
+========================================= */
 
-.header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
+.header {
 
-  padding:20px 25px;
+  display: flex;
 
-  border-bottom:1px solid #1e293b;
+  justify-content: space-between;
+
+  align-items: center;
+
+  padding: 26px 30px;
+
+  border-bottom:
+    1px solid rgba(255,255,255,0.08);
 
   background:
-    rgba(15,23,42,0.95);
+    rgba(2,6,23,0.95);
 
-  backdrop-filter:blur(10px);
+  backdrop-filter: blur(10px);
 
-  z-index:50;
+  z-index: 50;
 }
 
-.header h1{
-  margin:0;
-  font-size:1.9rem;
-  font-weight:700;
+.header h1 {
+  margin: 0;
+  font-size: 2.3rem;
+  font-weight: 700;
 }
 
-.header p{
-  margin-top:5px;
-  opacity:0.7;
-  font-size:0.95rem;
+.header p {
+  margin-top: 8px;
+  opacity: 0.7;
+  font-size: 1rem;
 }
 
-.back-btn{
-  border:none;
+.back-btn {
 
-  background:#1e293b;
+  border: none;
 
-  color:white;
+  background: #172036;
 
-  padding:12px 18px;
+  color: white;
 
-  border-radius:12px;
+  padding: 14px 22px;
 
-  cursor:pointer;
+  border-radius: 14px;
 
-  transition:0.2s;
+  cursor: pointer;
 
-  font-weight:bold;
+  font-size: 1rem;
+
+  transition: 0.2s;
 }
 
-.back-btn:hover{
-  background:#334155;
-  transform:translateY(-2px);
+.back-btn:hover {
+  background: #24314f;
 }
 
-/* ====================== LAYOUT ====================== */
+/* =========================================
+   MOBILE BUTTONS
+========================================= */
 
-.layout{
-  flex:1;
+.mobile-left-btn,
+.mobile-right-btn {
 
-  display:flex;
+  position: fixed;
 
-  gap:18px;
+  top: 16px;
 
-  padding:18px;
+  width: 46px;
+  height: 46px;
 
-  overflow:hidden;
+  border: none;
+
+  border-radius: 14px;
+
+  background: #2563eb;
+
+  color: white;
+
+  z-index: 999;
+
+  display: none;
+
+  justify-content: center;
+  align-items: center;
+
+  font-size: 1.2rem;
+
+  cursor: pointer;
 }
 
-/* ====================== PANELS ====================== */
+.mobile-left-btn {
+  left: 12px;
+}
+
+.mobile-right-btn {
+  right: 12px;
+}
+
+/* =========================================
+   OVERLAY
+========================================= */
+
+.overlay {
+
+  position: fixed;
+
+  inset: 0;
+
+  background:
+    rgba(0,0,0,0.55);
+
+  z-index: 500;
+}
+
+/* =========================================
+   LAYOUT
+========================================= */
+
+.layout {
+
+  flex: 1;
+
+  display: flex;
+
+  gap: 18px;
+
+  padding: 18px;
+
+  overflow: hidden;
+}
+
+/* =========================================
+   PANELS
+========================================= */
 
 .left-panel,
 .center-panel,
-.right-panel{
+.right-panel {
+
   background:
-    rgba(15,23,42,0.95);
+    linear-gradient(
+      180deg,
+      #08112b 0%,
+      #091633 100%
+    );
 
-  border:1px solid #1e293b;
+  border-radius: 24px;
 
-  border-radius:20px;
+  border:
+    1px solid rgba(255,255,255,0.05);
 
-  box-shadow:
-    0 10px 30px rgba(0,0,0,0.35);
-}
-
-/* ====================== LEFT ====================== */
-
-.left-panel{
-  width:330px;
-  min-width:330px;
-
-  padding:22px;
-
-  overflow-y:auto;
-}
-
-.left-panel h3{
-  margin-top:0;
-  margin-bottom:16px;
-
-  color:#c4b5fd;
-}
-
-/* ====================== ACTIVITY CARD ====================== */
-
-.activity-card{
-  background:#111827;
-
-  border:2px solid transparent;
-
-  border-radius:14px;
-
-  padding:14px;
-
-  margin-bottom:12px;
-
-  cursor:pointer;
-
-  transition:0.2s;
-}
-
-.activity-card:hover{
-  background:#1e293b;
-  transform:translateY(-2px);
-}
-
-.activity-card.selected{
-  border-color:#22c55e;
-  background:#052e16;
-}
-
-.activity-card strong{
-  display:block;
-  margin-bottom:5px;
-}
-
-.activity-card p{
-  margin:0;
-  opacity:0.75;
-}
-
-/* ====================== INPUTS ====================== */
-
-.left-panel input,
-.left-panel textarea{
-  width:100%;
-
-  border:none;
-
-  outline:none;
-
-  background:#111827;
-
-  color:white;
-
-  padding:13px 14px;
-
-  border-radius:12px;
-
-  margin-bottom:15px;
-
-  font-size:0.95rem;
-
-  transition:0.2s;
-}
-
-.left-panel textarea{
-  min-height:90px;
-  resize:none;
-}
-
-.left-panel input:focus,
-.left-panel textarea:focus{
-  border-color:#3b82f6;
+  overflow-y: auto;
 
   box-shadow:
-    0 0 0 2px rgba(59,130,246,0.35);
+    0 10px 40px rgba(0,0,0,0.25);
 }
 
-.left-panel label{
-  display:block;
-  margin-bottom:8px;
-  opacity:0.8;
+/* =========================================
+   LEFT PANEL
+========================================= */
+
+.left-panel {
+
+  width: 340px;
+  min-width: 340px;
+
+  padding: 24px;
 }
 
-/* ====================== BUTTON ====================== */
+.left-panel h3 {
 
-.left-panel button{
-  width:100%;
+  margin-top: 0;
 
-  border:none;
+  margin-bottom: 18px;
+
+  color: #8ea7ff;
+}
+
+/* =========================================
+   ACTIVITY CARD
+========================================= */
+
+.activity-card {
+
+  background:
+    linear-gradient(
+      145deg,
+      #0c1738,
+      #0a132c
+    );
+
+  padding: 18px;
+
+  border-radius: 18px;
+
+  margin-bottom: 14px;
+
+  cursor: pointer;
+
+  border:
+    2px solid transparent;
+
+  transition: 0.2s;
+}
+
+.activity-card:hover {
+
+  transform:
+    translateY(-2px);
+
+  border-color:
+    rgba(59,130,246,0.45);
+}
+
+.activity-card.selected {
+
+  border-color: #22c55e;
+
+  background:
+    linear-gradient(
+      145deg,
+      #123120,
+      #0d2417
+    );
+}
+
+.activity-card strong {
+  font-size: 1rem;
+}
+
+.activity-card p {
+  opacity: 0.8;
+}
+
+/* =========================================
+   INPUTS
+========================================= */
+
+.input,
+textarea,
+input[type="text"],
+input[type="time"],
+input[type="number"] {
+
+  width: 100%;
+
+  border: none;
+
+  outline: none;
+
+  background: #111c3f;
+
+  color: white;
+
+  padding: 14px;
+
+  border-radius: 14px;
+
+  margin-top: 8px;
+
+  margin-bottom: 16px;
+
+  font-size: 0.95rem;
+}
+
+textarea {
+  resize: none;
+}
+
+/* =========================================
+   TIME ROW
+========================================= */
+
+.time-row {
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, 1fr);
+
+  gap: 14px;
+}
+
+/* =========================================
+   CREATE BTN
+========================================= */
+
+.create-btn {
+
+  width: 100%;
+
+  border: none;
 
   background:
     linear-gradient(
       135deg,
-      #06b6d4,
-      #2563eb
+      #2563eb,
+      #1d4ed8
     );
 
-  color:white;
+  color: white;
 
-  padding:15px;
+  padding: 16px;
 
-  border-radius:14px;
+  border-radius: 16px;
 
-  font-weight:bold;
+  font-size: 1rem;
 
-  cursor:pointer;
+  font-weight: bold;
 
-  transition:0.25s;
+  cursor: pointer;
+
+  transition: 0.2s;
 }
 
-.left-panel button:hover{
-  transform:translateY(-2px);
+.create-btn:hover {
 
-  opacity:0.92;
+  transform:
+    translateY(-2px);
+
+  opacity: 0.95;
 }
 
-/* ====================== CENTER ====================== */
+/* =========================================
+   CENTER PANEL
+========================================= */
 
-.center-panel{
-  flex:1;
+.center-panel {
 
-  padding:24px;
+  flex: 1;
 
-  overflow-y:auto;
+  padding: 30px;
+
+  min-width: 0;
 }
 
-.center-panel h2{
-  margin-top:0;
-  margin-bottom:20px;
+/* =========================================
+   PLANNER
+========================================= */
+
+.planner-header {
+  margin-bottom: 30px;
 }
 
-/* ====================== EMPTY ====================== */
+.planner-header h2 {
 
-.empty-events{
-  width:100%;
+  margin: 0;
 
-  min-height:300px;
-
-  display:flex;
-  justify-content:center;
-  align-items:center;
-
-  opacity:0.6;
-
-  text-align:center;
+  font-size: 2rem;
 }
 
-/* ====================== EVENT CARD ====================== */
+.planner-date {
 
-.event-card{
-  background:#111827;
+  margin-top: 12px;
 
-  border-left:6px solid #3b82f6;
+  opacity: 0.7;
 
-  border-radius:16px;
-
-  padding:18px;
-
-  margin-bottom:16px;
-
-  display:flex;
-  align-items:flex-start;
-  gap:16px;
-
-  transition:0.2s;
+  text-transform: capitalize;
 }
 
-.event-card:hover{
-  transform:translateY(-2px);
+/* =========================================
+   EMPTY
+========================================= */
+
+.empty-planner {
+
+  background: #0d1735;
+
+  border-radius: 24px;
+
+  padding: 70px 30px;
+
+  text-align: center;
+
+  opacity: 0.75;
 }
 
-.event-card.completed{
-  opacity:0.6;
+/* =========================================
+   EVENTS
+========================================= */
 
-  border-left-color:#22c55e;
+.planner-events {
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 18px;
 }
 
-.event-info{
-  flex:1;
+/* =========================================
+   EVENT CARD
+========================================= */
+
+.planner-card {
+
+  background:
+    linear-gradient(
+      145deg,
+      #0c1738,
+      #09122b
+    );
+
+  border-radius: 24px;
+
+  padding: 24px;
+
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: flex-start;
+
+  border-left:
+    6px solid #2563eb;
+
+  transition: 0.25s;
 }
 
-.event-info h4{
-  margin:0 0 8px;
-  font-size:1.1rem;
+.planner-card:hover {
+
+  transform:
+    translateY(-2px);
 }
 
-.event-info p{
-  margin:5px 0;
-  opacity:0.8;
+.planner-card.completed {
+
+  opacity: 0.65;
+
+  border-left-color:
+    #22c55e;
 }
 
-.event-card input[type="checkbox"]{
-  width:22px;
-  height:22px;
-  cursor:pointer;
-  margin-top:5px;
+/* =========================================
+   LEFT EVENT
+========================================= */
+
+.planner-left {
+
+  display: flex;
+
+  gap: 18px;
+
+  flex: 1;
 }
 
-.delete-btn{
-  border:none;
+.planner-checkbox {
 
-  background:#ef4444;
+  width: 24px;
+  height: 24px;
 
-  color:white;
+  cursor: pointer;
 
-  padding:10px 12px;
-
-  border-radius:10px;
-
-  cursor:pointer;
-
-  transition:0.2s;
+  margin-top: 4px;
 }
 
-.delete-btn:hover{
-  background:#dc2626;
+.planner-info h3 {
+
+  margin: 0;
+
+  font-size: 1.4rem;
 }
 
-/* ====================== RIGHT PANEL ====================== */
+.planner-time {
 
-.right-panel{
-  width:350px;
-  min-width:350px;
+  margin-top: 12px;
 
-  padding:22px;
-
-  overflow-y:auto;
+  opacity: 0.85;
 }
 
-.right-panel h3{
-  margin-top:0;
+.planner-duration {
+
+  margin-top: 10px;
+
+  opacity: 0.75;
 }
 
-/* ====================== MONTH NAV ====================== */
+.planner-description {
 
-.month-nav{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
+  margin-top: 18px;
 
-  margin-bottom:20px;
+  line-height: 1.5;
+
+  opacity: 0.85;
 }
 
-.month-nav h4{
-  margin:0;
+/* =========================================
+   DELETE BTN
+========================================= */
+
+.planner-delete {
+
+  border: none;
+
+  width: 48px;
+  height: 48px;
+
+  border-radius: 16px;
+
+  background: #ef4444;
+
+  color: white;
+
+  cursor: pointer;
+
+  font-size: 1rem;
+
+  transition: 0.2s;
 }
 
-.month-nav button{
-  width:38px;
-  height:38px;
-
-  border:none;
-
-  border-radius:10px;
-
-  background:#1e293b;
-
-  color:white;
-
-  cursor:pointer;
-
-  transition:0.2s;
+.planner-delete:hover {
+  background: #dc2626;
 }
 
-.month-nav button:hover{
-  background:#334155;
+/* =========================================
+   RIGHT PANEL
+========================================= */
+
+.right-panel {
+
+  width: 360px;
+  min-width: 360px;
+
+  padding: 24px;
 }
 
-/* ====================== CALENDAR ====================== */
+/* =========================================
+   CALENDAR
+========================================= */
 
-.calendar-grid{
-  display:grid;
+.calendar-top {
+
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  margin-bottom: 24px;
+}
+
+.calendar-top h3 {
+  margin: 0;
+}
+
+.calendar-nav {
+
+  display: flex;
+
+  gap: 10px;
+}
+
+.calendar-nav button {
+
+  width: 38px;
+  height: 38px;
+
+  border: none;
+
+  border-radius: 12px;
+
+  background: #111c3f;
+
+  color: white;
+
+  cursor: pointer;
+}
+
+.calendar-container h2 {
+
+  text-align: center;
+
+  margin-bottom: 28px;
+}
+
+/* =========================================
+   WEEKDAYS
+========================================= */
+
+.weekdays {
+
+  display: grid;
 
   grid-template-columns:
-    repeat(7,1fr);
+    repeat(7, 1fr);
 
-  gap:8px;
+  gap: 10px;
+
+  margin-bottom: 14px;
 }
 
-.calendar-header{
-  text-align:center;
+.weekdays div {
 
-  font-weight:bold;
+  text-align: center;
 
-  padding:10px 0;
+  opacity: 0.65;
 
-  opacity:0.7;
+  font-size: 0.9rem;
 }
 
-.calendar-day{
-  min-height:70px;
+/* =========================================
+   CALENDAR GRID
+========================================= */
 
-  background:#111827;
+.calendar-grid {
 
-  border-radius:14px;
+  display: grid;
 
-  display:flex;
-  justify-content:center;
-  align-items:center;
+  grid-template-columns:
+    repeat(7, 1fr);
 
-  position:relative;
-
-  cursor:pointer;
-
-  transition:0.2s;
-
-  font-weight:600;
+  gap: 10px;
 }
 
-.calendar-day:hover{
-  background:#1e293b;
+/* =========================================
+   CALENDAR DAY
+========================================= */
+
+.calendar-day {
+
+  height: 64px;
+
+  border-radius: 18px;
+
+  background: #0f1b3d;
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: center;
+
+  align-items: center;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+
+  position: relative;
 }
 
-.calendar-day.selected-day{
-  border:2px solid #06b6d4;
+.calendar-day:hover {
 
-  background:#082f49;
+  background: #17264f;
+
+  transform: translateY(-2px);
 }
 
-.calendar-day.has-events{
-  background:#064e3b;
+.calendar-day.selected {
+
+  background:
+    linear-gradient(
+      135deg,
+      #2563eb,
+      #3b82f6
+    );
+
+  font-weight: bold;
 }
 
-.calendar-day.empty{
-  background:transparent;
-  cursor:default;
+.calendar-day.today {
+
+  border:
+    2px solid #22c55e;
 }
 
-.dot{
-  width:8px;
-  height:8px;
+.calendar-day.empty {
 
-  border-radius:50%;
+  background: transparent;
 
-  background:white;
-
-  position:absolute;
-
-  bottom:8px;
+  cursor: default;
 }
 
-/* ====================== SCROLL ====================== */
+/* =========================================
+   EVENT DOT
+========================================= */
+
+.event-dot {
+
+  width: 8px;
+  height: 8px;
+
+  border-radius: 999px;
+
+  background: #22c55e;
+
+  position: absolute;
+
+  bottom: 8px;
+}
+
+/* =========================================
+   SCROLLBAR
+========================================= */
 
 .left-panel::-webkit-scrollbar,
 .center-panel::-webkit-scrollbar,
-.right-panel::-webkit-scrollbar{
-  width:6px;
+.right-panel::-webkit-scrollbar {
+
+  width: 6px;
 }
 
 .left-panel::-webkit-scrollbar-thumb,
 .center-panel::-webkit-scrollbar-thumb,
-.right-panel::-webkit-scrollbar-thumb{
-  background:#334155;
-  border-radius:20px;
+.right-panel::-webkit-scrollbar-thumb {
+
+  background: #334155;
+
+  border-radius: 999px;
 }
 
-/* ====================== TABLET ====================== */
+/* =========================================
+   TABLET
+========================================= */
 
-@media(max-width:1100px){
+@media (max-width: 1200px) {
 
-  .left-panel{
-    width:280px;
-    min-width:280px;
+  .left-panel {
+    width: 300px;
+    min-width: 300px;
   }
 
-  .right-panel{
-    width:300px;
-    min-width:300px;
+  .right-panel {
+    width: 320px;
+    min-width: 320px;
   }
-
 }
 
-/* ====================== MOBILE ====================== */
+/* =========================================
+   MOBILE
+========================================= */
 
-@media(max-width:760px){
+@media (max-width: 900px) {
 
-  html,
-  body,
-  #root{
-    overflow:auto;
+  .mobile-left-btn,
+  .mobile-right-btn {
+    display: flex;
   }
 
-  .page{
-    height:auto;
-    min-height:100dvh;
+  .header {
+
+    padding:
+      18px 70px;
   }
 
-  .layout{
-    flex-direction:column;
-    overflow:visible;
+  .header h1 {
+    font-size: 1.5rem;
+  }
+
+  .back-btn {
+    display: none;
+  }
+
+  .layout {
+    padding: 12px;
+  }
+
+  /* LEFT */
+
+  .left-panel {
+
+    position: fixed;
+
+    top: 0;
+    left: 0;
+
+    height: 100dvh;
+
+    width: 300px;
+
+    z-index: 700;
+
+    border-radius: 0;
+
+    transform:
+      translateX(-105%);
+
+    transition: 0.25s;
+  }
+
+  .left-panel.open {
+    transform: translateX(0);
+  }
+
+  /* RIGHT */
+
+  .right-panel {
+
+    position: fixed;
+
+    top: 0;
+    right: 0;
+
+    height: 100dvh;
+
+    width: 300px;
+
+    z-index: 700;
+
+    border-radius: 0;
+
+    transform:
+      translateX(105%);
+
+    transition: 0.25s;
+  }
+
+  .right-panel.open {
+    transform: translateX(0);
+  }
+
+  /* CENTER */
+
+  .center-panel {
+
+    width: 100%;
+
+    padding-top: 70px;
+  }
+
+  /* EVENTS */
+
+  .planner-card {
+
+    flex-direction: column;
+
+    gap: 18px;
+  }
+
+  .planner-delete {
+    width: 100%;
+  }
+}
+
+/* =========================================
+   SMALL MOBILE
+========================================= */
+
+@media (max-width: 480px) {
+
+  .header h1 {
+    font-size: 1.2rem;
+  }
+
+  .planner-header h2 {
+    font-size: 1.4rem;
+  }
+
+  .calendar-day {
+    height: 52px;
+    font-size: 0.85rem;
   }
 
   .left-panel,
-  .right-panel,
-  .center-panel{
-    width:100%;
-    min-width:100%;
+  .right-panel {
+    width: 260px;
   }
 
-  .left-panel,
-  .right-panel{
-    overflow:visible;
+  .time-row {
+    grid-template-columns: 1fr;
   }
-
-  .header{
-    flex-direction:column;
-    gap:15px;
-
-    text-align:center;
-  }
-
-  .header h1{
-    font-size:1.4rem;
-  }
-
-  .event-card{
-    flex-direction:column;
-  }
-
-  .delete-btn{
-    width:100%;
-  }
-
-  .calendar-day{
-    min-height:55px;
-    font-size:0.9rem;
-  }
-
-}
-
-/* ====================== SMALL MOBILE ====================== */
-
-@media(max-width:420px){
-
-  .layout{
-    padding:10px;
-    gap:12px;
-  }
-
-  .left-panel,
-  .center-panel,
-  .right-panel{
-    padding:16px;
-  }
-
-  .calendar-grid{
-    gap:5px;
-  }
-
-  .calendar-day{
-    min-height:48px;
-    border-radius:10px;
-    font-size:0.82rem;
-  }
-
-  .header{
-    padding:15px;
-  }
-
-  .header h1{
-    font-size:1.2rem;
-  }
-
 }
