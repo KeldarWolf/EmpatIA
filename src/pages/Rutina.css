@@ -15,43 +15,52 @@ body,
 
 .page {
   height: 100dvh;
-
-  background:
-    linear-gradient(
-      180deg,
-      #0b0f14 0%,
-      #020617 100%
-    );
-
+  background: #0b0f14;
   color: white;
-
   display: flex;
-
   flex-direction: column;
-
   font-family: Arial, sans-serif;
-
   overflow: hidden;
-
   position: relative;
 }
 
-/* ==================== LOADING ==================== */
+/* ==================== HEADER ==================== */
 
-.loading {
-  height: 100dvh;
-
+.header {
   display: flex;
-
-  justify-content: center;
-
+  justify-content: space-between;
   align-items: center;
 
-  background: #0b0f14;
+  padding: 20px;
 
+  border-bottom: 1px solid #1f2937;
+
+  background: #0f172a;
+
+  z-index: 20;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.header p {
+  margin: 5px 0 0;
+  opacity: 0.7;
+}
+
+.back-btn {
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: none;
+  background: #1f2937;
   color: white;
+  cursor: pointer;
+}
 
-  font-size: 1.3rem;
+.back-btn:hover {
+  background: #374151;
 }
 
 /* ==================== MOBILE BUTTONS ==================== */
@@ -67,73 +76,13 @@ body,
   display: none;
 }
 
-/* ==================== HEADER ==================== */
-
-.header {
-  display: flex;
-
-  justify-content: space-between;
-
-  align-items: center;
-
-  padding: 20px;
-
-  border-bottom:
-    1px solid #1f2937;
-
-  background:
-    rgba(15,23,42,0.82);
-
-  backdrop-filter: blur(12px);
-
-  z-index: 20;
-}
-
-.header h1 {
-  margin: 0;
-
-  font-size: 1.8rem;
-}
-
-.header p {
-  margin: 5px 0 0 0;
-
-  opacity: 0.7;
-}
-
-.back-btn {
-  padding: 10px 18px;
-
-  border-radius: 10px;
-
-  border: none;
-
-  background: #1f2937;
-
-  color: white;
-
-  cursor: pointer;
-
-  font-size: 1rem;
-
-  transition: 0.2s;
-}
-
-.back-btn:hover {
-  background: #374151;
-}
-
 /* ==================== LAYOUT ==================== */
 
 .layout {
   flex: 1;
-
   display: flex;
-
   gap: 15px;
-
   padding: 15px;
-
   overflow: hidden;
 }
 
@@ -141,13 +90,9 @@ body,
 
 .left-panel {
   width: 320px;
-
   min-width: 320px;
 
-  background:
-    rgba(15,23,42,0.92);
-
-  backdrop-filter: blur(12px);
+  background: #0f172a;
 
   padding: 20px;
 
@@ -155,19 +100,16 @@ body,
 
   overflow-y: auto;
 
-  border:
-    1px solid rgba(255,255,255,0.04);
-
-  transition: 0.28s ease;
+  transition:
+    transform 0.28s ease;
 }
 
 .left-panel h3 {
-  margin: 0 0 15px 0;
-
+  margin: 0 0 15px;
   color: #a5b4fc;
 }
 
-/* ==================== ACTIVITY CARD ==================== */
+/* ==================== CARDS ==================== */
 
 .activity-card {
   background: #111827;
@@ -180,21 +122,17 @@ body,
 
   cursor: pointer;
 
-  border:
-    2px solid transparent;
+  border: 2px solid transparent;
 
-  transition: all 0.2s ease;
+  transition: 0.2s;
 }
 
 .activity-card:hover {
   background: #1e2937;
-
-  transform: translateY(-2px);
 }
 
 .activity-card.selected {
   border-color: #22c55e;
-
   background: #052e16;
 }
 
@@ -202,10 +140,7 @@ body,
 
 .divider {
   border: none;
-
-  border-top:
-    1px solid #1f2937;
-
+  border-top: 1px solid #1f2937;
   margin: 20px 0;
 }
 
@@ -228,14 +163,11 @@ body,
   background: #111827;
 
   color: white;
-
-  font-size: 1rem;
 }
 
 .input:focus,
 .select:focus {
-  outline:
-    2px solid #6366f1;
+  outline: 2px solid #6366f1;
 }
 
 /* ==================== CREATE BTN ==================== */
@@ -255,42 +187,32 @@ body,
 
   font-weight: bold;
 
-  font-size: 1.1rem;
-
   cursor: pointer;
 
-  margin-top: 10px;
-
-  transition: all 0.2s;
+  transition: 0.2s;
 }
 
 .create-btn:hover {
   background: #16a34a;
-
-  transform: scale(1.02);
 }
 
-/* ==================== CENTER PANEL ==================== */
+/* ==================== CENTER ==================== */
 
 .center-panel {
   flex: 1;
 
   min-width: 0;
 
-  background:
-    rgba(15,23,42,0.92);
-
-  backdrop-filter: blur(12px);
+  background: #0f172a;
 
   padding: 20px;
 
   border-radius: 12px;
 
   overflow-y: auto;
-
-  border:
-    1px solid rgba(255,255,255,0.04);
 }
+
+/* ==================== EVENTS ==================== */
 
 .selected-date {
   background: #111827;
@@ -299,26 +221,16 @@ body,
 
   border-radius: 10px;
 
-  margin: 15px 0 20px 0;
+  margin-bottom: 20px;
 
   font-weight: bold;
-
-  font-size: 1.1rem;
 }
 
 .empty {
   padding: 60px 20px;
-
   text-align: center;
-
   opacity: 0.6;
 }
-
-.empty h3 {
-  margin-bottom: 10px;
-}
-
-/* ==================== EVENT CARD ==================== */
 
 .event-card {
   background: #111827;
@@ -335,73 +247,31 @@ body,
 
   align-items: flex-start;
 
-  border-left:
-    6px solid #2563eb;
-
-  transition: all 0.2s;
+  border-left: 6px solid #2563eb;
 }
 
 .event-card.completed {
   opacity: 0.65;
-
   border-left-color: #22c55e;
 }
 
 .event-left {
   display: flex;
-
   gap: 12px;
-
   flex: 1;
 }
 
 .checkbox {
-  width: 24px;
-
-  height: 24px;
-
-  margin-top: 4px;
-
-  accent-color: #22c55e;
-
+  width: 22px;
+  height: 22px;
+  margin-top: 3px;
   cursor: pointer;
-}
-
-.event-time {
-  margin: 6px 0;
-
-  opacity: 0.85;
-}
-
-.event-duration {
-  opacity: 0.7;
-
-  font-size: 0.95rem;
 }
 
 .event-description {
   margin-top: 10px;
-
-  line-height: 1.5;
-
   opacity: 0.8;
 }
-
-.repeat-badge {
-  margin-top: 10px;
-
-  background: #1e293b;
-
-  display: inline-block;
-
-  padding: 5px 10px;
-
-  border-radius: 20px;
-
-  font-size: 0.85rem;
-}
-
-/* ==================== DELETE BTN ==================== */
 
 .delete-btn {
   background: #ef4444;
@@ -415,10 +285,6 @@ body,
   border-radius: 8px;
 
   cursor: pointer;
-
-  font-size: 1.1rem;
-
-  transition: 0.2s;
 }
 
 .delete-btn:hover {
@@ -428,14 +294,11 @@ body,
 /* ==================== RIGHT PANEL ==================== */
 
 .right-panel {
-  width: 360px;
+  width: 340px;
 
-  min-width: 360px;
+  min-width: 340px;
 
-  background:
-    rgba(15,23,42,0.92);
-
-  backdrop-filter: blur(12px);
+  background: #0f172a;
 
   padding: 20px;
 
@@ -443,43 +306,19 @@ body,
 
   overflow-y: auto;
 
-  border:
-    1px solid rgba(255,255,255,0.04);
-
-  transition: 0.28s ease;
+  transition:
+    transform 0.28s ease;
 }
 
 /* ==================== CALENDAR ==================== */
 
 .calendar-header {
   display: flex;
-
   gap: 10px;
-
   margin-bottom: 15px;
 }
 
-.week-header {
-  display: grid;
-
-  grid-template-columns:
-    repeat(7, 1fr);
-
-  gap: 5px;
-
-  margin-bottom: 10px;
-
-  text-align: center;
-}
-
-.week-day {
-  font-size: 0.9rem;
-
-  opacity: 0.7;
-
-  padding: 5px 0;
-}
-
+.week-header,
 .week-row {
   display: grid;
 
@@ -487,12 +326,19 @@ body,
     repeat(7, 1fr);
 
   gap: 5px;
+}
 
-  margin-bottom: 5px;
+.week-header {
+  margin-bottom: 10px;
+}
+
+.week-day {
+  text-align: center;
+  opacity: 0.7;
 }
 
 .day-cell {
-  height: 48px;
+  height: 46px;
 
   display: flex;
 
@@ -504,11 +350,9 @@ body,
 
   cursor: pointer;
 
-  user-select: none;
-
   background: #111827;
 
-  transition: all 0.2s;
+  transition: 0.2s;
 }
 
 .day-cell:hover {
@@ -516,83 +360,16 @@ body,
 }
 
 .day-cell.active {
-  background:
-    #2563eb !important;
-
-  font-weight: bold;
+  background: #2563eb;
 }
 
 .day-cell.selected {
   background: #22c55e;
-
   color: black;
-
   font-weight: bold;
 }
 
-/* ==================== SELECTED DAYS ==================== */
-
-.selected-container {
-  display: flex;
-
-  flex-wrap: wrap;
-
-  gap: 8px;
-
-  margin-top: 10px;
-}
-
-.selected-day {
-  background: #22c55e;
-
-  color: black;
-
-  padding: 6px 12px;
-
-  border-radius: 20px;
-
-  font-size: 0.85rem;
-
-  font-weight: 500;
-}
-
-/* ==================== WEEK CARDS ==================== */
-
-.week-container {
-  display: flex;
-
-  flex-direction: column;
-
-  gap: 10px;
-}
-
-.week-card {
-  padding: 12px;
-
-  border-radius: 10px;
-
-  cursor: pointer;
-
-  display: flex;
-
-  justify-content: space-between;
-
-  align-items: center;
-
-  background: #111827;
-
-  transition: all 0.2s;
-}
-
-.week-card:hover {
-  background: #1e2937;
-}
-
-.week-card.active {
-  background: #2563eb;
-}
-
-/* ==================== SCROLLBAR ==================== */
+/* ==================== SCROLL ==================== */
 
 .left-panel::-webkit-scrollbar,
 .center-panel::-webkit-scrollbar,
@@ -604,7 +381,6 @@ body,
 .center-panel::-webkit-scrollbar-thumb,
 .right-panel::-webkit-scrollbar-thumb {
   background: #334155;
-
   border-radius: 10px;
 }
 
@@ -613,13 +389,13 @@ body,
 @media (max-width: 1100px) {
 
   .left-panel {
-    width: 260px;
-    min-width: 260px;
+    width: 250px;
+    min-width: 250px;
   }
 
   .right-panel {
-    width: 300px;
-    min-width: 300px;
+    width: 280px;
+    min-width: 280px;
   }
 }
 
@@ -627,40 +403,37 @@ body,
 
 @media (max-width: 760px) {
 
-  /* ==================== TOGGLES ==================== */
+  .layout {
+    padding: 10px;
+  }
+
+  /* BOTONES */
 
   .left-toggle,
   .right-toggle {
     display: flex;
-
-    align-items: center;
-
-    justify-content: center;
 
     position: fixed;
 
     top: 14px;
 
     width: 42px;
-
     height: 42px;
 
     border: none;
 
     border-radius: 12px;
 
-    background:
-      rgba(37,99,235,0.95);
+    background: #2563eb;
 
     color: white;
 
-    font-size: 18px;
+    justify-content: center;
+    align-items: center;
+
+    z-index: 500;
 
     cursor: pointer;
-
-    z-index: 300;
-
-    backdrop-filter: blur(10px);
   }
 
   .left-toggle {
@@ -671,7 +444,7 @@ body,
     right: 12px;
   }
 
-  /* ==================== OVERLAY ==================== */
+  /* OVERLAY */
 
   .overlay {
     display: block;
@@ -683,10 +456,10 @@ body,
     background:
       rgba(0,0,0,0.45);
 
-    z-index: 150;
+    z-index: 200;
   }
 
-  /* ==================== LEFT PANEL ==================== */
+  /* LEFT PANEL */
 
   .left-panel {
     position: fixed;
@@ -694,27 +467,31 @@ body,
     top: 0;
     left: 0;
 
+    height: 100dvh;
+
     width: 280px;
 
     max-width: 85vw;
 
-    height: 100dvh;
-
-    z-index: 220;
-
     border-radius: 0;
 
-    transform: translateX(-100%);
+    z-index: 400;
 
-    transition:
-      transform 0.28s ease;
+    transform:
+      translateX(-100%);
+
+    /* IMPORTANTE */
+    pointer-events: none;
   }
 
   .left-panel.open {
-    transform: translateX(0);
+    transform:
+      translateX(0);
+
+    pointer-events: auto;
   }
 
-  /* ==================== RIGHT PANEL ==================== */
+  /* RIGHT PANEL */
 
   .right-panel {
     position: fixed;
@@ -722,27 +499,31 @@ body,
     top: 0;
     right: 0;
 
-    width: 300px;
-
-    max-width: 88vw;
-
     height: 100dvh;
 
-    z-index: 220;
+    width: 280px;
+
+    max-width: 85vw;
 
     border-radius: 0;
 
-    transform: translateX(100%);
+    z-index: 400;
 
-    transition:
-      transform 0.28s ease;
+    transform:
+      translateX(100%);
+
+    /* IMPORTANTE */
+    pointer-events: none;
   }
 
   .right-panel.open {
-    transform: translateX(0);
+    transform:
+      translateX(0);
+
+    pointer-events: auto;
   }
 
-  /* ==================== CENTER ==================== */
+  /* CENTER */
 
   .center-panel {
     width: 100%;
@@ -750,7 +531,7 @@ body,
     padding-top: 70px;
   }
 
-  /* ==================== HEADER ==================== */
+  /* HEADER */
 
   .header {
     padding:
@@ -758,22 +539,17 @@ body,
   }
 
   .header h1 {
-    font-size: 1.3rem;
-  }
-
-  .header p {
-    font-size: 0.9rem;
+    font-size: 1.2rem;
   }
 
   .back-btn {
     display: none;
   }
 
-  /* ==================== EVENT ==================== */
+  /* EVENTS */
 
   .event-card {
     flex-direction: column;
-
     gap: 12px;
   }
 
@@ -786,25 +562,13 @@ body,
 
 @media (max-width: 420px) {
 
-  .left-panel {
-    width: 240px;
-  }
-
+  .left-panel,
   .right-panel {
     width: 240px;
   }
 
   .day-cell {
     height: 40px;
-
     font-size: 0.85rem;
-  }
-
-  .selected-date {
-    font-size: 0.95rem;
-  }
-
-  .event-card {
-    padding: 12px;
   }
 }
