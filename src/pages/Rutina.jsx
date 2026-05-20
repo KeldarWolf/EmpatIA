@@ -169,27 +169,6 @@ export default function Rutina() {
   for (let i = 0; i < firstDay; i++) days.push(null);
   for (let i = 1; i <= daysInMonth; i++) days.push(i);
 
-  const changeMonth = (dir) => {
-    let newMonth = calendarMonth + dir;
-    let newYear = calendarYear;
-
-    if (newMonth < 0) {
-      newMonth = 11;
-      newYear--;
-    }
-    if (newMonth > 11) {
-      newMonth = 0;
-      newYear++;
-    }
-
-    setCalendarMonth(newMonth);
-    setCalendarYear(newYear);
-  };
-
-  const changeYear = (dir) => {
-    setCalendarYear((p) => p + dir);
-  };
-
   const closeAll = () => {
     setLeftOpen(false);
     setRightOpen(false);
@@ -213,30 +192,24 @@ export default function Rutina() {
         <div className="overlay show" onClick={closeAll} />
       )}
 
-      <button
-        className="mobile-toggle left"
-        onClick={() => {
-          setRightOpen(false);
-          setLeftOpen((v) => !v);
-        }}
-      >
-        🎯
-      </button>
-
-      <button
-        className="mobile-toggle right"
-        onClick={() => {
-          setLeftOpen(false);
-          setRightOpen((v) => !v);
-        }}
-      >
-        📅
-      </button>
-
       <div className="layout">
 
-        {/* LEFT */}
+        {/* LEFT PANEL */}
         <div className={`left-panel ${leftOpen ? "open" : ""}`}>
+
+          <button
+            className="panel-toggle"
+            onClick={() => {
+              setRightOpen(false);
+              setLeftOpen((v) => !v);
+            }}
+          >
+            <span className="icon">🎯</span>
+            <span className="text">
+              {leftOpen ? "Cerrar Actividades" : "Actividades"}
+            </span>
+          </button>
+
           <h3>🎯 Actividades</h3>
 
           {actividades.map((act) => (
@@ -289,8 +262,21 @@ export default function Rutina() {
           )}
         </div>
 
-        {/* RIGHT */}
+        {/* RIGHT PANEL */}
         <div className={`right-panel ${rightOpen ? "open" : ""}`}>
+
+          <button
+            className="panel-toggle"
+            onClick={() => {
+              setLeftOpen(false);
+              setRightOpen((v) => !v);
+            }}
+          >
+            <span className="icon">📅</span>
+            <span className="text">
+              {rightOpen ? "Cerrar Calendario" : "Calendario"}
+            </span>
+          </button>
 
           <div className="calendar-header">
             <div>
