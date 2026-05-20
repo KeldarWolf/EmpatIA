@@ -70,39 +70,7 @@
 }
 
 /* =========================
-   INPUTS / UI
-========================= */
-
-.input {
-  width: 100%;
-  padding: 10px;
-  border-radius: 10px;
-  border: none;
-  margin-bottom: 10px;
-  background: rgba(255, 255, 255, 0.08);
-  color: white;
-  outline: none;
-}
-
-.time-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.create-btn {
-  width: 100%;
-  padding: 12px;
-  border: none;
-  border-radius: 12px;
-  background: #6366f1;
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-/* =========================
-   CARDS
+   ACTIVIDADES
 ========================= */
 
 .activity-card {
@@ -124,6 +92,46 @@
   background: rgba(99, 102, 241, 0.15);
 }
 
+/* =========================
+   INPUTS
+========================= */
+
+.input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  outline: none;
+}
+
+.time-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* =========================
+   CREATE BUTTON
+========================= */
+
+.create-btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  background: #6366f1;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* =========================
+   EVENTOS
+========================= */
+
 .planner-card {
   display: flex;
   justify-content: space-between;
@@ -142,7 +150,7 @@
 }
 
 /* =========================
-   CALENDAR
+   CALENDARIO
 ========================= */
 
 .calendar-header {
@@ -182,14 +190,19 @@
 }
 
 /* =========================
-   OVERLAY
+   OVERLAY (SIN SLIDE)
 ========================= */
 
 .overlay {
+  display: none;
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.55);
   z-index: 900;
+}
+
+.overlay.show {
+  display: block;
 }
 
 /* =========================
@@ -209,7 +222,6 @@
   background: rgba(255, 255, 255, 0.12);
   color: white;
   font-size: 22px;
-
   backdrop-filter: blur(10px);
 }
 
@@ -222,7 +234,7 @@
 }
 
 /* =========================
-   RESPONSIVE (TABLET + MOBILE)
+   RESPONSIVE (SIN SLIDERS)
 ========================= */
 
 @media (max-width: 1024px) {
@@ -239,38 +251,35 @@
   }
 
   /* =========================
-     DRAWERS BASE
+     PANEL OCULTO POR DEFECTO
   ========================= */
 
   .left-panel,
   .right-panel {
     position: fixed;
     top: 0;
-    height: 100vh;
+    height: 100dvh;
     width: 85%;
     max-width: 340px;
+
     z-index: 1100;
-    transition: transform 0.28s ease;
+
+    /* ❌ SIN SLIDE */
+    display: none;
   }
 
-  /* LEFT */
-  .left-panel {
-    left: 0;
-    transform: translateX(-110%);
-  }
+  /* =========================
+     OPEN STATE (SHOW/HIDE)
+  ========================= */
 
   .left-panel.open {
-    transform: translateX(0);
-  }
-
-  /* RIGHT */
-  .right-panel {
-    right: 0;
-    transform: translateX(110%);
+    display: block;
+    left: 0;
   }
 
   .right-panel.open {
-    transform: translateX(0);
+    display: block;
+    right: 0;
   }
 
   .center-panel {
