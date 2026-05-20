@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { List, Calendar, X } from "lucide-react";
 import "./Rutina.css";
 
 const API_URL = "https://empatia-backend.onrender.com";
@@ -159,13 +160,30 @@ export default function Rutina() {
         </button>
       </div>
 
+      {/* BOTONES MOBILE */}
+      <button className="mobile-left-btn" onClick={() => setLeftOpen(!leftOpen)}>
+        {leftOpen ? <X size={22} /> : <List size={22} />}
+      </button>
+
+      <button className="mobile-right-btn" onClick={() => setRightOpen(!rightOpen)}>
+        {rightOpen ? <X size={22} /> : <Calendar size={22} />}
+      </button>
+
+      {/* OVERLAY */}
+      {(leftOpen || rightOpen) && (
+        <div className="overlay" onClick={() => {
+          setLeftOpen(false);
+          setRightOpen(false);
+        }} />
+      )}
+
       {/* LAYOUT */}
       <div className="layout">
 
         {/* LEFT */}
         <div className={`left-panel ${leftOpen ? "open" : ""}`}>
           <button className="panel-close-btn" onClick={() => setLeftOpen(false)}>
-            ✖
+            <X size={18} />
           </button>
 
           <h3>🎯 Actividades</h3>
@@ -186,7 +204,7 @@ export default function Rutina() {
 
           <h3>⚙ Crear</h3>
 
-          <input className="input" value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Título" />
+          <input className="input" value={titulo} onChange={(e) => setTitulo(e.target.value)} />
           <textarea className="input" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
 
           <div className="time-row">
@@ -208,7 +226,6 @@ export default function Rutina() {
 
         {/* CENTER */}
         <div className="center-panel">
-
           <h2>📅 {currentDate}</h2>
 
           {eventosDia.length === 0 ? (
@@ -239,7 +256,7 @@ export default function Rutina() {
         {/* RIGHT */}
         <div className={`right-panel ${rightOpen ? "open" : ""}`}>
           <button className="panel-close-btn" onClick={() => setRightOpen(false)}>
-            ✖
+            <X size={18} />
           </button>
 
           <div className="calendar-header">
@@ -287,7 +304,6 @@ export default function Rutina() {
               );
             })}
           </div>
-
         </div>
 
       </div>
