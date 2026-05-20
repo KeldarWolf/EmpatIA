@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 
 import "./Rutina.css";
-
+ 
 const API_URL = "https://empatia-backend.onrender.com";
 
 export default function Rutina() {
