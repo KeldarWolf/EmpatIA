@@ -1,60 +1,104 @@
 // ============================================
-// src/pages/Rutina/Rutina.jsx
+// src/pages/User/User.jsx
 // ============================================
 
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-import {
-  useNavigate,
-} from "react-router-dom";
+import "./user.css";
 
-import "./Rutina.css";
+import ChatBox from "./ChatBox";
+import InputBox from "./InputBox";
+import frases from "./frases";
 
 const API_URL =
   "https://empatia-backend.onrender.com";
 
-export default function Rutina() {
+// ============================================
+// MENÚS
+// ============================================
+
+const mainOptions = [
+  "🎵 Música",
+  "🧘 Relajación",
+  "🏃 Actividad física",
+  "✍️ Escribir actividad",
+  "❓ No sé cuál",
+];
+
+const subOptions = {
+  "🎵 Música": [
+    "Lo-fi",
+    "Piano suave",
+    "Música relajante",
+    "Sonidos lluvia",
+    "Cantar",
+  ],
+
+  "🧘 Relajación": [
+    "Respirar profundo",
+    "Meditar",
+    "Estiramientos",
+    "Cerrar ojos",
+    "Ducha relajante",
+  ],
+
+  "🏃 Actividad física": [
+    "Caminar",
+    "Yoga",
+    "Bailar",
+    "Mover cuerpo",
+    "Trotar suave",
+  ],
+};
+
+// ============================================
+// FRASES ACTIVIDAD
+// ============================================
+
+const activityPrompts = [
+  "🤍 ¿Te gustaría probar una actividad?",
+  "🌱 A veces ayuda hacer algo pequeño, ¿quieres intentar una actividad?",
+  "✨ Podemos probar una actividad para distraerte un rato, ¿te gustaría?",
+  "🤍 Quizás una actividad podría ayudarte un poco, ¿quieres probar?",
+  "🌿 Podemos hacer algo tranquilo juntos, ¿te gustaría?",
+];
+
+// ============================================
+// FRASES CONTINUAR
+// ============================================
+
+const continuePrompts = [
+  "🤍 Entiendo, podemos seguir hablando.",
+  "🌱 Comprendo, cuéntame un poco más.",
+  "🤍 Estoy aquí contigo, si quieres seguir conversando te leo.",
+  "🌿 Entiendo, podemos conversar un rato si quieres.",
+];
+
+export default function User() {
 
   const navigate =
     useNavigate();
 
-  /* =========================================
-     SESSION SAFE
-  ========================================= */
+  // ============================================
+  // MENUS MOBILE
+  // ============================================
 
-  let storedUser = null;
+  const [leftOpen, setLeftOpen] =
+    useState(false);
 
-  try {
+  const [rightOpen, setRightOpen] =
+    useState(false);
 
-    const sessionUser =
-      sessionStorage.getItem(
-        "usuario"
-      );
+  // ============================================
+  // SESSION
+  // ============================================
 
-    if (
-      sessionUser &&
-      sessionUser !== "undefined"
-    ) {
-
-      storedUser =
-        JSON.parse(
-          sessionUser
-        );
-    }
-
-  } catch (err) {
-
-    console.log(
-      "SESSION ERROR:",
-      err
-    );
-
-    storedUser = null;
-  }
+  const storedUser = JSON.parse(
+    sessionStorage.getItem(
+      "usuario"
+    ) || "null"
+  );
 
   const user = {
 
@@ -72,259 +116,201 @@ export default function Rutina() {
       "Usuario",
   };
 
-  /* =========================================
-     FIX LOGIN
-  ========================================= */
+  // ============================================
+  // FIX LOGIN
+  // ============================================
 
   useEffect(() => {
 
-    if (!user.id_usuario) {
-
-      console.log(
-        "❌ SESION INVALIDA"
+    const stored =
+      sessionStorage.getItem(
+        "usuario"
       );
+
+    console.log(
+      "SESSION:",
+      stored
+    );
+
+    if (!stored) {
+
+      navigate("/", {
+        replace: true,
+      });
+
+      return;
+    }
+
+    try {
+
+      const parsed =
+        JSON.parse(stored);
+
+      const id =
+        parsed?.id_usuario ||
+        parsed?.user
+          ?.id_usuario ||
+        parsed?.id;
+
+      if (!id) {
+
+        navigate("/", {
+          replace: true,
+        });
+      }
+
+    } catch (err) {
+
+      console.log(err);
 
       navigate("/", {
         replace: true,
       });
     }
 
-  }, [
-    user.id_usuario,
-    navigate,
-  ]);
+  }, [navigate]);
 
-  /* =========================================
-     MOBILE PANELS
-  ========================================= */
+  // ============================================
+  // STATES
+  // ============================================
 
-  const [leftOpen,
-    setLeftOpen] =
-    useState(false);
-
-  const [rightOpen,
-    setRightOpen] =
-    useState(false);
-
-  /* =========================================
-     DATA
-  ========================================= */
-
-  const [actividades,
-    setActividades] =
+  const [messages, setMessages] =
     useState([]);
 
-  const [eventos,
-    setEventos] =
-    useState([]);
+  const [input, setInput] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(false);
 
   const [
-    selectedActivity,
-    setSelectedActivity,
-  ] = useState(null);
+    writingActivity,
+    setWritingActivity,
+  ] = useState(false);
 
-  /* =========================================
-     FORM
-  ========================================= */
-
-  const [titulo,
-    setTitulo] =
+  const [frase, setFrase] =
     useState("");
 
-  const [descripcion,
-    setDescripcion] =
-    useState("");
-
-  const [hora,
-    setHora] =
-    useState("");
-
-  const [horaFin,
-    setHoraFin] =
-    useState("");
-
-  const [duracion,
-    setDuracion] =
-    useState(30);
-
-  /* =========================================
-     DATE
-  ========================================= */
-
-  const [selectedDate,
-    setSelectedDate] =
-    useState(new Date());
-
-  /* =========================================
-     FORMAT DATE
-  ========================================= */
-
-  const formatDateLocal =
-    (date) => {
-
-      const year =
-        date.getFullYear();
-
-      const month = String(
-        date.getMonth() + 1
-      ).padStart(2, "0");
-
-      const day = String(
-        date.getDate()
-      ).padStart(2, "0");
-
-      return `${year}-${month}-${day}`;
-    };
-
-  /* =========================================
-     LOAD ACTIVITIES
-  ========================================= */
-
-  const loadActivities =
-    async () => {
-
-      try {
-
-        const res =
-          await fetch(
-            `${API_URL}/api/registro-actividad/usuario/${user.id_usuario}`
-          );
-
-        const data =
-          await res.json();
-
-        setActividades(
-          Array.isArray(data)
-            ? data
-            : []
-        );
-
-      } catch (err) {
-
-        console.log(err);
-      }
-    };
-
-  /* =========================================
-     LOAD EVENTS
-  ========================================= */
-
-  const loadEvents =
-    async () => {
-
-      try {
-
-        const res =
-          await fetch(
-            `${API_URL}/api/rutina-eventos/${user.id_usuario}`
-          );
-
-        const data =
-          await res.json();
-
-        setEventos(
-          Array.isArray(data)
-            ? data
-            : []
-        );
-
-      } catch (err) {
-
-        console.log(err);
-      }
-    };
-
-  /* =========================================
-     INIT
-  ========================================= */
+  // ============================================
+  // INIT
+  // ============================================
 
   useEffect(() => {
 
-    if (user?.id_usuario) {
+    setMessages([
+      {
+        role: "ai",
+        text:
+          `Hola ${user.nombre}, estoy aquí contigo.`,
+      },
+      {
+        role: "ai",
+        text:
+          "Cuéntame cómo te sientes...",
+      },
+    ]);
 
-      loadActivities();
+    setFrase(
+      frases[
+        Math.floor(
+          Math.random() *
+            frases.length
+        )
+      ]
+    );
 
-      loadEvents();
+    const interval =
+      setInterval(() => {
+
+        setFrase(
+          frases[
+            Math.floor(
+              Math.random() *
+                frases.length
+            )
+          ]
+        );
+
+      }, 8000);
+
+    return () =>
+      clearInterval(interval);
+
+  }, []);
+
+  // ============================================
+  // IA REQUEST
+  // ============================================
+
+  const askAI = async (
+    message
+  ) => {
+
+    try {
+
+      const res =
+        await fetch(
+          `${API_URL}/chat`,
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body: JSON.stringify({
+              message,
+            }),
+          }
+        );
+
+      return await res.json();
+
+    } catch (err) {
+
+      console.log(err);
+
+      return {
+        reply:
+          "🤍 No puedo responder ahora.",
+        options: [],
+      };
     }
+  };
 
-  }, [user?.id_usuario]);
+  // ============================================
+  // SAVE ACTIVITY
+  // ============================================
 
-  /* =========================================
-     SELECT ACTIVITY
-  ========================================= */
-
-  const selectActivity =
-    (act) => {
-
-      setSelectedActivity(
-        act
-      );
-
-      setTitulo(
-        act.nombre_actividad ||
-        ""
-      );
-
-      setLeftOpen(true);
-    };
-
-  /* =========================================
-     CREATE EVENT
-  ========================================= */
-
-  const createEvent =
-    async () => {
-
-      if (!titulo.trim()) {
-
-        alert(
-          "Ingrese título"
-        );
-
-        return;
-      }
-
-      if (!hora) {
-
-        alert(
-          "Seleccione hora"
-        );
-
-        return;
-      }
+  const saveActivity =
+    async (
+      activityName
+    ) => {
 
       try {
 
         const payload = {
 
           id_usuario:
-            user.id_usuario,
-
-          id_registro:
-            selectedActivity
-              ?.id_registro ||
-            null,
-
-          titulo,
-
-          descripcion,
-
-          fecha:
-            formatDateLocal(
-              selectedDate
+            Number(
+              user.id_usuario
             ),
 
-          hora,
+          nombre_actividad:
+            activityName,
 
-          hora_fin:
-            horaFin || null,
+          puntaje_agrado: 5,
 
-          duracion,
+          frecuencia_deseada:
+            "media",
+
+          reaccion: "",
         };
 
         const res =
           await fetch(
-            `${API_URL}/api/rutina-eventos`,
+            `${API_URL}/api/registro-actividad`,
             {
               method: "POST",
 
@@ -345,235 +331,395 @@ export default function Rutina() {
 
         if (!res.ok) {
 
-          alert(
+          throw new Error(
             data.error ||
-            "Error creando evento"
+              "error"
           );
-
-          return;
         }
 
-        await loadEvents();
-
-        setTitulo("");
-
-        setDescripcion("");
-
-        setHora("");
-
-        setHoraFin("");
-
-        setDuracion(30);
-
-        setSelectedActivity(
-          null
-        );
-
-        alert(
-          "Rutina guardada"
-        );
+        return data;
 
       } catch (err) {
 
         console.log(err);
 
-        alert(
-          "Error conexión servidor"
-        );
-      }
-    };
-
-  /* =========================================
-     DELETE EVENT
-  ========================================= */
-
-  const deleteEvent =
-    async (
-      id_evento
-    ) => {
-
-      try {
-
-        await fetch(
-          `${API_URL}/api/rutina-eventos/${id_evento}`,
-          {
-            method:
-              "DELETE",
-          }
-        );
-
-        await loadEvents();
-
-      } catch (err) {
-
-        console.log(err);
-      }
-    };
-
-  /* =========================================
-     TOGGLE COMPLETE
-  ========================================= */
-
-  const toggleComplete =
-    async (
-      evento
-    ) => {
-
-      try {
-
-        await fetch(
-          `${API_URL}/api/rutina-eventos/${evento.id_evento}`,
-          {
-            method: "PUT",
-
-            headers: {
-              "Content-Type":
-                "application/json",
+        setMessages(
+          (prev) => [
+            ...prev,
+            {
+              role: "ai",
+              text:
+                "❌ No pude guardar la actividad",
             },
-
-            body:
-              JSON.stringify({
-                completado:
-                  !evento.completado,
-              }),
-          }
+          ]
         );
 
-        await loadEvents();
-
-      } catch (err) {
-
-        console.log(err);
+        return null;
       }
     };
 
-  /* =========================================
-     FILTER EVENTS
-  ========================================= */
+  // ============================================
+  // SEND
+  // ============================================
 
-  const currentDate =
-    formatDateLocal(
-      selectedDate
-    );
+  const sendMessage =
+    async () => {
 
-  const eventosDia =
-    useMemo(() => {
+      if (
+        !input.trim() ||
+        loading
+      )
+        return;
 
-      return eventos
-        .filter(
-          (evento) =>
-            evento.fecha?.slice(
-              0,
-              10
-            ) === currentDate
-        )
-        .sort((a, b) =>
-          a.hora.localeCompare(
-            b.hora
-          )
+      const text =
+        input.trim();
+
+      setMessages(
+        (prev) => [
+          ...prev,
+          {
+            role: "user",
+            text,
+          },
+        ]
+      );
+
+      setInput("");
+
+      setLoading(true);
+
+      const response =
+        await askAI(text);
+
+      setMessages(
+        (prev) => [
+          ...prev,
+          {
+            role: "ai",
+            text:
+              response.reply,
+            options:
+              response.options ||
+              [],
+          },
+        ]
+      );
+
+      setLoading(false);
+    };
+
+  // ============================================
+  // OPTIONS
+  // ============================================
+
+  const handleOptionClick =
+    async (opt) => {
+
+      setMessages(
+        (prev) => [
+          ...prev,
+          {
+            role: "user",
+            text: opt,
+          },
+        ]
+      );
+
+      setLeftOpen(false);
+      setRightOpen(false);
+
+      if (opt === "No") {
+
+        const randomContinuePrompt =
+          continuePrompts[
+            Math.floor(
+              Math.random() *
+                continuePrompts.length
+            )
+          ];
+
+        setMessages(
+          (prev) => [
+            ...prev,
+            {
+              role: "ai",
+              text:
+                randomContinuePrompt,
+            },
+          ]
         );
 
-    }, [
-      eventos,
-      currentDate,
-    ]);
+        return;
+      }
 
-  /* =========================================
-     CALENDAR
-  ========================================= */
+      if (opt === "Sí") {
 
-  const currentMonth =
-    selectedDate.getMonth();
+        setMessages(
+          (prev) => [
+            ...prev,
+            {
+              role: "ai",
+              text:
+                "✨ Elige una categoría:",
+              options:
+                mainOptions,
+            },
+          ]
+        );
 
-  const currentYear =
-    selectedDate.getFullYear();
+        return;
+      }
 
-  const today =
-    new Date();
+      if (subOptions[opt]) {
 
-  const daysInMonth =
-    new Date(
-      currentYear,
-      currentMonth + 1,
-      0
-    ).getDate();
+        setMessages(
+          (prev) => [
+            ...prev,
+            {
+              role: "ai",
 
-  let firstDay =
-    new Date(
-      currentYear,
-      currentMonth,
-      1
-    ).getDay();
+              text:
+                `✨ Opciones de ${opt}:`,
 
-  firstDay =
-    firstDay === 0
-      ? 6
-      : firstDay - 1;
+              options:
+                subOptions[
+                  opt
+                ],
+            },
+          ]
+        );
 
-  const days = [];
+        return;
+      }
 
-  for (
-    let i = 0;
-    i < firstDay;
-    i++
-  ) {
-
-    days.push(null);
-  }
-
-  for (
-    let i = 1;
-    i <= daysInMonth;
-    i++
-  ) {
-
-    days.push(i);
-  }
-
-  /* =========================================
-     CHANGE MONTH
-  ========================================= */
-
-  const changeMonth =
-    (dir) => {
-
-      setSelectedDate(
-        new Date(
-          currentYear,
-          currentMonth + dir,
-          1
+      if (
+        opt.includes(
+          "Escribir"
         )
-      );
+      ) {
+
+        setWritingActivity(
+          true
+        );
+
+        setMessages(
+          (prev) => [
+            ...prev,
+            {
+              role: "ai",
+              text:
+                "✍️ Escribe tu actividad:",
+            },
+          ]
+        );
+
+        return;
+      }
+
+      if (
+        opt ===
+        "❓ No sé cuál"
+      ) {
+
+        setMessages(
+          (prev) => [
+            ...prev,
+            {
+              role: "ai",
+
+              text:
+                "🤍 Podrías probar escuchar música o caminar un rato.",
+
+              options: [
+                "🎵 Música",
+                "🏃 Actividad física",
+              ],
+            },
+          ]
+        );
+
+        return;
+      }
+
+      const saved =
+        await saveActivity(
+          opt
+        );
+
+      if (saved) {
+
+        setMessages(
+          (prev) => [
+            ...prev,
+            {
+              role: "ai",
+              text:
+                `✅ Guardado: ${opt}`,
+            },
+            {
+              role: "ai",
+              text:
+                "⏳ Redirigiendo...",
+            },
+          ]
+        );
+
+        setTimeout(() => {
+
+          navigate(
+            "/actividades",
+            {
+              replace: true,
+            }
+          );
+
+        }, 1200);
+      }
     };
+
+  // ============================================
+  // UI
+  // ============================================
 
   return (
 
-    <div className="page">
+    <div className="app-layout">
 
-      <div className="header">
+      {/* MENU LEFT */}
 
-        <div>
+      <button
+        className="menu-left"
+        onClick={() =>
+          setLeftOpen(true)
+        }
+      >
+        ☰
+      </button>
 
-          <h1>
-            🧘 Rutina Inteligente
-          </h1>
+      {/* MENU RIGHT */}
 
-          <p>
-            Organiza actividades
-            por día, semana o mes
-          </p>
+      <button
+        className="menu-right"
+        onClick={() =>
+          setRightOpen(true)
+        }
+      >
+        ⚙
+      </button>
 
+      {/* OVERLAY */}
+
+      {(leftOpen ||
+        rightOpen) && (
+
+        <div
+          className="overlay"
+          onClick={() => {
+
+            setLeftOpen(false);
+
+            setRightOpen(false);
+          }}
+        />
+      )}
+
+      {/* LEFT */}
+
+      <div
+        className={`left-panel ${
+          leftOpen
+            ? "open"
+            : ""
+        }`}
+      >
+
+        <h4>
+          💡 Acompañamiento
+        </h4>
+
+        <div className="quote-box">
+          {frase}
         </div>
 
+        <div
+          style={{
+            marginTop: 20,
+            color: "#00e5ff",
+          }}
+        >
+          👤 {user.nombre}
+        </div>
+
+      </div>
+
+      {/* CENTER */}
+
+      <div className="center-panel">
+
+        <ChatBox
+          messages={messages}
+          onOptionClick={
+            handleOptionClick
+          }
+        />
+
+        <InputBox
+          input={input}
+          setInput={setInput}
+          sendMessage={sendMessage}
+          loading={loading}
+        />
+
+      </div>
+
+      {/* RIGHT */}
+
+      <div
+        className={`right-panel ${
+          rightOpen
+            ? "open"
+            : ""
+        }`}
+      >
+
         <button
-          className="back-btn"
           onClick={() =>
             navigate(
-              "/usuario"
+              "/rutina"
             )
           }
         >
-          ⬅ Volver
+          🧘 Rutina
+        </button>
+
+        <button
+          onClick={() =>
+            navigate(
+              "/actividades"
+            )
+          }
+        >
+          🎯 Actividades
+        </button>
+
+        <button
+          onClick={() =>
+            navigate(
+              "/estadisticas"
+            )
+          }
+        >
+          📊 Estadísticas
+        </button>
+
+        <button
+          onClick={() =>
+            navigate(
+              "/diario"
+            )
+          }
+        >
+          📓 Diario
         </button>
 
       </div>
