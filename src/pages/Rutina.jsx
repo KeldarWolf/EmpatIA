@@ -32,12 +32,20 @@ export default function Rutina() {
 
   const [selectedDate, setSelectedDate] = useState(new Date());
 
+  /* =========================
+     UTIL
+  ========================= */
+
   const formatDateLocal = (date) => {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, "0");
     const d = String(date.getDate()).padStart(2, "0");
     return `${y}-${m}-${d}`;
   };
+
+  /* =========================
+     LOAD DATA
+  ========================= */
 
   const loadActivities = async () => {
     const res = await fetch(`${API_URL}/api/registro-actividad/usuario/${user.id_usuario}`);
@@ -57,6 +65,10 @@ export default function Rutina() {
       loadEvents();
     }
   }, [user?.id_usuario]);
+
+  /* =========================
+     ACTIONS
+  ========================= */
 
   const selectActivity = (act) => {
     setSelectedActivity(act);
@@ -115,6 +127,10 @@ export default function Rutina() {
     await loadEvents();
   };
 
+  /* =========================
+     DATE / CALENDAR
+  ========================= */
+
   const currentDate = formatDateLocal(selectedDate);
 
   const eventosDia = useMemo(() => {
@@ -140,17 +156,17 @@ export default function Rutina() {
   };
 
   /* =========================
-     CONTROL DRAWERS
+     DRAWER CONTROL
   ========================= */
 
   const openLeft = () => {
     setRightOpen(false);
-    setLeftOpen(true);
+    setLeftOpen((v) => !v);
   };
 
   const openRight = () => {
     setLeftOpen(false);
-    setRightOpen(true);
+    setRightOpen((v) => !v);
   };
 
   const closeAll = () => {
@@ -173,12 +189,12 @@ export default function Rutina() {
         </button>
       </div>
 
-      {/* OVERLAY (mobile drawers) */}
+      {/* OVERLAY */}
       {(leftOpen || rightOpen) && (
         <div className="overlay" onClick={closeAll} />
       )}
 
-      {/* MOBILE BUTTONS */}
+      {/* BOTONES FLOTANTES */}
       <button className="mobile-toggle left" onClick={openLeft}>
         🎯
       </button>
@@ -192,7 +208,6 @@ export default function Rutina() {
 
         {/* LEFT PANEL */}
         <div className={`left-panel ${leftOpen ? "open" : ""}`}>
-          <button className="panel-close-btn" onClick={closeAll}>✖</button>
 
           <h3>🎯 Actividades</h3>
 
@@ -212,12 +227,32 @@ export default function Rutina() {
 
           <h3>⚙ Crear</h3>
 
-          <input className="input" value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Título" />
-          <textarea className="input" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
+          <input
+            className="input"
+            value={titulo}
+            onChange={(e) => setTitulo(e.target.value)}
+            placeholder="Título"
+          />
+
+          <textarea
+            className="input"
+            value={descripcion}
+            onChange={(e) => setDescripcion(e.target.value)}
+          />
 
           <div className="time-row">
-            <input type="time" className="input" value={hora} onChange={(e) => setHora(e.target.value)} />
-            <input type="time" className="input" value={horaFin} onChange={(e) => setHoraFin(e.target.value)} />
+            <input
+              type="time"
+              className="input"
+              value={hora}
+              onChange={(e) => setHora(e.target.value)}
+            />
+            <input
+              type="time"
+              className="input"
+              value={horaFin}
+              onChange={(e) => setHoraFin(e.target.value)}
+            />
           </div>
 
           <input
@@ -243,7 +278,9 @@ export default function Rutina() {
             eventosDia.map((evento) => (
               <div
                 key={evento.id_evento}
-                className={`planner-card ${evento.completado ? "completed" : ""}`}
+                className={`planner-card ${
+                  evento.completado ? "completed" : ""
+                }`}
               >
                 <div>
                   <input
@@ -256,7 +293,9 @@ export default function Rutina() {
                   <p>{evento.hora} → {evento.hora_fin}</p>
                 </div>
 
-                <button onClick={() => deleteEvent(evento.id_evento)}>🗑</button>
+                <button onClick={() => deleteEvent(evento.id_evento)}>
+                  🗑
+                </button>
               </div>
             ))
           )}
@@ -264,7 +303,6 @@ export default function Rutina() {
 
         {/* RIGHT PANEL */}
         <div className={`right-panel ${rightOpen ? "open" : ""}`}>
-          <button className="panel-close-btn" onClick={closeAll}>✖</button>
 
           <div className="calendar-header">
             <h3>
@@ -300,9 +338,9 @@ export default function Rutina() {
               return (
                 <div
                   key={i}
-                  className={`calendar-day ${selected ? "selected" : ""} ${
-                    isToday ? "today" : ""
-                  }`}
+                  className={`calendar-day ${
+                    selected ? "selected" : ""
+                  } ${isToday ? "today" : ""}`}
                   onClick={() => setSelectedDate(date)}
                 >
                   {d}
