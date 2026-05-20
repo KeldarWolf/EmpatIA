@@ -4,19 +4,49 @@
   box-sizing: border-box;
 }
 
+:root {
+
+  --bg-1: #0f172a;
+  --bg-2: #111827;
+  --bg-3: #1e293b;
+
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+
+  --success: #10b981;
+  --warning: #fbbf24;
+
+  --glass:
+    rgba(255,255,255,0.06);
+
+  --glass-2:
+    rgba(255,255,255,0.1);
+
+  --border:
+    rgba(255,255,255,0.08);
+}
+
+/* =========================
+   BASE
+========================= */
+
+body {
+  background: #0f172a;
+}
+
 .page {
 
   min-height: 100vh;
   width: 100%;
- 
+
   padding: 25px;
 
   background:
     linear-gradient(
       135deg,
-      #0f172a,
-      #111827,
-      #1e293b
+      var(--bg-1),
+      var(--bg-2),
+      var(--bg-3)
     );
 
   color: white;
@@ -44,16 +74,40 @@
 }
 
 .header h1 {
+
   font-size: 2.2rem;
+
+  font-weight: 700;
 }
 
 .header p {
+
   opacity: 0.7;
+
+  margin-top: 4px;
+}
+
+/* =========================
+   BUTTONS
+========================= */
+
+.back-btn,
+.create-btn {
+
+  border: none;
+
+  cursor: pointer;
+
+  color: white;
+
+  font-weight: bold;
+
+  transition:
+    transform 0.2s,
+    background 0.2s;
 }
 
 .back-btn {
-
-  border: none;
 
   padding: 12px 18px;
 
@@ -65,18 +119,29 @@
       #4f46e5,
       #7c3aed
     );
-
-  color: white;
-
-  font-weight: bold;
-
-  cursor: pointer;
-
-  transition: 0.2s;
 }
 
-.back-btn:hover {
+.back-btn:hover,
+.create-btn:hover {
+
   transform: translateY(-2px);
+}
+
+.create-btn {
+
+  width: 100%;
+
+  padding: 14px;
+
+  border-radius: 14px;
+
+  background: var(--primary);
+}
+
+.create-btn:hover {
+
+  background:
+    var(--primary-hover);
 }
 
 /* =========================
@@ -94,7 +159,8 @@
 
   gap: 22px;
 
-  height: calc(100vh - 120px);
+  height:
+    calc(100vh - 120px);
 }
 
 /* =========================
@@ -106,23 +172,25 @@
 .right-panel {
 
   background:
-    rgba(255,255,255,0.06);
+    var(--glass);
 
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(6px);
 
   border-radius: 22px;
 
   padding: 18px;
 
   border:
-    1px solid
-    rgba(255,255,255,0.08);
+    1px solid var(--border);
 
   overflow-y: auto;
 
   position: relative;
 
-  transition: 0.25s;
+  transition:
+    transform 0.25s,
+    opacity 0.25s,
+    background 0.2s;
 }
 
 /* =========================
@@ -171,17 +239,24 @@
 
   resize: none;
 
-  transition: 0.2s;
+  transition:
+    background 0.2s,
+    border 0.2s;
 }
 
 .input:focus {
 
   background:
     rgba(255,255,255,0.12);
+
+  border:
+    1px solid var(--primary);
 }
 
 .input::placeholder {
-  color: rgba(255,255,255,0.5);
+
+  color:
+    rgba(255,255,255,0.5);
 }
 
 .time-row {
@@ -195,39 +270,7 @@
 }
 
 /* =========================
-   BUTTON CREATE
-========================= */
-
-.create-btn {
-
-  width: 100%;
-
-  padding: 14px;
-
-  border: none;
-
-  border-radius: 14px;
-
-  background: #6366f1;
-
-  color: white;
-
-  font-weight: bold;
-
-  cursor: pointer;
-
-  transition: 0.2s;
-}
-
-.create-btn:hover {
-
-  transform: translateY(-2px);
-
-  background: #4f46e5;
-}
-
-/* =========================
-   ACTIVITIES
+   ACTIVITY
 ========================= */
 
 .activity-card {
@@ -243,10 +286,13 @@
 
   cursor: pointer;
 
-  transition: 0.2s;
-
   border:
     1px solid transparent;
+
+  transition:
+    transform 0.2s,
+    background 0.2s,
+    border 0.2s;
 }
 
 .activity-card:hover {
@@ -260,14 +306,14 @@
 .activity-card.selected {
 
   border:
-    1px solid #6366f1;
+    1px solid var(--primary);
 
   background:
     rgba(99,102,241,0.18);
 }
 
 /* =========================
-   PLANNER EVENTS
+   PLANNER
 ========================= */
 
 .planner-card {
@@ -292,11 +338,17 @@
   border-left:
     4px solid #3b82f6;
 
-  transition: 0.2s;
+  transition:
+    transform 0.2s,
+    background 0.2s;
 }
 
 .planner-card:hover {
+
   transform: translateY(-2px);
+
+  background:
+    rgba(255,255,255,0.08);
 }
 
 .planner-card.completed {
@@ -306,7 +358,7 @@
   text-decoration: line-through;
 
   border-left:
-    4px solid #10b981;
+    4px solid var(--success);
 }
 
 .planner-card button {
@@ -324,9 +376,9 @@
 
 .empty-planner {
 
-  padding: 40px;
-
   text-align: center;
+
+  padding: 40px;
 
   opacity: 0.7;
 }
@@ -343,13 +395,15 @@
 
   align-items: center;
 
-  gap: 10px;
+  gap: 12px;
 
   margin-bottom: 18px;
 }
 
 .calendar-header p {
+
   opacity: 0.7;
+
   font-size: 14px;
 }
 
@@ -364,10 +418,10 @@
 
 .calendar-nav button {
 
-  border: none;
-
   width: 38px;
   height: 38px;
+
+  border: none;
 
   border-radius: 12px;
 
@@ -378,10 +432,14 @@
 
   cursor: pointer;
 
-  transition: 0.2s;
+  transition:
+    background 0.2s,
+    transform 0.2s;
 }
 
 .calendar-nav button:hover {
+
+  transform: scale(1.05);
 
   background:
     rgba(255,255,255,0.15);
@@ -415,6 +473,8 @@
 
   align-items: center;
 
+  position: relative;
+
   border-radius: 14px;
 
   background:
@@ -422,21 +482,26 @@
 
   cursor: pointer;
 
-  position: relative;
-
-  transition: 0.2s;
-
   user-select: none;
 
   font-weight: 500;
+
+  transition:
+    transform 0.2s,
+    background 0.2s,
+    border 0.2s;
 }
 
-.calendar-day:hover {
+@media (hover:hover) {
 
-  transform: scale(1.05);
+  .calendar-day:hover {
 
-  background:
-    rgba(255,255,255,0.12);
+    transform: scale(1.03);
+
+    background:
+      rgba(255,255,255,0.12);
+  }
+
 }
 
 .calendar-day.selected {
@@ -445,13 +510,13 @@
     rgba(99,102,241,0.35);
 
   border:
-    1px solid #6366f1;
+    1px solid var(--primary);
 }
 
 .calendar-day.today {
 
   border:
-    1px solid #10b981;
+    1px solid var(--success);
 }
 
 .calendar-day.empty {
@@ -462,7 +527,7 @@
 }
 
 /* =========================
-   DOT EVENT
+   EVENT DOT
 ========================= */
 
 .event-dot {
@@ -470,7 +535,8 @@
   width: 6px;
   height: 6px;
 
-  background: #fbbf24;
+  background:
+    var(--warning);
 
   border-radius: 50%;
 
@@ -498,11 +564,12 @@
 }
 
 .overlay.show {
+
   display: block;
 }
 
 /* =========================
-   MOBILE SIDE TABS
+   MOBILE DRAWER TABS
 ========================= */
 
 .mobile-toggle {
@@ -528,22 +595,24 @@
 
   font-size: 22px;
 
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(6px);
 
   cursor: pointer;
 
   align-items: center;
   justify-content: center;
 
-  transition: 0.25s;
+  transition:
+    background 0.2s,
+    width 0.2s;
 }
 
 .mobile-toggle:hover {
 
+  width: 48px;
+
   background:
     rgba(255,255,255,0.2);
-
-  width: 48px;
 }
 
 .mobile-toggle.left {
@@ -585,9 +654,7 @@
     display: flex;
   }
 
-  /* =========================
-     MOBILE PANELS
-  ========================= */
+  /* MOBILE PANELS */
 
   .left-panel,
   .right-panel {
@@ -604,25 +671,49 @@
 
     z-index: 1201;
 
-    display: none;
-
     border-radius: 0;
 
     overflow-y: auto;
+
+    opacity: 0;
+
+    pointer-events: none;
+  }
+
+  .left-panel {
+
+    left: 0;
+
+    transform:
+      translateX(-100%);
+  }
+
+  .right-panel {
+
+    right: 0;
+
+    transform:
+      translateX(100%);
   }
 
   .left-panel.open {
 
-    display: block;
+    transform:
+      translateX(0);
 
-    left: 0;
+    opacity: 1;
+
+    pointer-events: auto;
   }
 
   .right-panel.open {
 
-    display: block;
+    transform:
+      translateX(0);
 
-    right: 0;
+    opacity: 1;
+
+    pointer-events: auto;
   }
 
   .center-panel {
@@ -634,7 +725,7 @@
 }
 
 /* =========================
-   SMALL MOBILE
+   MOBILE
 ========================= */
 
 @media (max-width: 600px) {
