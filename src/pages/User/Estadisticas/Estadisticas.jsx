@@ -1,800 +1,362 @@
-// ============================================
-// src/pages/Rutina/Rutina.jsx
-// ============================================
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "./Estadisticas.css";
 
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+const API_URL = "https://empatia-backend.onrender.com";
 
-import {
-  useNavigate,
-} from "react-router-dom";
+export default function Estadisticas() {
+  const navigate = useNavigate();
 
-import "./Rutina.css";
+  const storedUser = JSON.parse(
+    sessionStorage.getItem("usuario") || "null"
+  );
 
-const API_URL =
-  "https://empatia-backend.onrender.com";
+  const id_usuario =
+    storedUser?.id_usuario ||
+    storedUser?.user?.id_usuario ||
+    storedUser?.id;
 
-export default function Rutina() {
+  const [loading, setLoading] = useState(true);
 
-  const navigate =
-    useNavigate();
+  const [leftOpen, setLeftOpen] = useState(false);
+  const [rightOpen, setRightOpen] = useState(false);
 
-  /* =========================================
-     SESSION SAFE
-  ========================================= */
+  const [data, setData] = useState({
+    totalTareas: 0,
+    completadas: 0,
+    pendientes: 0,
+    diasActivos: 0,
+    emocionesPositivas: 0,
+    emocionesNeutras: 0,
+    emocionesBajas: 0,
+    actividadFavorita: "Sin datos",
+    bienestar: 0,
+  });
 
-  let storedUser = null;
+  /* =========================
+     LOAD STATS
+  ========================= */
 
-  try {
+  const loadStats = async () => {
+    try {
+      setLoading(true);
 
-    const sessionUser =
-      sessionStorage.getItem(
-        "usuario"
+      const res = await fetch(
+        `${API_URL}/api/stats/${id_usuario}`
       );
 
-    if (
-      sessionUser &&
-      sessionUser !== "undefined"
-    ) {
+      const result = await res.json();
 
-      storedUser =
-        JSON.parse(
-          sessionUser
-        );
+      setData(result);
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setLoading(false);
     }
-
-  } catch (err) {
-
-    console.log(
-      "SESSION ERROR:",
-      err
-    );
-
-    storedUser = null;
-  }
-
-  const user = {
-
-    id_usuario:
-      storedUser?.id_usuario ||
-      storedUser?.user
-        ?.id_usuario ||
-      storedUser?.id ||
-      null,
-
-    nombre:
-      storedUser?.nombre ||
-      storedUser?.user
-        ?.nombre ||
-      "Usuario",
   };
 
-  /* =========================================
-     FIX LOGIN
-  ========================================= */
-
   useEffect(() => {
+    if (id_usuario) {
+      loadStats();
+    }
+  }, [id_usuario]);
 
-    if (!user.id_usuario) {
+  /* =========================
+     INSIGHTS IA
+  ========================= */
 
-      navigate("/", {
-        replace: true,
-      });
+  const insights = useMemo(() => {
+    const arr = [];
+
+    if (data.bienestar >= 80) {
+      arr.push(
+        "✨ Excelente progreso emocional y constancia en tus rutinas."
+      );
     }
 
-  }, [
-    user.id_usuario,
-    navigate,
-  ]);
-
-  /* =========================================
-     MOBILE PANELS
-  ========================================= */
-
-  const [leftOpen,
-    setLeftOpen] =
-    useState(false);
-
-  const [rightOpen,
-    setRightOpen] =
-    useState(false);
-
-  /* =========================================
-     DATA
-  ========================================= */
-
-  const [actividades,
-    setActividades] =
-    useState([]);
-
-  const [eventos,
-    setEventos] =
-    useState([]);
-
-  const [
-    selectedActivity,
-    setSelectedActivity,
-  ] = useState(null);
-
-  /* =========================================
-     FORM
-  ========================================= */
-
-  const [titulo,
-    setTitulo] =
-    useState("");
-
-  const [descripcion,
-    setDescripcion] =
-    useState("");
-
-  const [hora,
-    setHora] =
-    useState("");
-
-  const [horaFin,
-    setHoraFin] =
-    useState("");
-
-  const [duracion,
-    setDuracion] =
-    useState(30);
-
-  /* =========================================
-     DATE
-  ========================================= */
-
-  const [selectedDate,
-    setSelectedDate] =
-    useState(new Date());
-
-  /* =========================================
-     FORMAT DATE
-  ========================================= */
-
-  const formatDateLocal =
-    (date) => {
-
-      const year =
-        date.getFullYear();
-
-      const month = String(
-        date.getMonth() + 1
-      ).padStart(2, "0");
-
-      const day = String(
-        date.getDate()
-      ).padStart(2, "0");
-
-      return `${year}-${month}-${day}`;
-    };
-
-  /* =========================================
-     LOAD ACTIVITIES
-  ========================================= */
-
-  const loadActivities =
-    async () => {
-
-      try {
-
-        const res =
-          await fetch(
-            `${API_URL}/api/registro-actividad/usuario/${user.id_usuario}`
-          );
-
-        const data =
-          await res.json();
-
-        setActividades(
-          Array.isArray(data)
-            ? data
-            : []
-        );
-
-      } catch (err) {
-
-        console.log(err);
-      }
-    };
-
-  /* =========================================
-     LOAD EVENTS
-  ========================================= */
-
-  const loadEvents =
-    async () => {
-
-      try {
-
-        const res =
-          await fetch(
-            `${API_URL}/api/rutina-eventos/${user.id_usuario}`
-          );
-
-        const data =
-          await res.json();
-
-        setEventos(
-          Array.isArray(data)
-            ? data
-            : []
-        );
-
-      } catch (err) {
-
-        console.log(err);
-      }
-    };
-
-  /* =========================================
-     INIT
-  ========================================= */
-
-  useEffect(() => {
-
-    if (user?.id_usuario) {
-
-      loadActivities();
-
-      loadEvents();
+    if (
+      data.bienestar >= 50 &&
+      data.bienestar < 80
+    ) {
+      arr.push(
+        "📈 Tu progreso es positivo, sigue manteniendo tus hábitos."
+      );
     }
 
-  }, [user?.id_usuario]);
-
-  /* =========================================
-     SELECT ACTIVITY
-  ========================================= */
-
-  const selectActivity =
-    (act) => {
-
-      setSelectedActivity(
-        act
+    if (data.bienestar < 50) {
+      arr.push(
+        "🧠 Intenta completar más actividades para mejorar tu bienestar."
       );
+    }
 
-      setTitulo(
-        act.nombre_actividad ||
-        ""
+    if (
+      data.emocionesPositivas >
+      data.emocionesBajas
+    ) {
+      arr.push(
+        "😊 Tus actividades generan más emociones positivas."
       );
+    }
 
-      setLeftOpen(false);
-    };
+    if (
+      data.emocionesBajas >
+      data.emocionesPositivas
+    ) {
+      arr.push(
+        "💙 Considera actividades más relajantes o motivadoras."
+      );
+    }
 
-  /* =========================================
-     CREATE EVENT
-  ========================================= */
+    if (data.diasActivos >= 5) {
+      arr.push(
+        "🔥 Has tenido una excelente constancia esta semana."
+      );
+    }
 
-  const createEvent =
-    async () => {
+    if (
+      data.actividadFavorita !== "Sin datos"
+    ) {
+      arr.push(
+        `⭐ Tu actividad favorita es: ${data.actividadFavorita}`
+      );
+    }
 
-      if (!titulo.trim()) {
+    return arr;
+  }, [data]);
 
-        alert(
-          "Ingrese título"
-        );
+  /* =========================
+     LOADING
+  ========================= */
 
-        return;
-      }
-
-      if (!hora) {
-
-        alert(
-          "Seleccione hora"
-        );
-
-        return;
-      }
-
-      try {
-
-        const payload = {
-
-          id_usuario:
-            user.id_usuario,
-
-          id_registro:
-            selectedActivity
-              ?.id_registro ||
-            null,
-
-          titulo,
-
-          descripcion,
-
-          fecha:
-            formatDateLocal(
-              selectedDate
-            ),
-
-          hora,
-
-          hora_fin:
-            horaFin || null,
-
-          duracion,
-        };
-
-        const res =
-          await fetch(
-            `${API_URL}/api/rutina-eventos`,
-            {
-              method: "POST",
-
-              headers: {
-                "Content-Type":
-                  "application/json",
-              },
-
-              body:
-                JSON.stringify(
-                  payload
-                ),
-            }
-          );
-
-        const data =
-          await res.json();
-
-        if (!res.ok) {
-
-          alert(
-            data.error ||
-            "Error creando evento"
-          );
-
-          return;
-        }
-
-        await loadEvents();
-
-        setTitulo("");
-
-        setDescripcion("");
-
-        setHora("");
-
-        setHoraFin("");
-
-        setDuracion(30);
-
-        setSelectedActivity(
-          null
-        );
-
-        alert(
-          "Rutina guardada"
-        );
-
-      } catch (err) {
-
-        console.log(err);
-
-        alert(
-          "Error conexión servidor"
-        );
-      }
-    };
-
-  /* =========================================
-     DELETE EVENT
-  ========================================= */
-
-  const deleteEvent =
-    async (
-      id_evento
-    ) => {
-
-      try {
-
-        await fetch(
-          `${API_URL}/api/rutina-eventos/${id_evento}`,
-          {
-            method:
-              "DELETE",
-          }
-        );
-
-        await loadEvents();
-
-      } catch (err) {
-
-        console.log(err);
-      }
-    };
-
-  /* =========================================
-     TOGGLE COMPLETE
-  ========================================= */
-
-  const toggleComplete =
-    async (
-      evento
-    ) => {
-
-      try {
-
-        await fetch(
-          `${API_URL}/api/rutina-eventos/${evento.id_evento}`,
-          {
-            method: "PUT",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-
-            body:
-              JSON.stringify({
-                completado:
-                  !evento.completado,
-              }),
-          }
-        );
-
-        await loadEvents();
-
-      } catch (err) {
-
-        console.log(err);
-      }
-    };
-
-  /* =========================================
-     FILTER EVENTS
-  ========================================= */
-
-  const currentDate =
-    formatDateLocal(
-      selectedDate
+  if (loading) {
+    return (
+      <div className="stats-page">
+        <div className="loading-box">
+          <div className="loader"></div>
+          <p>Cargando estadísticas...</p>
+        </div>
+      </div>
     );
-
-  const eventosDia =
-    useMemo(() => {
-
-      return eventos
-        .filter(
-          (evento) =>
-            evento.fecha?.slice(
-              0,
-              10
-            ) === currentDate
-        )
-        .sort((a, b) =>
-          a.hora.localeCompare(
-            b.hora
-          )
-        );
-
-    }, [
-      eventos,
-      currentDate,
-    ]);
+  }
 
   return (
+    <div className="stats-page">
 
-    <div className="page">
-
-      {/* MOBILE BUTTONS */}
-
+      {/* BOTON IZQUIERDO */}
       <button
-        className="mobile-left-btn"
-        onClick={() =>
-          setLeftOpen(
-            !leftOpen
-          )
-        }
+        className="mobile-toggle left-toggle"
+        onClick={() => setLeftOpen(!leftOpen)}
       >
         ☰
       </button>
 
+      {/* BOTON DERECHO */}
       <button
-        className="mobile-right-btn"
-        onClick={() =>
-          setRightOpen(
-            !rightOpen
-          )
-        }
+        className="mobile-toggle right-toggle"
+        onClick={() => setRightOpen(!rightOpen)}
       >
-        📅
+        🤖
       </button>
 
-      {/* OVERLAY */}
-
-      {(leftOpen ||
-        rightOpen) && (
-
-        <div
-          className="overlay"
-          onClick={() => {
-
-            setLeftOpen(false);
-
-            setRightOpen(false);
-          }}
-        />
-
-      )}
-
       {/* HEADER */}
-
-      <div className="header">
+      <div className="stats-header">
 
         <div>
-
-          <h1>
-            🧘 Rutina Inteligente
-          </h1>
+          <h1>📊 Estadísticas</h1>
 
           <p>
-            Organiza actividades
-            por día, semana o mes
+            Seguimiento emocional y progreso personal
           </p>
-
         </div>
 
         <button
           className="back-btn"
-          onClick={() =>
-            navigate("/user")
-          }
+          onClick={() => navigate("/user")}
         >
           ⬅ Volver
         </button>
 
       </div>
 
-      {/* LAYOUT */}
-
-      <div className="layout">
+      {/* MAIN GRID */}
+      <div className="stats-grid">
 
         {/* LEFT PANEL */}
-
         <div
-          className={`
-            left-panel
-            ${
-              leftOpen
-                ? "open"
-                : ""
-            }
-          `}
+          className={`stats-column left-panel ${
+            leftOpen ? "show-panel" : ""
+          }`}
         >
 
-          <h3>
-            🎯 Actividades
-          </h3>
+          <div className="glass-card emotion-card positive">
+            <span>😊 Positivas</span>
 
-          {actividades.map(
-            (act) => (
+            <h2>
+              {data.emocionesPositivas}
+            </h2>
+          </div>
 
-              <div
-                key={
-                  act.id_registro
-                }
-                className={`
-                  activity-card
-                  ${
-                    selectedActivity?.id_registro ===
-                    act.id_registro
-                      ? "selected"
-                      : ""
-                  }
-                `}
-                onClick={() =>
-                  selectActivity(
-                    act
-                  )
-                }
-              >
+          <div className="glass-card emotion-card neutral">
+            <span>😐 Neutras</span>
 
-                <strong>
-                  {
-                    act.nombre_actividad
-                  }
-                </strong>
+            <h2>
+              {data.emocionesNeutras}
+            </h2>
+          </div>
 
-                <p>
-                  ⭐{" "}
-                  {act.puntaje_agrado ||
-                    5}
-                  /10
-                </p>
+          <div className="glass-card emotion-card negative">
+            <span>💙 Bajas</span>
 
-              </div>
-            )
-          )}
+            <h2>
+              {data.emocionesBajas}
+            </h2>
+          </div>
+
+          <div className="glass-card favorite-card">
+
+            <span>
+              ⭐ Actividad favorita
+            </span>
+
+            <h3>
+              {data.actividadFavorita}
+            </h3>
+
+          </div>
 
         </div>
 
-        {/* CENTER PANEL */}
+        {/* CENTER */}
+        <div className="stats-center">
 
-        <div className="center-panel">
+          <div className="glass-card wellbeing-card">
 
-          <h2>
-            📅 Eventos del día
-          </h2>
+            <div className="wellbeing-top">
 
-          {eventosDia.length ===
-          0 ? (
+              <div>
+                <h2>
+                  🧠 Bienestar general
+                </h2>
 
-            <div className="empty-planner">
+                <p>
+                  Basado en actividades completadas
+                </p>
+              </div>
 
-              No hay eventos
+              <div className="wellbeing-number">
+                {data.bienestar}%
+              </div>
 
             </div>
 
-          ) : (
+            <div className="progress-container">
 
-            eventosDia.map(
-              (evento) => (
+              <div
+                className="progress-bar"
+                style={{
+                  width: `${data.bienestar}%`,
+                }}
+              />
 
-                <div
-                  key={
-                    evento.id_evento
-                  }
-                  className={`
-                    planner-card
-                    ${
-                      evento.completado
-                        ? "completed"
-                        : ""
-                    }
-                  `}
-                >
+            </div>
 
-                  <div>
+          </div>
 
-                    <h3>
-                      {
-                        evento.titulo
-                      }
-                    </h3>
+          {/* SUMMARY */}
+          <div className="summary-grid">
 
-                    <p>
-                      ⏰{" "}
-                      {
-                        evento.hora
-                      }
-                    </p>
+            <div className="summary-card">
+              <h2>{data.totalTareas}</h2>
+              <p>Total tareas</p>
+            </div>
 
-                  </div>
+            <div className="summary-card">
+              <h2>{data.completadas}</h2>
+              <p>Completadas</p>
+            </div>
 
-                  <div>
+            <div className="summary-card">
+              <h2>{data.pendientes}</h2>
+              <p>Pendientes</p>
+            </div>
 
-                    <button
-                      onClick={() =>
-                        toggleComplete(
-                          evento
-                        )
-                      }
-                    >
-                      ✅
-                    </button>
+            <div className="summary-card">
+              <h2>{data.diasActivos}</h2>
+              <p>Días activos</p>
+            </div>
 
-                    <button
-                      onClick={() =>
-                        deleteEvent(
-                          evento.id_evento
-                        )
-                      }
-                    >
-                      🗑
-                    </button>
+          </div>
 
-                  </div>
+          {/* EXTRA */}
+          <div className="glass-card extra-card">
 
-                </div>
-              )
-            )
-          )}
+            <h3>
+              📈 Resumen
+            </h3>
+
+            <div className="extra-grid">
+
+              <div className="mini-box">
+                <span>✔ Completadas</span>
+
+                <strong>
+                  {data.completadas}
+                </strong>
+              </div>
+
+              <div className="mini-box">
+                <span>⏳ Pendientes</span>
+
+                <strong>
+                  {data.pendientes}
+                </strong>
+              </div>
+
+              <div className="mini-box">
+                <span>🔥 Constancia</span>
+
+                <strong>
+                  {data.diasActivos} días
+                </strong>
+              </div>
+
+              <div className="mini-box">
+                <span>💯 Bienestar</span>
+
+                <strong>
+                  {data.bienestar}%
+                </strong>
+              </div>
+
+            </div>
+
+          </div>
 
         </div>
 
         {/* RIGHT PANEL */}
-
         <div
-          className={`
-            right-panel
-            ${
-              rightOpen
-                ? "open"
-                : ""
-            }
-          `}
+          className={`stats-column right-panel ${
+            rightOpen ? "show-panel" : ""
+          }`}
         >
 
-          <h3>
-            ⚙ Configuración
-          </h3>
+          <div className="glass-card insights-card">
 
-          <label>
-            Título
-          </label>
+            <h3>
+              🤖 Insights IA
+            </h3>
 
-          <input
-            className="input"
-            value={titulo}
-            onChange={(e) =>
-              setTitulo(
-                e.target.value
-              )
-            }
-          />
+            {insights.map((tip, i) => (
+              <div
+                key={i}
+                className="insight-item"
+              >
+                {tip}
+              </div>
+            ))}
 
-          <label>
-            Descripción
-          </label>
-
-          <textarea
-            className="input"
-            rows="4"
-            value={descripcion}
-            onChange={(e) =>
-              setDescripcion(
-                e.target.value
-              )
-            }
-          />
-
-          <label>
-            Hora inicio
-          </label>
-
-          <input
-            type="time"
-            className="input"
-            value={hora}
-            onChange={(e) =>
-              setHora(
-                e.target.value
-              )
-            }
-          />
-
-          <label>
-            Hora fin
-          </label>
-
-          <input
-            type="time"
-            className="input"
-            value={horaFin}
-            onChange={(e) =>
-              setHoraFin(
-                e.target.value
-              )
-            }
-          />
-
-          <label>
-            Duración
-          </label>
-
-          <input
-            type="number"
-            className="input"
-            value={duracion}
-            onChange={(e) =>
-              setDuracion(
-                Number(
-                  e.target.value
-                )
-              )
-            }
-          />
-
-          <button
-            className="back-btn"
-            onClick={
-              createEvent
-            }
-          >
-            Guardar rutina
-          </button>
+          </div>
 
         </div>
 
