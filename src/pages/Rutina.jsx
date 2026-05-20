@@ -32,20 +32,12 @@ export default function Rutina() {
 
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  /* =========================
-     UTIL
-  ========================= */
-
   const formatDateLocal = (date) => {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, "0");
     const d = String(date.getDate()).padStart(2, "0");
     return `${y}-${m}-${d}`;
   };
-
-  /* =========================
-     LOAD DATA
-  ========================= */
 
   const loadActivities = async () => {
     const res = await fetch(
@@ -69,10 +61,6 @@ export default function Rutina() {
       loadEvents();
     }
   }, [user?.id_usuario]);
-
-  /* =========================
-     ACTIONS
-  ========================= */
 
   const selectActivity = (act) => {
     setSelectedActivity(act);
@@ -132,16 +120,24 @@ export default function Rutina() {
   };
 
   /* =========================
-     CALENDAR
+     FECHA ACTUAL
   ========================= */
 
   const currentDate = formatDateLocal(selectedDate);
+
+  /* =========================
+     EVENTOS DEL DÍA (CENTRO)
+  ========================= */
 
   const eventosDia = useMemo(() => {
     return eventos
       .filter((e) => e.fecha?.slice(0, 10) === currentDate)
       .sort((a, b) => a.hora.localeCompare(b.hora));
   }, [eventos, currentDate]);
+
+  /* =========================
+     CALENDARIO
+  ========================= */
 
   const today = new Date();
   const month = selectedDate.getMonth();
@@ -157,20 +153,6 @@ export default function Rutina() {
 
   const changeMonth = (dir) => {
     setSelectedDate(new Date(year, month + dir, 1));
-  };
-
-  /* =========================
-     CONTROL UI (SIN SLIDE)
-  ========================= */
-
-  const openLeft = () => {
-    setRightOpen(false);
-    setLeftOpen((v) => !v);
-  };
-
-  const openRight = () => {
-    setLeftOpen(false);
-    setRightOpen((v) => !v);
   };
 
   const closeAll = () => {
@@ -198,19 +180,31 @@ export default function Rutina() {
         <div className="overlay show" onClick={closeAll} />
       )}
 
-      {/* BOTONES FLOTANTES */}
-      <button className="mobile-toggle left" onClick={openLeft}>
+      {/* =========================
+         BOTONES ICONO FLOTANTES
+      ========================= */}
+
+      <button className="mobile-toggle left" onClick={() => {
+        setRightOpen(false);
+        setLeftOpen(!leftOpen);
+      }}>
         🎯
       </button>
 
-      <button className="mobile-toggle right" onClick={openRight}>
+      <button className="mobile-toggle right" onClick={() => {
+        setLeftOpen(false);
+        setRightOpen(!rightOpen);
+      }}>
         📅
       </button>
 
       {/* LAYOUT */}
       <div className="layout">
 
-        {/* LEFT PANEL */}
+        {/* =========================
+           LEFT PANEL
+        ========================= */}
+
         <div className={`left-panel ${leftOpen ? "open" : ""}`}>
 
           <h3>🎯 Actividades</h3>
@@ -245,18 +239,8 @@ export default function Rutina() {
           />
 
           <div className="time-row">
-            <input
-              type="time"
-              className="input"
-              value={hora}
-              onChange={(e) => setHora(e.target.value)}
-            />
-            <input
-              type="time"
-              className="input"
-              value={horaFin}
-              onChange={(e) => setHoraFin(e.target.value)}
-            />
+            <input type="time" className="input" value={hora} onChange={(e) => setHora(e.target.value)} />
+            <input type="time" className="input" value={horaFin} onChange={(e) => setHoraFin(e.target.value)} />
           </div>
 
           <input
@@ -271,7 +255,10 @@ export default function Rutina() {
           </button>
         </div>
 
-        {/* CENTER */}
+        {/* =========================
+           CENTER PANEL
+        ========================= */}
+
         <div className="center-panel">
 
           <h2>📅 {currentDate}</h2>
@@ -305,7 +292,10 @@ export default function Rutina() {
           )}
         </div>
 
-        {/* RIGHT PANEL */}
+        {/* =========================
+           RIGHT PANEL (CALENDAR FIX)
+        ========================= */}
+
         <div className={`right-panel ${rightOpen ? "open" : ""}`}>
 
           <div className="calendar-header">
@@ -329,7 +319,10 @@ export default function Rutina() {
               const date = new Date(year, month, d);
               const full = formatDateLocal(date);
 
-              const has = eventos.some((e) => e.fecha?.slice(0, 10) === full);
+              /* 🔥 FIX: sigue mostrando puntos */
+              const hasEvent = eventos.some(
+                (e) => e.fecha?.slice(0, 10) === full
+              );
 
               const selected =
                 selectedDate.getDate() === d &&
@@ -348,7 +341,7 @@ export default function Rutina() {
                   onClick={() => setSelectedDate(date)}
                 >
                   {d}
-                  {has && <div className="event-dot" />}
+                  {hasEvent && <div className="event-dot" />}
                 </div>
               );
             })}
