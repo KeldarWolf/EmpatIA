@@ -1,6 +1,6 @@
-/* =========================================
-   BASE
-========================================= */
+* {
+  box-sizing: border-box;
+}
 
 .stats-page {
   min-height: 100vh;
@@ -8,21 +8,20 @@
   padding: 30px;
   background: linear-gradient(135deg, #0f172a, #111827, #1e293b);
   color: white;
-  position: relative;
   overflow-x: hidden;
-  box-sizing: border-box;
+  position: relative;
 }
 
-/* =========================================
+/* =========================
    HEADER
-========================================= */
+========================= */
 
 .stats-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 20px;
   flex-wrap: wrap;
+  gap: 15px;
   margin-bottom: 25px;
 }
 
@@ -40,8 +39,8 @@
   border-radius: 14px;
   background: linear-gradient(135deg, #4f46e5, #7c3aed);
   color: white;
-  cursor: pointer;
   font-weight: 600;
+  cursor: pointer;
   transition: 0.2s;
 }
 
@@ -49,9 +48,9 @@
   transform: translateY(-2px);
 }
 
-/* =========================================
-   GRID BASE
-========================================= */
+/* =========================
+   GRID
+========================= */
 
 .stats-grid {
   display: grid;
@@ -60,13 +59,9 @@
   width: 100%;
 }
 
-.stats-center {
-  min-width: 0;
-}
-
-/* =========================================
+/* =========================
    CARDS
-========================================= */
+========================= */
 
 .glass-card {
   background: rgba(255,255,255,0.08);
@@ -77,21 +72,20 @@
   box-shadow: 0 8px 25px rgba(0,0,0,0.25);
 }
 
-/* =========================================
+/* =========================
    INSIGHTS
-========================================= */
+========================= */
 
 .insight-item {
   background: rgba(255,255,255,0.07);
   padding: 14px;
   border-radius: 14px;
   margin-bottom: 12px;
-  line-height: 1.4;
 }
 
-/* =========================================
+/* =========================
    PROGRESS BAR
-========================================= */
+========================= */
 
 .progress-container {
   width: 100%;
@@ -105,35 +99,24 @@
 .progress-bar {
   height: 100%;
   background: linear-gradient(90deg, #3b82f6, #8b5cf6);
-  transition: 0.4s;
+  transition: 0.4s ease;
 }
 
-/* =========================================
+/* =========================
    OVERLAY
-========================================= */
+========================= */
 
 .panel-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   background: rgba(0,0,0,0.55);
   backdrop-filter: blur(3px);
   z-index: 1500;
 }
 
-/* =========================================
-   MOBILE TOGGLE BUTTONS
-========================================= */
-
-.mobile-toggle {
-  display: none;
-}
-
-/* =========================================
-   LEFT / RIGHT PANELS (DESKTOP DEFAULT)
-========================================= */
+/* =========================
+   PANELS (BASE DESKTOP)
+========================= */
 
 .left-panel,
 .right-panel {
@@ -142,18 +125,25 @@
   gap: 16px;
 }
 
-/* =========================================
-   RESPONSIVE PANEL SYSTEM
-========================================= */
+/* =========================
+   TOGGLE BUTTONS
+========================= */
+
+.mobile-toggle {
+  display: none;
+}
+
+/* =========================
+   RESPONSIVE SYSTEM (IMPORTANT FIX)
+========================= */
 
 @media (max-width: 1200px) {
 
-  /* GRID OFF */
+  /* 🔥 EL FIX CLAVE: apagar grid */
   .stats-grid {
     display: block;
   }
 
-  /* CENTER SAFE */
   .stats-center {
     width: 100%;
     position: relative;
@@ -165,7 +155,7 @@
   .left-panel {
     position: fixed;
     top: 0;
-    left: -340px;
+    left: -100%;
     width: 300px;
     height: 100vh;
     background: rgba(15, 23, 42, 0.98);
@@ -185,7 +175,7 @@
   .right-panel {
     position: fixed;
     top: 0;
-    right: -340px;
+    right: -100%;
     width: 300px;
     height: 100vh;
     background: rgba(15, 23, 42, 0.98);
@@ -200,7 +190,7 @@
     right: 0;
   }
 
-  /* ================= BUTTONS ================= */
+  /* ================= BOTONES ================= */
 
   .mobile-toggle {
     display: flex;
@@ -216,8 +206,8 @@
     border-radius: 50%;
     border: none;
 
-    z-index: 3000;
     cursor: pointer;
+    z-index: 3000;
 
     font-size: 1.2rem;
     color: white;
@@ -235,23 +225,18 @@
   }
 }
 
-/* =========================================
+/* =========================
    MOBILE SMALL
-========================================= */
+========================= */
 
 @media (max-width: 600px) {
-
-  .left-panel,
-  .right-panel {
-    width: 85%;
-  }
 
   .stats-page {
     padding: 15px;
   }
 
   .stats-header h1 {
-    font-size: 1.7rem;
+    font-size: 1.6rem;
   }
 
   .glass-card {
