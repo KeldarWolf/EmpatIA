@@ -9,7 +9,7 @@ import {
   Trash2,
 } from "lucide-react";
 
-import "./rutina.css";
+import "./Rutina.css";
 
 const API_URL = "https://empatia-backend.onrender.com";
 
