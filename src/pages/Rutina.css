@@ -70,7 +70,7 @@
 }
 
 /* =========================
-   CLOSE BUTTON (ICON)
+   CLOSE BUTTON
 ========================= */
 
 .panel-close-btn {
@@ -83,14 +83,6 @@
   padding: 6px 10px;
   border-radius: 10px;
   cursor: pointer;
-  transition: 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.panel-close-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
 }
 
 /* =========================
@@ -175,7 +167,6 @@
 
 .planner-card:hover {
   transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.1);
 }
 
 .planner-card.completed {
@@ -194,7 +185,7 @@
 }
 
 /* =========================
-   CALENDAR HEADER
+   CALENDAR
 ========================= */
 
 .calendar-header {
@@ -203,38 +194,6 @@
   align-items: center;
   margin-bottom: 12px;
 }
-
-.calendar-header h3 {
-  font-size: 1.2rem;
-  font-weight: bold;
-}
-
-/* =========================
-   NAV BUTTONS
-========================= */
-
-.calendar-nav {
-  display: flex;
-  gap: 8px;
-}
-
-.calendar-nav button {
-  background: rgba(255, 255, 255, 0.08);
-  border: none;
-  padding: 8px 10px;
-  border-radius: 10px;
-  color: white;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.calendar-nav button:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-/* =========================
-   CALENDAR GRID
-========================= */
 
 .calendar-grid {
   display: grid;
@@ -251,11 +210,6 @@
   background: rgba(255, 255, 255, 0.04);
   cursor: pointer;
   position: relative;
-  transition: 0.2s;
-}
-
-.calendar-day:hover {
-  background: rgba(255, 255, 255, 0.1);
 }
 
 .calendar-day.selected {
@@ -281,26 +235,30 @@
 }
 
 /* =========================
-   MOBILE BUTTONS (ICONOS)
+   MOBILE TOGGLE BUTTONS
 ========================= */
 
-.mobile-left-btn,
-.mobile-right-btn {
+.mobile-toggle {
   display: none;
   position: fixed;
-  top: 15px;
-  z-index: 1000;
-
-  background: rgba(255, 255, 255, 0.1);
+  bottom: 18px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
   border: none;
+  z-index: 1200;
+  background: rgba(255, 255, 255, 0.12);
   color: white;
+  font-size: 22px;
+  backdrop-filter: blur(10px);
+}
 
-  padding: 10px;
-  border-radius: 12px;
+.mobile-toggle.left {
+  left: 15px;
+}
 
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.mobile-toggle.right {
+  right: 15px;
 }
 
 /* =========================
@@ -310,51 +268,60 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.55);
   z-index: 900;
 }
 
 /* =========================
-   RESPONSIVE
+   RESPONSIVE (DRAWER MODE)
 ========================= */
 
 @media (max-width: 900px) {
+
   .layout {
     grid-template-columns: 1fr;
     height: auto;
   }
 
-  .mobile-left-btn,
-  .mobile-right-btn {
+  /* mostrar botones */
+  .mobile-toggle {
     display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  .left-panel,
-  .right-panel {
+  /* LEFT PANEL */
+  .left-panel {
     position: fixed;
     top: 0;
-    bottom: 0;
+    left: 0;
+    height: 100%;
     width: 85%;
     max-width: 320px;
-    z-index: 1001;
     transform: translateX(-110%);
-    transition: 0.3s ease;
-  }
-
-  .right-panel {
-    right: 0;
-    left: auto;
-    transform: translateX(110%);
+    transition: transform 0.3s ease;
+    z-index: 1100;
   }
 
   .left-panel.open {
     transform: translateX(0);
-    left: 0;
+  }
+
+  /* RIGHT PANEL */
+  .right-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: 85%;
+    max-width: 320px;
+    transform: translateX(110%);
+    transition: transform 0.3s ease;
+    z-index: 1100;
   }
 
   .right-panel.open {
     transform: translateX(0);
-    right: 0;
   }
 
   .center-panel {
