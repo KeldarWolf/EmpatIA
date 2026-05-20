@@ -111,11 +111,11 @@
   inset: 0;
   background: rgba(0,0,0,0.55);
   backdrop-filter: blur(3px);
-  z-index: 1500;
+  z-index: 2500;
 }
 
 /* =========================
-   PANELS (BASE DESKTOP)
+   PANELS BASE
 ========================= */
 
 .left-panel,
@@ -134,14 +134,14 @@
 }
 
 /* =========================
-   RESPONSIVE SYSTEM (IMPORTANT FIX)
+   RESPONSIVE FIX REAL
 ========================= */
 
 @media (max-width: 1200px) {
 
-  /* 🔥 EL FIX CLAVE: apagar grid */
+  /* GRID FIX SIN BUGS */
   .stats-grid {
-    display: block;
+    grid-template-columns: 1fr;
   }
 
   .stats-center {
@@ -155,15 +155,16 @@
   .left-panel {
     position: fixed;
     top: 0;
-    left: -100%;
+    left: -320px;
     width: 300px;
     height: 100vh;
     background: rgba(15, 23, 42, 0.98);
     backdrop-filter: blur(14px);
-    z-index: 2000;
+    z-index: 3000;
     padding: 20px;
     overflow-y: auto;
     transition: 0.35s ease;
+    color: white;
   }
 
   .left-panel.show-panel {
@@ -175,15 +176,16 @@
   .right-panel {
     position: fixed;
     top: 0;
-    right: -100%;
+    right: -320px;
     width: 300px;
     height: 100vh;
     background: rgba(15, 23, 42, 0.98);
     backdrop-filter: blur(14px);
-    z-index: 2000;
+    z-index: 3000;
     padding: 20px;
     overflow-y: auto;
     transition: 0.35s ease;
+    color: white;
   }
 
   .right-panel.show-panel {
@@ -207,7 +209,7 @@
     border: none;
 
     cursor: pointer;
-    z-index: 3000;
+    z-index: 4000;
 
     font-size: 1.2rem;
     color: white;
