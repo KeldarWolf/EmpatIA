@@ -69,7 +69,10 @@ export default function Estadisticas() {
       );
     }
 
-    if (data.bienestar >= 50 && data.bienestar < 80) {
+    if (
+      data.bienestar >= 50 &&
+      data.bienestar < 80
+    ) {
       arr.push(
         "📈 Tu progreso es positivo, sigue manteniendo tus hábitos."
       );
@@ -105,7 +108,9 @@ export default function Estadisticas() {
       );
     }
 
-    if (data.actividadFavorita !== "Sin datos") {
+    if (
+      data.actividadFavorita !== "Sin datos"
+    ) {
       arr.push(
         `⭐ Tu actividad favorita es: ${data.actividadFavorita}`
       );
@@ -131,7 +136,73 @@ export default function Estadisticas() {
   return (
     <div className="stats-page">
 
-      {/* HEADER */}
+      {/* =========================
+          BOTONES LATERALES
+      ========================= */}
+
+      <div className="side-buttons left-side">
+
+        <button
+          className="side-btn"
+          onClick={() => navigate("/user")}
+        >
+          🏠
+          <span>Inicio</span>
+        </button>
+
+        <button
+          className="side-btn"
+          onClick={() => navigate("/actividades")}
+        >
+          🧩
+          <span>Actividades</span>
+        </button>
+
+        <button
+          className="side-btn"
+          onClick={() => navigate("/rutinas")}
+        >
+          📅
+          <span>Rutinas</span>
+        </button>
+
+      </div>
+
+      <div className="side-buttons right-side">
+
+        <button
+          className="side-btn"
+          onClick={() => navigate("/chat")}
+        >
+          🤖
+          <span>Chat IA</span>
+        </button>
+
+        <button
+          className="side-btn"
+          onClick={() => navigate("/perfil")}
+        >
+          👤
+          <span>Perfil</span>
+        </button>
+
+        <button
+          className="side-btn logout-btn"
+          onClick={() => {
+            sessionStorage.clear();
+            navigate("/");
+          }}
+        >
+          🚪
+          <span>Salir</span>
+        </button>
+
+      </div>
+
+      {/* =========================
+          HEADER
+      ========================= */}
+
       <div className="stats-header">
 
         <div>
@@ -148,40 +219,63 @@ export default function Estadisticas() {
         >
           ⬅ Volver
         </button>
+
       </div>
 
-      {/* MAIN GRID */}
+      {/* =========================
+          MAIN GRID
+      ========================= */}
+
       <div className="stats-grid">
 
-        {/* LEFT */}
+        {/* =========================
+            LEFT COLUMN
+        ========================= */}
+
         <div className="stats-column">
 
           <div className="glass-card emotion-card positive">
             <span>😊 Positivas</span>
-            <h2>{data.emocionesPositivas}</h2>
+
+            <h2>
+              {data.emocionesPositivas}
+            </h2>
           </div>
 
           <div className="glass-card emotion-card neutral">
             <span>😐 Neutras</span>
-            <h2>{data.emocionesNeutras}</h2>
+
+            <h2>
+              {data.emocionesNeutras}
+            </h2>
           </div>
 
           <div className="glass-card emotion-card negative">
             <span>💙 Bajas</span>
-            <h2>{data.emocionesBajas}</h2>
+
+            <h2>
+              {data.emocionesBajas}
+            </h2>
           </div>
 
           <div className="glass-card favorite-card">
-            <span>⭐ Actividad favorita</span>
+
+            <span>
+              ⭐ Actividad favorita
+            </span>
 
             <h3>
               {data.actividadFavorita}
             </h3>
+
           </div>
 
         </div>
 
-        {/* CENTER */}
+        {/* =========================
+            CENTER COLUMN
+        ========================= */}
+
         <div className="stats-center">
 
           {/* WELLBEING */}
@@ -190,7 +284,9 @@ export default function Estadisticas() {
             <div className="wellbeing-top">
 
               <div>
-                <h2>🧠 Bienestar general</h2>
+                <h2>
+                  🧠 Bienestar general
+                </h2>
 
                 <p>
                   Basado en actividades completadas
@@ -220,23 +316,43 @@ export default function Estadisticas() {
           <div className="summary-grid">
 
             <div className="summary-card">
-              <h2>{data.totalTareas}</h2>
-              <p>Total tareas</p>
+              <h2>
+                {data.totalTareas}
+              </h2>
+
+              <p>
+                Total tareas
+              </p>
             </div>
 
             <div className="summary-card">
-              <h2>{data.completadas}</h2>
-              <p>Completadas</p>
+              <h2>
+                {data.completadas}
+              </h2>
+
+              <p>
+                Completadas
+              </p>
             </div>
 
             <div className="summary-card">
-              <h2>{data.pendientes}</h2>
-              <p>Pendientes</p>
+              <h2>
+                {data.pendientes}
+              </h2>
+
+              <p>
+                Pendientes
+              </p>
             </div>
 
             <div className="summary-card">
-              <h2>{data.diasActivos}</h2>
-              <p>Días activos</p>
+              <h2>
+                {data.diasActivos}
+              </h2>
+
+              <p>
+                Días activos
+              </p>
             </div>
 
           </div>
@@ -244,12 +360,16 @@ export default function Estadisticas() {
           {/* EXTRA */}
           <div className="glass-card extra-card">
 
-            <h3>📈 Resumen</h3>
+            <h3>
+              📈 Resumen
+            </h3>
 
             <div className="extra-grid">
 
               <div className="mini-box">
-                <span>✔ Completadas</span>
+                <span>
+                  ✔ Completadas
+                </span>
 
                 <strong>
                   {data.completadas}
@@ -257,7 +377,9 @@ export default function Estadisticas() {
               </div>
 
               <div className="mini-box">
-                <span>⏳ Pendientes</span>
+                <span>
+                  ⏳ Pendientes
+                </span>
 
                 <strong>
                   {data.pendientes}
@@ -265,7 +387,9 @@ export default function Estadisticas() {
               </div>
 
               <div className="mini-box">
-                <span>🔥 Constancia</span>
+                <span>
+                  🔥 Constancia
+                </span>
 
                 <strong>
                   {data.diasActivos} días
@@ -273,7 +397,9 @@ export default function Estadisticas() {
               </div>
 
               <div className="mini-box">
-                <span>💯 Bienestar</span>
+                <span>
+                  💯 Bienestar
+                </span>
 
                 <strong>
                   {data.bienestar}%
@@ -286,12 +412,17 @@ export default function Estadisticas() {
 
         </div>
 
-        {/* RIGHT */}
+        {/* =========================
+            RIGHT COLUMN
+        ========================= */}
+
         <div className="stats-column">
 
           <div className="glass-card insights-card">
 
-            <h3>🤖 Insights IA</h3>
+            <h3>
+              🤖 Insights IA
+            </h3>
 
             {insights.map((tip, i) => (
               <div
