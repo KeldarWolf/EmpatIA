@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { createPortal } from "react-dom";
 import "./Estadisticas.css";
 
 const API_URL = "https://empatia-backend.onrender.com";
@@ -7,15 +8,13 @@ const API_URL = "https://empatia-backend.onrender.com";
 export default function Estadisticas() {
   const navigate = useNavigate();
   const storedUser = JSON.parse(sessionStorage.getItem("usuario") || "null");
-  
+
   const id_usuario =
     storedUser?.id_usuario ||
     storedUser?.user?.id_usuario ||
     storedUser?.id;
 
   const [loading, setLoading] = useState(true);
-
-  // ========================= PANELS STATE =========================
   const [leftOpen, setLeftOpen] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
 
@@ -40,7 +39,6 @@ export default function Estadisticas() {
     });
   };
 
-  // ========================= DATA =========================
   const [data, setData] = useState({
     totalTareas: 0,
     completadas: 0,
@@ -70,7 +68,6 @@ export default function Estadisticas() {
     if (id_usuario) loadStats();
   }, [id_usuario]);
 
-  // ========================= INSIGHTS =========================
   const insights = useMemo(() => {
     const arr = [];
     if (data.bienestar >= 80) arr.push("✨ Excelente progreso emocional.");
@@ -81,7 +78,6 @@ export default function Estadisticas() {
     return arr;
   }, [data]);
 
-  // ========================= LOADING =========================
   if (loading) {
     return (
       <div className="stats-page">
@@ -95,20 +91,7 @@ export default function Estadisticas() {
 
   return (
     <div className="stats-page">
-      {/* ================= OVERLAY ================= */}
-      {(leftOpen || rightOpen) && (
-        <div className="panel-overlay" onClick={closePanels} />
-      )}
-
-      {/* ================= BOTONES MÓVILES ================= */}
-      <button className="mobile-toggle left-toggle" onClick={toggleLeft}>
-        ☰
-      </button>
-      <button className="mobile-toggle right-toggle" onClick={toggleRight}>
-        🤖
-      </button>
-
-      {/* ================= HEADER ================= */}
+      {/* HEADER */}
       <div className="stats-header">
         <div>
           <h1>📊 Estadísticas</h1>
@@ -119,29 +102,8 @@ export default function Estadisticas() {
         </button>
       </div>
 
-      {/* ================= GRID ================= */}
+      {/* CONTENIDO CENTRAL */}
       <div className="stats-grid">
-        {/* LEFT PANEL */}
-        <div className={`left-panel ${leftOpen ? "show-panel" : ""}`}>
-          <div className="glass-card">
-            <h3>😊 Positivas</h3>
-            <h2>{data.emocionesPositivas}</h2>
-          </div>
-          <div className="glass-card">
-            <h3>😐 Neutras</h3>
-            <h2>{data.emocionesNeutras}</h2>
-          </div>
-          <div className="glass-card">
-            <h3>💙 Bajas</h3>
-            <h2>{data.emocionesBajas}</h2>
-          </div>
-          <div className="glass-card">
-            <h3>⭐ Favorita</h3>
-            <h2>{data.actividadFavorita}</h2>
-          </div>
-        </div>
-
-        {/* CENTER */}
         <div className="stats-center">
           <div className="glass-card">
             <h2>🧠 Bienestar: {data.bienestar}%</h2>
@@ -161,23 +123,62 @@ export default function Estadisticas() {
             <p>Días activos: {data.diasActivos}</p>
           </div>
         </div>
-
-        {/* RIGHT PANEL */}
-        <div className={`right-panel ${rightOpen ? "show-panel" : ""}`}>
-          <div className="glass-card">
-            <h3>🤖 Insights IA</h3>
-            {insights.length > 0 ? (
-              insights.map((item, i) => (
-                <div key={i} className="insight-item">
-                  {item}
-                </div>
-              ))
-            ) : (
-              <p>No hay insights disponibles aún.</p>
-            )}
-          </div>
-        </div>
       </div>
+
+      {/* PANELS + OVERLAY + BOTONES (con Portal) */}
+      {createPortal(
+        <>
+          {/* LEFT PANEL */}
+          <div className={`left-panel ${leftOpen ? "show-panel" : ""}`}>
+            <div className="glass-card">
+              <h3>😊 Positivas</h3>
+              <h2>{data.emocionesPositivas}</h2>
+            </div>
+            <div className="glass-card">
+              <h3>😐 Neutras</h3>
+              <h2>{data.emocionesNeutras}</h2>
+            </div>
+            <div className="glass-card">
+              <h3>💙 Bajas</h3>
+              <h2>{data.emocionesBajas}</h2>
+            </div>
+            <div className="glass-card">
+              <h3>⭐ Favorita</h3>
+              <h2>{data.actividadFavorita}</h2>
+            </div>
+          </div>
+
+          {/* RIGHT PANEL */}
+          <div className={`right-panel ${rightOpen ? "show-panel" : ""}`}>
+            <div className="glass-card">
+              <h3>🤖 Insights IA</h3>
+              {insights.length > 0 ? (
+                insights.map((item, i) => (
+                  <div key={i} className="insight-item">
+                    {item}
+                  </div>
+                ))
+              ) : (
+                <p>No hay insights disponibles aún.</p>
+              )}
+            </div>
+          </div>
+
+          {/* OVERLAY */}
+          {(leftOpen || rightOpen) && (
+            <div className="panel-overlay" onClick={closePanels} />
+          )}
+
+          {/* BOTONES MÓVILES */}
+          <button className="mobile-toggle left-toggle" onClick={toggleLeft}>
+            ☰
+          </button>
+          <button className="mobile-toggle right-toggle" onClick={toggleRight}>
+            🤖
+          </button>
+        </>,
+        document.body
+      )}
     </div>
   );
 }
