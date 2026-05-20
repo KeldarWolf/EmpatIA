@@ -160,12 +160,9 @@ export default function Rutina() {
       .sort((a, b) => a.hora.localeCompare(b.hora));
   }, [eventos, currentDate]);
 
-  const month = calendarMonth;
-  const year = calendarYear;
+  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
 
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-  let firstDay = new Date(year, month, 1).getDay();
+  let firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
   firstDay = firstDay === 0 ? 6 : firstDay - 1;
 
   const days = [];
@@ -201,7 +198,6 @@ export default function Rutina() {
   return (
     <div className="page">
 
-      {/* HEADER */}
       <div className="header">
         <div>
           <h1>🧘 Rutina Inteligente</h1>
@@ -213,12 +209,10 @@ export default function Rutina() {
         </button>
       </div>
 
-      {/* OVERLAY FIX */}
       {(leftOpen || rightOpen) && (
         <div className="overlay show" onClick={closeAll} />
       )}
 
-      {/* TOGGLES */}
       <button
         className="mobile-toggle left"
         onClick={() => {
@@ -239,7 +233,6 @@ export default function Rutina() {
         📅
       </button>
 
-      {/* LAYOUT */}
       <div className="layout">
 
         {/* LEFT */}
@@ -299,54 +292,54 @@ export default function Rutina() {
         {/* RIGHT */}
         <div className={`right-panel ${rightOpen ? "open" : ""}`}>
 
-          {/* SELECTOR MES/AÑO */}
           <div className="calendar-header">
-
             <div>
-              <select value={month} onChange={(e) => setCalendarMonth(Number(e.target.value))} className="input small">
-                {["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"].map((m,i)=>(
-                  <option key={i} value={i}>{m}</option>
-                ))}
+              <select
+                value={calendarMonth}
+                onChange={(e) => setCalendarMonth(Number(e.target.value))}
+                className="input small"
+              >
+                {["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"]
+                  .map((m,i)=>(
+                    <option key={i} value={i}>{m}</option>
+                  ))}
               </select>
 
               <input
                 type="number"
-                value={year}
+                value={calendarYear}
                 onChange={(e) => setCalendarYear(Number(e.target.value))}
                 className="input small"
               />
             </div>
-
-            <div className="calendar-nav">
-              <button onClick={() => changeYear(-1)}>⏪</button>
-              <button onClick={() => changeMonth(-1)}>◀</button>
-              <button onClick={() => changeMonth(1)}>▶</button>
-              <button onClick={() => changeYear(1)}>⏩</button>
-            </div>
-
           </div>
 
-          {/* CALENDAR */}
           <div className="calendar-grid">
-            {days.map((d, i) =>
-              !d ? (
-                <div key={i} className="calendar-day empty" />
-              ) : (
+            {days.map((d, i) => {
+              if (!d) return <div key={i} className="calendar-day empty" />;
+
+              const dateObj = new Date(calendarYear, calendarMonth, d);
+              const formatted = formatDateLocal(dateObj);
+
+              const isSelected = selectedDates.includes(formatted);
+              const isToday = formatted === formatDateLocal(new Date());
+              const hasEvents = eventos.some(e => e.fecha?.slice(0,10) === formatted);
+
+              return (
                 <div
                   key={i}
-                  className="calendar-day"
-                  onClick={() => toggleDate(new Date(year, month, d))}
+                  className={`calendar-day ${isSelected ? "selected" : ""} ${isToday ? "today" : ""}`}
+                  onClick={() => toggleDate(dateObj)}
                 >
                   {d}
+                  {hasEvents && <div className="event-dot" />}
                 </div>
-              )
-            )}
+              );
+            })}
           </div>
 
         </div>
-
       </div>
-
     </div>
   );
 }
