@@ -18,6 +18,9 @@ export default function Estadisticas() {
 
   const [loading, setLoading] = useState(true);
 
+  // =========================
+  // PANEL STATES
+  // =========================
   const [leftOpen, setLeftOpen] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
 
@@ -33,10 +36,9 @@ export default function Estadisticas() {
     bienestar: 0,
   });
 
-  /* =========================
-     LOAD STATS
-  ========================= */
-
+  // =========================
+  // LOAD DATA
+  // =========================
   const loadStats = async () => {
     try {
       setLoading(true);
@@ -46,7 +48,6 @@ export default function Estadisticas() {
       );
 
       const result = await res.json();
-
       setData(result);
     } catch (err) {
       console.log(err);
@@ -56,83 +57,54 @@ export default function Estadisticas() {
   };
 
   useEffect(() => {
-    if (id_usuario) {
-      loadStats();
-    }
+    if (id_usuario) loadStats();
   }, [id_usuario]);
 
-  /* =========================
-     INSIGHTS IA
-  ========================= */
-
+  // =========================
+  // INSIGHTS IA
+  // =========================
   const insights = useMemo(() => {
     const arr = [];
 
     if (data.bienestar >= 80) {
-      arr.push(
-        "✨ Excelente progreso emocional y constancia en tus rutinas."
-      );
-    }
-
-    if (
-      data.bienestar >= 50 &&
-      data.bienestar < 80
-    ) {
-      arr.push(
-        "📈 Tu progreso es positivo, sigue manteniendo tus hábitos."
-      );
+      arr.push("✨ Excelente progreso emocional.");
     }
 
     if (data.bienestar < 50) {
-      arr.push(
-        "🧠 Intenta completar más actividades para mejorar tu bienestar."
-      );
+      arr.push("🧠 Intenta mejorar tus hábitos.");
     }
 
-    if (
-      data.emocionesPositivas >
-      data.emocionesBajas
-    ) {
-      arr.push(
-        "😊 Tus actividades generan más emociones positivas."
-      );
-    }
-
-    if (
-      data.emocionesBajas >
-      data.emocionesPositivas
-    ) {
-      arr.push(
-        "💙 Considera actividades más relajantes o motivadoras."
-      );
+    if (data.emocionesPositivas > data.emocionesBajas) {
+      arr.push("😊 Predominan emociones positivas.");
     }
 
     if (data.diasActivos >= 5) {
-      arr.push(
-        "🔥 Has tenido una excelente constancia esta semana."
-      );
+      arr.push("🔥 Muy buena constancia semanal.");
     }
 
-    if (
-      data.actividadFavorita !== "Sin datos"
-    ) {
-      arr.push(
-        `⭐ Tu actividad favorita es: ${data.actividadFavorita}`
-      );
+    if (data.actividadFavorita !== "Sin datos") {
+      arr.push(`⭐ Favorita: ${data.actividadFavorita}`);
     }
 
     return arr;
   }, [data]);
 
-  /* =========================
-     LOADING
-  ========================= */
+  // =========================
+  // CLOSE PANELS
+  // =========================
+  const closePanels = () => {
+    setLeftOpen(false);
+    setRightOpen(false);
+  };
 
+  // =========================
+  // LOADING
+  // =========================
   if (loading) {
     return (
       <div className="stats-page">
         <div className="loading-box">
-          <div className="loader"></div>
+          <div className="loader" />
           <p>Cargando estadísticas...</p>
         </div>
       </div>
@@ -142,31 +114,43 @@ export default function Estadisticas() {
   return (
     <div className="stats-page">
 
-      {/* BOTON IZQUIERDO */}
+      {/* ================= OVERLAY ================= */}
+      {(leftOpen || rightOpen) && (
+        <div
+          className="panel-overlay"
+          onClick={closePanels}
+        />
+      )}
+
+      {/* ================= TOGGLE BUTTONS ================= */}
+
       <button
         className="mobile-toggle left-toggle"
-        onClick={() => setLeftOpen(!leftOpen)}
+        onClick={() => {
+          setLeftOpen(!leftOpen);
+          setRightOpen(false);
+        }}
       >
         ☰
       </button>
 
-      {/* BOTON DERECHO */}
       <button
         className="mobile-toggle right-toggle"
-        onClick={() => setRightOpen(!rightOpen)}
+        onClick={() => {
+          setRightOpen(!rightOpen);
+          setLeftOpen(false);
+        }}
       >
         🤖
       </button>
 
-      {/* HEADER */}
+      {/* ================= HEADER ================= */}
+
       <div className="stats-header">
 
         <div>
           <h1>📊 Estadísticas</h1>
-
-          <p>
-            Seguimiento emocional y progreso personal
-          </p>
+          <p>Seguimiento emocional y progreso personal</p>
         </div>
 
         <button
@@ -178,50 +162,31 @@ export default function Estadisticas() {
 
       </div>
 
-      {/* MAIN GRID */}
+      {/* ================= GRID ================= */}
+
       <div className="stats-grid">
 
         {/* LEFT PANEL */}
-        <div
-          className={`stats-column left-panel ${
-            leftOpen ? "show-panel" : ""
-          }`}
-        >
+        <div className={`stats-column left-panel ${leftOpen ? "show-panel" : ""}`}>
 
-          <div className="glass-card emotion-card positive">
-            <span>😊 Positivas</span>
-
-            <h2>
-              {data.emocionesPositivas}
-            </h2>
+          <div className="glass-card">
+            <h3>😊 Emociones positivas</h3>
+            <h2>{data.emocionesPositivas}</h2>
           </div>
 
-          <div className="glass-card emotion-card neutral">
-            <span>😐 Neutras</span>
-
-            <h2>
-              {data.emocionesNeutras}
-            </h2>
+          <div className="glass-card">
+            <h3>😐 Neutras</h3>
+            <h2>{data.emocionesNeutras}</h2>
           </div>
 
-          <div className="glass-card emotion-card negative">
-            <span>💙 Bajas</span>
-
-            <h2>
-              {data.emocionesBajas}
-            </h2>
+          <div className="glass-card">
+            <h3>💙 Bajas</h3>
+            <h2>{data.emocionesBajas}</h2>
           </div>
 
-          <div className="glass-card favorite-card">
-
-            <span>
-              ⭐ Actividad favorita
-            </span>
-
-            <h3>
-              {data.actividadFavorita}
-            </h3>
-
+          <div className="glass-card">
+            <h3>⭐ Favorita</h3>
+            <h2>{data.actividadFavorita}</h2>
           </div>
 
         </div>
@@ -229,133 +194,43 @@ export default function Estadisticas() {
         {/* CENTER */}
         <div className="stats-center">
 
-          <div className="glass-card wellbeing-card">
+          <div className="glass-card">
 
-            <div className="wellbeing-top">
-
-              <div>
-                <h2>
-                  🧠 Bienestar general
-                </h2>
-
-                <p>
-                  Basado en actividades completadas
-                </p>
-              </div>
-
-              <div className="wellbeing-number">
-                {data.bienestar}%
-              </div>
-
-            </div>
+            <h2>🧠 Bienestar: {data.bienestar}%</h2>
 
             <div className="progress-container">
-
               <div
                 className="progress-bar"
-                style={{
-                  width: `${data.bienestar}%`,
-                }}
+                style={{ width: `${data.bienestar}%` }}
               />
-
             </div>
 
           </div>
 
-          {/* SUMMARY */}
-          <div className="summary-grid">
+          <div className="glass-card">
 
-            <div className="summary-card">
-              <h2>{data.totalTareas}</h2>
-              <p>Total tareas</p>
-            </div>
+            <h3>📈 Resumen</h3>
 
-            <div className="summary-card">
-              <h2>{data.completadas}</h2>
-              <p>Completadas</p>
-            </div>
-
-            <div className="summary-card">
-              <h2>{data.pendientes}</h2>
-              <p>Pendientes</p>
-            </div>
-
-            <div className="summary-card">
-              <h2>{data.diasActivos}</h2>
-              <p>Días activos</p>
-            </div>
-
-          </div>
-
-          {/* EXTRA */}
-          <div className="glass-card extra-card">
-
-            <h3>
-              📈 Resumen
-            </h3>
-
-            <div className="extra-grid">
-
-              <div className="mini-box">
-                <span>✔ Completadas</span>
-
-                <strong>
-                  {data.completadas}
-                </strong>
-              </div>
-
-              <div className="mini-box">
-                <span>⏳ Pendientes</span>
-
-                <strong>
-                  {data.pendientes}
-                </strong>
-              </div>
-
-              <div className="mini-box">
-                <span>🔥 Constancia</span>
-
-                <strong>
-                  {data.diasActivos} días
-                </strong>
-              </div>
-
-              <div className="mini-box">
-                <span>💯 Bienestar</span>
-
-                <strong>
-                  {data.bienestar}%
-                </strong>
-              </div>
-
-            </div>
+            <p>Total tareas: {data.totalTareas}</p>
+            <p>Completadas: {data.completadas}</p>
+            <p>Pendientes: {data.pendientes}</p>
+            <p>Días activos: {data.diasActivos}</p>
 
           </div>
 
         </div>
 
         {/* RIGHT PANEL */}
-        <div
-          className={`stats-column right-panel ${
-            rightOpen ? "show-panel" : ""
-          }`}
-        >
+        <div className={`stats-column right-panel ${rightOpen ? "show-panel" : ""}`}>
 
-          <div className="glass-card insights-card">
+          <div className="glass-card">
+            <h3>🤖 Insights IA</h3>
 
-            <h3>
-              🤖 Insights IA
-            </h3>
-
-            {insights.map((tip, i) => (
-              <div
-                key={i}
-                className="insight-item"
-              >
-                {tip}
+            {insights.map((item, i) => (
+              <div key={i} className="insight-item">
+                {item}
               </div>
             ))}
-
           </div>
 
         </div>
