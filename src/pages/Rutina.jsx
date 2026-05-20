@@ -5,7 +5,7 @@ import "./Rutina.css";
 const API_URL = "https://empatia-backend.onrender.com";
 
 export default function Rutina() {
-
+ 
   const navigate = useNavigate();
 
   const storedUser = JSON.parse(
