@@ -70,7 +70,39 @@
 }
 
 /* =========================
-   ACTIVIDADES
+   INPUTS / UI
+========================= */
+
+.input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  outline: none;
+}
+
+.time-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.create-btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  background: #6366f1;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* =========================
+   CARDS
 ========================= */
 
 .activity-card {
@@ -91,50 +123,6 @@
   border: 1px solid #6366f1;
   background: rgba(99, 102, 241, 0.15);
 }
-
-/* =========================
-   INPUTS
-========================= */
-
-.input {
-  width: 100%;
-  padding: 10px;
-  border-radius: 10px;
-  border: none;
-  margin-bottom: 10px;
-  background: rgba(255, 255, 255, 0.08);
-  color: white;
-  outline: none;
-}
-
-/* =========================
-   TIME ROW
-========================= */
-
-.time-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-/* =========================
-   CREATE BUTTON
-========================= */
-
-.create-btn {
-  width: 100%;
-  padding: 12px;
-  border: none;
-  border-radius: 12px;
-  background: #6366f1;
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-/* =========================
-   EVENTS
-========================= */
 
 .planner-card {
   display: flex;
@@ -191,20 +179,10 @@
 
 .calendar-day.empty {
   background: transparent;
-  cursor: default;
-}
-
-.event-dot {
-  width: 6px;
-  height: 6px;
-  background: #fbbf24;
-  border-radius: 50%;
-  position: absolute;
-  bottom: 6px;
 }
 
 /* =========================
-   OVERLAY (IMPORTANT)
+   OVERLAY
 ========================= */
 
 .overlay {
@@ -244,65 +222,78 @@
 }
 
 /* =========================
-   RESPONSIVE DRAWER MODE
+   RESPONSIVE (TABLET + MOBILE)
 ========================= */
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
 
   .layout {
     grid-template-columns: 1fr;
     height: auto;
   }
 
-  /* mostrar botones flotantes */
   .mobile-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
-  /* ================= LEFT PANEL ================= */
+  /* =========================
+     DRAWERS BASE
+  ========================= */
 
-  .left-panel {
+  .left-panel,
+  .right-panel {
     position: fixed;
     top: 0;
-    left: 0;
-    height: 100%;
+    height: 100vh;
     width: 85%;
-    max-width: 320px;
-
-    transform: translateX(-110%);
-    transition: transform 0.3s ease;
-
+    max-width: 340px;
     z-index: 1100;
+    transition: transform 0.28s ease;
+  }
+
+  /* LEFT */
+  .left-panel {
+    left: 0;
+    transform: translateX(-110%);
   }
 
   .left-panel.open {
     transform: translateX(0);
   }
 
-  /* ================= RIGHT PANEL ================= */
-
+  /* RIGHT */
   .right-panel {
-    position: fixed;
-    top: 0;
     right: 0;
-    height: 100%;
-    width: 85%;
-    max-width: 320px;
-
     transform: translateX(110%);
-    transition: transform 0.3s ease;
-
-    z-index: 1100;
   }
 
   .right-panel.open {
     transform: translateX(0);
   }
 
-  /* center abajo */
   .center-panel {
-    order: 1;
+    width: 100%;
+    min-height: 100vh;
+  }
+}
+
+/* =========================
+   MOBILE PEQUEÑO
+========================= */
+
+@media (max-width: 600px) {
+
+  .left-panel,
+  .right-panel {
+    width: 92%;
+    max-width: none;
+  }
+
+  .mobile-toggle {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
   }
 }
