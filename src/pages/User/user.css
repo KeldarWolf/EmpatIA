@@ -1,66 +1,13 @@
 /* =========================================
-   RESET GLOBAL
-========================================= */
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-html,
-body,
-#root {
-  width: 100%;
-  min-height: 100dvh;
-
-  overflow-x: hidden;
-
-  background: #050505;
-
-  font-family: Arial, sans-serif;
-}
-
-/* =========================================
-   LAYOUT GENERAL
-========================================= */
-
-.app-layout {
-  display: flex;
-
-  width: 100%;
-
-  min-height: 100dvh;
-
-  overflow-x: auto;
-
-  overflow-y: hidden;
-
-  color: white;
-
-  background:
-    radial-gradient(
-      circle at top,
-      rgba(37,99,235,0.12),
-      transparent 35%
-    ),
-    linear-gradient(
-      180deg,
-      #0f172a 0%,
-      #020617 100%
-    );
-}
-
-/* =========================================
    PANEL IZQUIERDO
 ========================================= */
 
 .left-panel {
-  width: clamp(180px, 20vw, 320px);
+  width: clamp(90px, 11vw, 180px);
 
   flex-shrink: 1;
 
-  min-width: 160px;
+  min-width: 90px;
 
   background:
     rgba(17, 24, 39, 0.88);
@@ -69,7 +16,7 @@ body,
     1px solid rgba(255,255,255,0.05);
 
   padding:
-    clamp(10px, 2vw, 24px);
+    clamp(6px, 1vw, 14px);
 
   backdrop-filter: blur(14px);
 
@@ -77,14 +24,14 @@ body,
 
   flex-direction: column;
 
-  gap: 20px;
+  gap: 12px;
 
   overflow-y: auto;
 }
 
 .left-panel h4 {
   font-size:
-    clamp(18px, 2vw, 24px);
+    clamp(13px, 1.3vw, 18px);
 
   color: #60a5fa;
 
@@ -95,18 +42,18 @@ body,
 
 .quote-box {
   padding:
-    clamp(12px, 2vw, 18px);
+    clamp(8px, 1vw, 12px);
 
   background:
     rgba(31, 41, 55, 0.75);
 
   border-radius:
-    clamp(12px, 2vw, 18px);
+    clamp(8px, 1vw, 14px);
 
   font-size:
-    clamp(13px, 2vw, 15px);
+    clamp(10px, 1vw, 13px);
 
-  line-height: 1.6;
+  line-height: 1.4;
 
   opacity: 0.95;
 
@@ -114,187 +61,51 @@ body,
     1px solid rgba(255,255,255,0.05);
 
   box-shadow:
-    0 0 clamp(10px, 2vw, 22px)
+    0 0 clamp(6px, 1vw, 14px)
     rgba(96,165,250,0.08);
 }
 
 /* =========================================
-   PANEL CENTRAL
+   PANEL DERECHO
 ========================================= */
 
-.center-panel {
-  flex: 1;
+.right-panel {
+  width: clamp(90px, 11vw, 180px);
 
-  min-width: 0;
+  flex-shrink: 1;
 
-  display: flex;
-
-  flex-direction: column;
-
-  justify-content: space-between;
-}
-
-/* =========================================
-   CHAT
-========================================= */
-
-.chat-box {
-  flex: 1;
-
-  padding:
-    clamp(14px, 3vw, 30px);
-
-  overflow-y: auto;
-
-  display: flex;
-
-  flex-direction: column;
-
-  gap: 12px;
-
-  scroll-behavior: smooth;
-}
-
-/* Scrollbar */
-
-.chat-box::-webkit-scrollbar {
-  width: 8px;
-}
-
-.chat-box::-webkit-scrollbar-thumb {
-  background:
-    rgba(255,255,255,0.12);
-
-  border-radius: 20px;
-}
-
-/* =========================================
-   MENSAJES
-========================================= */
-
-.msg {
-  max-width:
-    min(75%, 720px);
-
-  padding:
-    clamp(12px, 2vw, 16px);
-
-  border-radius:
-    clamp(14px, 2vw, 18px);
-
-  line-height: 1.6;
-
-  font-size:
-    clamp(14px, 2vw, 16px);
-
-  word-break: break-word;
-
-  animation:
-    fadeIn 0.25s ease;
-}
-
-/* Usuario */
-
-.msg.user {
-  background:
-    linear-gradient(
-      135deg,
-      #2563eb,
-      #1d4ed8
-    );
-
-  margin-left: auto;
-
-  text-align: right;
-
-  box-shadow:
-    0 0 clamp(10px, 2vw, 24px)
-    rgba(37,99,235,0.25);
-}
-
-/* IA */
-
-.msg.ai {
-  background:
-    rgba(55, 65, 81, 0.92);
-
-  margin-right: auto;
-
-  box-shadow:
-    0 0 clamp(10px, 2vw, 20px)
-    rgba(255,255,255,0.05);
-}
-
-/* =========================================
-   INPUT BOX
-========================================= */
-
-.input-box {
-  display: flex;
-
-  gap: 12px;
-
-  padding:
-    clamp(12px, 2vw, 20px);
-
-  border-top:
-    1px solid rgba(255,255,255,0.05);
+  min-width: 90px;
 
   background:
     rgba(17, 24, 39, 0.88);
 
-  backdrop-filter: blur(12px);
-}
-
-/* Input */
-
-.input-box input {
-  flex: 1;
-
-  min-width: 0;
+  border-left:
+    1px solid rgba(255,255,255,0.05);
 
   padding:
-    clamp(12px, 2vw, 15px);
+    clamp(6px, 1vw, 14px);
 
-  border-radius:
-    clamp(12px, 2vw, 16px);
+  display: flex;
 
-  border:
-    1px solid rgba(255,255,255,0.08);
+  flex-direction: column;
 
-  outline: none;
+  gap: 8px;
 
-  background:
-    rgba(31, 41, 55, 0.95);
+  backdrop-filter: blur(14px);
 
-  color: white;
-
-  font-size:
-    clamp(14px, 2vw, 16px);
-
-  transition: 0.25s ease;
+  overflow-y: auto;
 }
 
-.input-box input:focus {
-  border-color: #2563eb;
+/* Botones */
 
-  box-shadow:
-    0 0 15px rgba(37,99,235,0.22);
-}
-
-/* =========================================
-   BOTONES
-========================================= */
-
-.input-box button,
 .right-panel button {
   padding:
-    clamp(12px, 2vw, 15px);
+    clamp(8px, 1vw, 12px);
 
   border: none;
 
   border-radius:
-    clamp(12px, 2vw, 16px);
+    clamp(8px, 1vw, 12px);
 
   background:
     linear-gradient(
@@ -310,68 +121,11 @@ body,
   transition: 0.25s ease;
 
   font-size:
-    clamp(13px, 2vw, 15px);
+    clamp(10px, 1vw, 13px);
 
   font-weight: bold;
 
   white-space: nowrap;
-
-  flex-shrink: 0;
-}
-
-.input-box button:hover,
-.right-panel button:hover {
-  transform: translateY(-2px);
-
-  box-shadow:
-    0 0 18px rgba(37,99,235,0.35);
-}
-
-/* =========================================
-   PANEL DERECHO
-========================================= */
-
-.right-panel {
-  width: clamp(180px, 20vw, 320px);
-
-  flex-shrink: 1;
-
-  min-width: 160px;
-
-  background:
-    rgba(17, 24, 39, 0.88);
-
-  border-left:
-    1px solid rgba(255,255,255,0.05);
-
-  padding:
-    clamp(10px, 2vw, 24px);
-
-  display: flex;
-
-  flex-direction: column;
-
-  gap: 12px;
-
-  backdrop-filter: blur(14px);
-
-  overflow-y: auto;
-}
-
-/* =========================================
-   ANIMACION
-========================================= */
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 /* =========================================
@@ -381,13 +135,15 @@ body,
 @media (max-width: 900px) {
   .left-panel,
   .right-panel {
-    width: clamp(150px, 18vw, 220px);
+    width: 80px;
 
-    padding: 12px;
+    min-width: 80px;
+
+    padding: 6px;
   }
 
-  .msg {
-    max-width: 88%;
+  .quote-box {
+    font-size: 10px;
   }
 }
 
@@ -398,56 +154,26 @@ body,
 @media (max-width: 600px) {
   .left-panel,
   .right-panel {
-    width: 140px;
+    width: 70px;
 
-    min-width: 140px;
+    min-width: 70px;
 
-    padding: 10px;
-  }
-
-  .chat-box {
-    padding: 12px;
-  }
-
-  .msg {
-    max-width: 94%;
-
-    font-size: 14px;
-  }
-
-  .input-box {
-    padding: 10px;
-
-    gap: 8px;
-  }
-
-  .input-box button,
-  .right-panel button {
-    padding: 10px;
-  }
-}
-
-/* =========================================
-   MOBILE MUY PEQUEÑO
-========================================= */
-
-@media (max-width: 420px) {
-  .left-panel,
-  .right-panel {
-    width: 120px;
-
-    min-width: 120px;
+    padding: 4px;
   }
 
   .left-panel h4 {
-    font-size: 16px;
+    font-size: 11px;
   }
 
   .quote-box {
-    font-size: 12px;
+    padding: 6px;
+
+    font-size: 9px;
   }
 
-  .msg {
-    font-size: 13px;
+  .right-panel button {
+    padding: 7px;
+
+    font-size: 9px;
   }
 }
