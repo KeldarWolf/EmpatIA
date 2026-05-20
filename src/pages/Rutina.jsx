@@ -38,6 +38,7 @@ export default function Rutina() {
   const [descripcion, setDescripcion] = useState("");
   const [hora, setHora] = useState("");
   const [duracion, setDuracion] = useState(30);
+
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   /* =========================
@@ -90,13 +91,13 @@ export default function Rutina() {
   };
 
   /* =========================
-     CREATE EVENT
+     CREATE EVENT (FIX REAL)
   ========================= */
   const createEvent = async () => {
-    if (!selectedActivity || !hora || !user?.id_usuario) return;
+    if (!user?.id_usuario || !titulo || !hora) return;
 
     try {
-      await fetch(`${API_URL}/api/rutina-eventos`, {
+      const res = await fetch(`${API_URL}/api/rutina-eventos`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -111,6 +112,13 @@ export default function Rutina() {
           fecha: selectedDate.toISOString().split("T")[0],
         }),
       });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.log("ERROR BACKEND:", data);
+        return;
+      }
 
       await loadEvents();
 
@@ -199,7 +207,7 @@ export default function Rutina() {
       {/* LAYOUT */}
       <div className="layout">
 
-        {/* LEFT */}
+        {/* LEFT PANEL */}
         <div className={`left-panel ${leftOpen ? "open" : ""}`}>
           <h3>🎯 Actividades</h3>
 
@@ -220,15 +228,34 @@ export default function Rutina() {
 
           <h3>➕ Crear evento</h3>
 
-          <input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Título" />
-          <textarea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder="Descripción" />
-          <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} />
-          <input type="number" value={duracion} onChange={(e) => setDuracion(e.target.value)} />
+          <input
+            value={titulo}
+            onChange={(e) => setTitulo(e.target.value)}
+            placeholder="Título"
+          />
+
+          <textarea
+            value={descripcion}
+            onChange={(e) => setDescripcion(e.target.value)}
+            placeholder="Descripción"
+          />
+
+          <input
+            type="time"
+            value={hora}
+            onChange={(e) => setHora(e.target.value)}
+          />
+
+          <input
+            type="number"
+            value={duracion}
+            onChange={(e) => setDuracion(e.target.value)}
+          />
 
           <button onClick={createEvent}>Crear rutina</button>
         </div>
 
-        {/* CENTER */}
+        {/* CENTER PANEL */}
         <div className="center-panel">
           <h3>📅 {selectedDate.toLocaleDateString()}</h3>
 
@@ -236,7 +263,10 @@ export default function Rutina() {
             <p>No hay eventos</p>
           ) : (
             eventosDia.map((evento) => (
-              <div key={evento.id_evento} className={`event-card ${evento.completado ? "completed" : ""}`}>
+              <div
+                key={evento.id_evento}
+                className={`event-card ${evento.completado ? "completed" : ""}`}
+              >
                 <input
                   type="checkbox"
                   checked={evento.completado}
@@ -250,24 +280,33 @@ export default function Rutina() {
                   <p>{evento.descripcion}</p>
                 </div>
 
-                <button onClick={() => deleteEvent(evento.id_evento)}>🗑</button>
+                <button onClick={() => deleteEvent(evento.id_evento)}>
+                  🗑
+                </button>
               </div>
             ))
           )}
         </div>
 
-        {/* RIGHT */}
+        {/* RIGHT PANEL */}
         <div className={`right-panel ${rightOpen ? "open" : ""}`}>
           <h3>📆 Calendario</h3>
 
           <select
             value={currentMonth}
             onChange={(e) =>
-              setSelectedDate(new Date(currentYear, Number(e.target.value), 1))
+              setSelectedDate(
+                new Date(currentYear, Number(e.target.value), 1)
+              )
             }
           >
-            {["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"].map((m,i)=>(
-              <option key={i} value={i}>{m}</option>
+            {[
+              "Enero","Febrero","Marzo","Abril","Mayo","Junio",
+              "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"
+            ].map((m, i) => (
+              <option key={i} value={i}>
+                {m}
+              </option>
             ))}
           </select>
 
@@ -275,7 +314,9 @@ export default function Rutina() {
             {days.map((d, i) => (
               <div
                 key={i}
-                onClick={() => d && setSelectedDate(new Date(currentYear, currentMonth, d))}
+                onClick={() =>
+                  d && setSelectedDate(new Date(currentYear, currentMonth, d))
+                }
               >
                 {d}
               </div>
