@@ -1,367 +1,451 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import "./Estadisticas.css";
+/* =========================================
+   ESTADISTICAS PAGE
+========================================= */
 
-const API_URL = "https://empatia-backend.onrender.com";
-
-export default function Estadisticas() {
-  const navigate = useNavigate();
-
-  const storedUser = JSON.parse(
-    sessionStorage.getItem("usuario") || "null"
+.stats-page {
+  min-height: 100vh;
+  width: 100%;
+  padding: 30px;
+  background: linear-gradient(
+    135deg,
+    #0f172a,
+    #111827,
+    #1e293b
   );
+  color: white;
+  overflow-x: hidden;
+  position: relative;
+  box-sizing: border-box;
+}
 
-  const id_usuario =
-    storedUser?.id_usuario ||
-    storedUser?.user?.id_usuario ||
-    storedUser?.id;
+/* =========================================
+   HEADER
+========================================= */
 
-  const [loading, setLoading] = useState(true);
+.stats-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  gap: 20px;
+  flex-wrap: wrap;
+}
 
-  const [leftOpen, setLeftOpen] = useState(false);
-  const [rightOpen, setRightOpen] = useState(false);
+.stats-header h1 {
+  font-size: 2.3rem;
+  margin-bottom: 5px;
+}
 
-  const [data, setData] = useState({
-    totalTareas: 0,
-    completadas: 0,
-    pendientes: 0,
-    diasActivos: 0,
-    emocionesPositivas: 0,
-    emocionesNeutras: 0,
-    emocionesBajas: 0,
-    actividadFavorita: "Sin datos",
-    bienestar: 0,
-  });
+.stats-header p {
+  opacity: 0.8;
+  font-size: 1rem;
+}
 
-  /* =========================
-     LOAD STATS
-  ========================= */
+.back-btn {
+  border: none;
+  background: linear-gradient(
+    135deg,
+    #4f46e5,
+    #7c3aed
+  );
+  color: white;
+  padding: 12px 20px;
+  border-radius: 14px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: 0.25s;
+  font-weight: 600;
+}
 
-  const loadStats = async () => {
-    try {
-      setLoading(true);
+.back-btn:hover {
+  transform: translateY(-2px);
+}
 
-      const res = await fetch(
-        `${API_URL}/api/stats/${id_usuario}`
-      );
+/* =========================================
+   GRID
+========================================= */
 
-      const result = await res.json();
+.stats-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr 320px;
+  gap: 24px;
+  width: 100%;
+}
 
-      setData(result);
-    } catch (err) {
-      console.log(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+.stats-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
 
-  useEffect(() => {
-    if (id_usuario) {
-      loadStats();
-    }
-  }, [id_usuario]);
+.stats-center {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
 
-  /* =========================
-     INSIGHTS IA
-  ========================= */
+/* =========================================
+   GLASS CARD
+========================================= */
 
-  const insights = useMemo(() => {
-    const arr = [];
+.glass-card {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  border-radius: 22px;
+  padding: 22px;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+}
 
-    if (data.bienestar >= 80) {
-      arr.push(
-        "✨ Excelente progreso emocional y constancia en tus rutinas."
-      );
-    }
+/* =========================================
+   EMOTION CARDS
+========================================= */
 
-    if (
-      data.bienestar >= 50 &&
-      data.bienestar < 80
-    ) {
-      arr.push(
-        "📈 Tu progreso es positivo, sigue manteniendo tus hábitos."
-      );
-    }
+.emotion-card {
+  text-align: center;
+  transition: 0.25s;
+}
 
-    if (data.bienestar < 50) {
-      arr.push(
-        "🧠 Intenta completar más actividades para mejorar tu bienestar."
-      );
-    }
+.emotion-card:hover {
+  transform: translateY(-4px);
+}
 
-    if (
-      data.emocionesPositivas >
-      data.emocionesBajas
-    ) {
-      arr.push(
-        "😊 Tus actividades generan más emociones positivas."
-      );
-    }
+.emotion-card span {
+  display: block;
+  font-size: 1rem;
+  opacity: 0.9;
+  margin-bottom: 10px;
+}
 
-    if (
-      data.emocionesBajas >
-      data.emocionesPositivas
-    ) {
-      arr.push(
-        "💙 Considera actividades más relajantes o motivadoras."
-      );
-    }
+.emotion-card h2 {
+  font-size: 2.6rem;
+  margin: 0;
+}
 
-    if (data.diasActivos >= 5) {
-      arr.push(
-        "🔥 Has tenido una excelente constancia esta semana."
-      );
-    }
+.positive {
+  background: linear-gradient(
+    135deg,
+    rgba(16,185,129,0.25),
+    rgba(5,150,105,0.2)
+  );
+}
 
-    if (
-      data.actividadFavorita !== "Sin datos"
-    ) {
-      arr.push(
-        `⭐ Tu actividad favorita es: ${data.actividadFavorita}`
-      );
-    }
+.neutral {
+  background: linear-gradient(
+    135deg,
+    rgba(59,130,246,0.25),
+    rgba(37,99,235,0.2)
+  );
+}
 
-    return arr;
-  }, [data]);
+.negative {
+  background: linear-gradient(
+    135deg,
+    rgba(236,72,153,0.25),
+    rgba(190,24,93,0.2)
+  );
+}
 
-  /* =========================
-     LOADING
-  ========================= */
+/* =========================================
+   FAVORITE CARD
+========================================= */
 
-  if (loading) {
-    return (
-      <div className="stats-page">
-        <div className="loading-box">
-          <div className="loader"></div>
-          <p>Cargando estadísticas...</p>
-        </div>
-      </div>
-    );
+.favorite-card span {
+  opacity: 0.8;
+}
+
+.favorite-card h3 {
+  margin-top: 14px;
+  font-size: 1.4rem;
+  line-height: 1.4;
+}
+
+/* =========================================
+   WELLBEING
+========================================= */
+
+.wellbeing-card {
+  width: 100%;
+}
+
+.wellbeing-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.wellbeing-top h2 {
+  margin-bottom: 6px;
+}
+
+.wellbeing-number {
+  font-size: 2.8rem;
+  font-weight: bold;
+  color: #60a5fa;
+}
+
+.progress-container {
+  width: 100%;
+  height: 18px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    #3b82f6,
+    #8b5cf6
+  );
+  transition: 0.5s;
+}
+
+/* =========================================
+   SUMMARY
+========================================= */
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.summary-card {
+  background: rgba(255,255,255,0.08);
+  border-radius: 20px;
+  padding: 22px;
+  text-align: center;
+  transition: 0.25s;
+}
+
+.summary-card:hover {
+  transform: translateY(-4px);
+}
+
+.summary-card h2 {
+  font-size: 2.2rem;
+  margin-bottom: 8px;
+}
+
+.summary-card p {
+  opacity: 0.8;
+}
+
+/* =========================================
+   EXTRA
+========================================= */
+
+.extra-card h3 {
+  margin-bottom: 20px;
+}
+
+.extra-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.mini-box {
+  background: rgba(255,255,255,0.07);
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.mini-box span {
+  display: block;
+  opacity: 0.8;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+}
+
+.mini-box strong {
+  font-size: 1.3rem;
+}
+
+/* =========================================
+   INSIGHTS
+========================================= */
+
+.insights-card h3 {
+  margin-bottom: 20px;
+}
+
+.insight-item {
+  background: rgba(255,255,255,0.07);
+  border-radius: 16px;
+  padding: 15px;
+  margin-bottom: 14px;
+  line-height: 1.5;
+  font-size: 0.96rem;
+}
+
+/* =========================================
+   LOADING
+========================================= */
+
+.loading-box {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.loader {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 5px solid rgba(255,255,255,0.2);
+  border-top: 5px solid #60a5fa;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================================
+   BOTONES MOBILE
+========================================= */
+
+.mobile-toggle {
+  display: none;
+}
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width: 1200px) {
+
+  .stats-grid {
+    grid-template-columns: 1fr;
   }
 
-  return (
-    <div className="stats-page">
+  .left-panel,
+  .right-panel {
+    position: fixed;
+    top: 0;
+    width: 300px;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.96);
+    backdrop-filter: blur(12px);
+    z-index: 1000;
+    overflow-y: auto;
+    padding: 20px;
+    transition: 0.35s;
+  }
 
-      {/* BOTON IZQUIERDO */}
-      <button
-        className="mobile-toggle left-toggle"
-        onClick={() => setLeftOpen(!leftOpen)}
-      >
-        ☰
-      </button>
+  .left-panel {
+    left: -340px;
+  }
 
-      {/* BOTON DERECHO */}
-      <button
-        className="mobile-toggle right-toggle"
-        onClick={() => setRightOpen(!rightOpen)}
-      >
-        🤖
-      </button>
+  .right-panel {
+    right: -340px;
+  }
 
-      {/* HEADER */}
-      <div className="stats-header">
+  .left-panel.show-panel {
+    left: 0;
+  }
 
-        <div>
-          <h1>📊 Estadísticas</h1>
+  .right-panel.show-panel {
+    right: 0;
+  }
 
-          <p>
-            Seguimiento emocional y progreso personal
-          </p>
-        </div>
+  .mobile-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    z-index: 1100;
+    font-size: 1.3rem;
+    color: white;
+    background: linear-gradient(
+      135deg,
+      #3b82f6,
+      #8b5cf6
+    );
+    box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+  }
 
-        <button
-          className="back-btn"
-          onClick={() => navigate("/user")}
-        >
-          ⬅ Volver
-        </button>
+  .left-toggle {
+    left: 10px;
+  }
 
-      </div>
+  .right-toggle {
+    right: 10px;
+  }
+}
 
-      {/* MAIN GRID */}
-      <div className="stats-grid">
+@media (max-width: 900px) {
 
-        {/* LEFT PANEL */}
-        <div
-          className={`stats-column left-panel ${
-            leftOpen ? "show-panel" : ""
-          }`}
-        >
+  .stats-page {
+    padding: 20px 15px 40px;
+  }
 
-          <div className="glass-card emotion-card positive">
-            <span>😊 Positivas</span>
+  .stats-header h1 {
+    font-size: 1.8rem;
+  }
 
-            <h2>
-              {data.emocionesPositivas}
-            </h2>
-          </div>
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
 
-          <div className="glass-card emotion-card neutral">
-            <span>😐 Neutras</span>
+  .extra-grid {
+    grid-template-columns: 1fr;
+  }
 
-            <h2>
-              {data.emocionesNeutras}
-            </h2>
-          </div>
+  .wellbeing-number {
+    font-size: 2rem;
+  }
+}
 
-          <div className="glass-card emotion-card negative">
-            <span>💙 Bajas</span>
+@media (max-width: 500px) {
 
-            <h2>
-              {data.emocionesBajas}
-            </h2>
-          </div>
+  .stats-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 
-          <div className="glass-card favorite-card">
+  .glass-card {
+    padding: 18px;
+  }
 
-            <span>
-              ⭐ Actividad favorita
-            </span>
+  .emotion-card h2 {
+    font-size: 2rem;
+  }
 
-            <h3>
-              {data.actividadFavorita}
-            </h3>
+  .summary-card h2 {
+    font-size: 1.8rem;
+  }
 
-          </div>
+  .favorite-card h3 {
+    font-size: 1.1rem;
+  }
 
-        </div>
+  .insight-item {
+    font-size: 0.88rem;
+  }
 
-        {/* CENTER */}
-        <div className="stats-center">
-
-          <div className="glass-card wellbeing-card">
-
-            <div className="wellbeing-top">
-
-              <div>
-                <h2>
-                  🧠 Bienestar general
-                </h2>
-
-                <p>
-                  Basado en actividades completadas
-                </p>
-              </div>
-
-              <div className="wellbeing-number">
-                {data.bienestar}%
-              </div>
-
-            </div>
-
-            <div className="progress-container">
-
-              <div
-                className="progress-bar"
-                style={{
-                  width: `${data.bienestar}%`,
-                }}
-              />
-
-            </div>
-
-          </div>
-
-          {/* SUMMARY */}
-          <div className="summary-grid">
-
-            <div className="summary-card">
-              <h2>{data.totalTareas}</h2>
-              <p>Total tareas</p>
-            </div>
-
-            <div className="summary-card">
-              <h2>{data.completadas}</h2>
-              <p>Completadas</p>
-            </div>
-
-            <div className="summary-card">
-              <h2>{data.pendientes}</h2>
-              <p>Pendientes</p>
-            </div>
-
-            <div className="summary-card">
-              <h2>{data.diasActivos}</h2>
-              <p>Días activos</p>
-            </div>
-
-          </div>
-
-          {/* EXTRA */}
-          <div className="glass-card extra-card">
-
-            <h3>
-              📈 Resumen
-            </h3>
-
-            <div className="extra-grid">
-
-              <div className="mini-box">
-                <span>✔ Completadas</span>
-
-                <strong>
-                  {data.completadas}
-                </strong>
-              </div>
-
-              <div className="mini-box">
-                <span>⏳ Pendientes</span>
-
-                <strong>
-                  {data.pendientes}
-                </strong>
-              </div>
-
-              <div className="mini-box">
-                <span>🔥 Constancia</span>
-
-                <strong>
-                  {data.diasActivos} días
-                </strong>
-              </div>
-
-              <div className="mini-box">
-                <span>💯 Bienestar</span>
-
-                <strong>
-                  {data.bienestar}%
-                </strong>
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* RIGHT PANEL */}
-        <div
-          className={`stats-column right-panel ${
-            rightOpen ? "show-panel" : ""
-          }`}
-        >
-
-          <div className="glass-card insights-card">
-
-            <h3>
-              🤖 Insights IA
-            </h3>
-
-            {insights.map((tip, i) => (
-              <div
-                key={i}
-                className="insight-item"
-              >
-                {tip}
-              </div>
-            ))}
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-  );
+  .left-panel,
+  .right-panel {
+    width: 85%;
+  }
 }
