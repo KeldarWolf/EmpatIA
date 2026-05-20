@@ -534,7 +534,7 @@ export default function Rutina() {
         <button
           className="back-btn"
           onClick={() =>
-            navigate("/user")
+            navigate("/home")
           }
         >
           ⬅ Volver
