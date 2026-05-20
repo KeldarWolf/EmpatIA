@@ -1,419 +1,313 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "./Estadisticas.css";
+
+const API_URL = "https://empatia-backend.onrender.com";
 
 export default function Estadisticas() {
   const navigate = useNavigate();
 
-  const [mobile, setMobile] = useState(window.innerWidth < 900);
-
-  useEffect(() => {
-    const resize = () => {
-      setMobile(window.innerWidth < 900);
-    };
-
-    window.addEventListener("resize", resize);
-
-    return () => window.removeEventListener("resize", resize);
-  }, []);
-
-  /* =========================================
-     DATOS
-  ========================================= */
-
-  const [data] = useState({
-    totalTareas: 12,
-    completadas: 7,
-    pendientes: 5,
-    diasActivos: 4,
-    emocionesPositivas: 6,
-    emocionesNeutras: 3,
-    emocionesBajas: 3,
-  });
-
-  const progress = Math.round(
-    (data.completadas / data.totalTareas) * 100
+  const storedUser = JSON.parse(
+    sessionStorage.getItem("usuario") || "null"
   );
 
-  /* =========================================
-     STYLES
-  ========================================= */
+  const id_usuario =
+    storedUser?.id_usuario ||
+    storedUser?.user?.id_usuario ||
+    storedUser?.id;
 
-  const styles = {
-    page: {
-      minHeight: "100dvh",
-      background:
-        "linear-gradient(180deg, #020617 0%, #081028 100%)",
-      color: "white",
-      fontFamily: "Arial, sans-serif",
-      display: "flex",
-      flexDirection: "column",
-      overflowX: "hidden",
-    },
+  const [loading, setLoading] = useState(true);
 
-    /* ================= HEADER ================= */
+  const [data, setData] = useState({
+    totalTareas: 0,
+    completadas: 0,
+    pendientes: 0,
+    diasActivos: 0,
+    emocionesPositivas: 0,
+    emocionesNeutras: 0,
+    emocionesBajas: 0,
+    actividadFavorita: "Sin datos",
+    bienestar: 0,
+  });
 
-    header: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: mobile ? "flex-start" : "center",
-      flexDirection: mobile ? "column" : "row",
-      gap: "16px",
-      padding: mobile ? "18px" : "24px 32px",
-      borderBottom: "1px solid rgba(255,255,255,0.08)",
-      background: "rgba(2,6,23,0.92)",
-      backdropFilter: "blur(10px)",
-    },
+  /* =========================
+     LOAD STATS
+  ========================= */
+  const loadStats = async () => {
+    try {
+      setLoading(true);
 
-    title: {
-      margin: 0,
-      fontSize: mobile ? "1.6rem" : "2.1rem",
-      fontWeight: 700,
-    },
+      const res = await fetch(
+        `${API_URL}/api/stats/${id_usuario}`
+      );
 
-    subtitle: {
-      marginTop: "8px",
-      opacity: 0.7,
-      fontSize: mobile ? "0.9rem" : "1rem",
-    },
+      const result = await res.json();
 
-    backBtn: {
-      border: "none",
-      background: "#172036",
-      color: "white",
-      padding: mobile ? "12px 18px" : "14px 22px",
-      borderRadius: "14px",
-      cursor: "pointer",
-      fontSize: mobile ? "0.9rem" : "1rem",
-      transition: "0.2s",
-      width: mobile ? "100%" : "auto",
-    },
-
-    /* ================= GRID ================= */
-
-    grid: {
-      flex: 1,
-      display: "grid",
-      gridTemplateColumns: mobile
-        ? "1fr"
-        : "280px 1fr 320px",
-      gap: mobile ? "14px" : "18px",
-      padding: mobile ? "14px" : "18px",
-      overflow: "auto",
-    },
-
-    /* ================= PANELS ================= */
-
-    panel: {
-      background:
-        "linear-gradient(145deg, #08112b, #091633)",
-      borderRadius: "24px",
-      border: "1px solid rgba(255,255,255,0.05)",
-      padding: mobile ? "18px" : "24px",
-      boxShadow: "0 10px 40px rgba(0,0,0,0.25)",
-    },
-
-    sectionTitle: {
-      margin: 0,
-      marginBottom: "20px",
-      fontSize: mobile ? "1.1rem" : "1.35rem",
-      color: "#dbeafe",
-    },
-
-    /* ================= EMOTION CARD ================= */
-
-    emotionCard: {
-      background:
-        "linear-gradient(145deg, #0c1738, #09122b)",
-      padding: mobile ? "16px" : "18px",
-      borderRadius: "18px",
-      marginBottom: "14px",
-      border: "1px solid rgba(255,255,255,0.04)",
-    },
-
-    emotionLabel: {
-      margin: 0,
-      opacity: 0.75,
-      fontSize: mobile ? "0.85rem" : "0.95rem",
-    },
-
-    emotionValue: {
-      margin: "10px 0 0",
-      fontSize: mobile ? "1.7rem" : "2rem",
-      fontWeight: "bold",
-    },
-
-    /* ================= CENTER ================= */
-
-    progressWrapper: {
-      marginTop: "10px",
-    },
-
-    progressTop: {
-      display: "flex",
-      justifyContent: "space-between",
-      marginBottom: "12px",
-      fontSize: mobile ? "0.9rem" : "1rem",
-    },
-
-    progressBarBg: {
-      width: "100%",
-      height: mobile ? "12px" : "16px",
-      background: "#111827",
-      borderRadius: "999px",
-      overflow: "hidden",
-    },
-
-    progressBar: {
-      height: "100%",
-      width: `${progress}%`,
-      background:
-        "linear-gradient(90deg, #2563eb, #3b82f6)",
-      borderRadius: "999px",
-      transition: "0.3s",
-    },
-
-    /* ================= SUMMARY ================= */
-
-    summary: {
-      display: "grid",
-      gridTemplateColumns: mobile
-        ? "repeat(2, 1fr)"
-        : "repeat(4, 1fr)",
-      gap: mobile ? "12px" : "16px",
-      marginTop: mobile ? "24px" : "32px",
-    },
-
-    summaryBox: {
-      background:
-        "linear-gradient(145deg, #0c1738, #09122b)",
-      padding: mobile ? "18px 14px" : "24px",
-      borderRadius: "20px",
-      textAlign: "center",
-      border: "1px solid rgba(255,255,255,0.04)",
-    },
-
-    summaryNumber: {
-      margin: 0,
-      fontSize: mobile ? "1.7rem" : "2.1rem",
-      fontWeight: "bold",
-    },
-
-    summaryText: {
-      marginTop: "8px",
-      opacity: 0.75,
-      fontSize: mobile ? "0.82rem" : "0.95rem",
-    },
-
-    /* ================= NOTE ================= */
-
-    note: {
-      marginTop: mobile ? "24px" : "34px",
-      background:
-        "linear-gradient(145deg, #132347, #10203d)",
-      padding: mobile ? "16px" : "20px",
-      borderRadius: "18px",
-      lineHeight: 1.6,
-      opacity: 0.88,
-      fontSize: mobile ? "0.9rem" : "1rem",
-      textAlign: "center",
-    },
-
-    /* ================= INSIGHTS ================= */
-
-    insightCard: {
-      background:
-        "linear-gradient(145deg, #0c1738, #09122b)",
-      padding: mobile ? "16px" : "18px",
-      borderRadius: "18px",
-      marginBottom: "14px",
-      lineHeight: 1.5,
-      color: "#cbd5e1",
-      fontSize: mobile ? "0.88rem" : "0.96rem",
-      border: "1px solid rgba(255,255,255,0.04)",
-    },
+      setData(result);
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  useEffect(() => {
+    if (id_usuario) {
+      loadStats();
+    }
+  }, [id_usuario]);
+
+  /* =========================
+     INSIGHTS IA
+  ========================= */
+  const insights = useMemo(() => {
+    const arr = [];
+
+    if (data.bienestar >= 80) {
+      arr.push(
+        "✨ Excelente progreso emocional y constancia en tus rutinas."
+      );
+    }
+
+    if (data.bienestar >= 50 && data.bienestar < 80) {
+      arr.push(
+        "📈 Tu progreso es positivo, sigue manteniendo tus hábitos."
+      );
+    }
+
+    if (data.bienestar < 50) {
+      arr.push(
+        "🧠 Intenta completar más actividades para mejorar tu bienestar."
+      );
+    }
+
+    if (
+      data.emocionesPositivas >
+      data.emocionesBajas
+    ) {
+      arr.push(
+        "😊 Tus actividades generan más emociones positivas."
+      );
+    }
+
+    if (
+      data.emocionesBajas >
+      data.emocionesPositivas
+    ) {
+      arr.push(
+        "💙 Considera actividades más relajantes o motivadoras."
+      );
+    }
+
+    if (data.diasActivos >= 5) {
+      arr.push(
+        "🔥 Has tenido una excelente constancia esta semana."
+      );
+    }
+
+    if (data.actividadFavorita !== "Sin datos") {
+      arr.push(
+        `⭐ Tu actividad favorita es: ${data.actividadFavorita}`
+      );
+    }
+
+    return arr;
+  }, [data]);
+
+  /* =========================
+     LOADING
+  ========================= */
+  if (loading) {
+    return (
+      <div className="stats-page">
+        <div className="loading-box">
+          <div className="loader"></div>
+          <p>Cargando estadísticas...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div style={styles.page}>
+    <div className="stats-page">
 
-      {/* =========================================
-          HEADER
-      ========================================= */}
+      {/* HEADER */}
+      <div className="stats-header">
 
-      <div style={styles.header}>
         <div>
-          <h1 style={styles.title}>
-            📊 Estadísticas
-          </h1>
+          <h1>📊 Estadísticas</h1>
 
-          <p style={styles.subtitle}>
-            Tu progreso emocional y actividades
+          <p>
+            Seguimiento emocional y progreso personal
           </p>
         </div>
 
         <button
+          className="back-btn"
           onClick={() => navigate("/user")}
-          style={styles.backBtn}
         >
           ⬅ Volver
         </button>
       </div>
 
-      {/* =========================================
-          GRID
-      ========================================= */}
+      {/* MAIN GRID */}
+      <div className="stats-grid">
 
-      <div style={styles.grid}>
+        {/* LEFT */}
+        <div className="stats-column">
 
-        {/* =====================================
-            IZQUIERDA
-        ===================================== */}
-
-        <div style={styles.panel}>
-          <h3 style={styles.sectionTitle}>
-            💬 Estado emocional
-          </h3>
-
-          <div style={styles.emotionCard}>
-            <p style={styles.emotionLabel}>
-              Positivas
-            </p>
-
-            <h2 style={styles.emotionValue}>
-              {data.emocionesPositivas}
-            </h2>
+          <div className="glass-card emotion-card positive">
+            <span>😊 Positivas</span>
+            <h2>{data.emocionesPositivas}</h2>
           </div>
 
-          <div style={styles.emotionCard}>
-            <p style={styles.emotionLabel}>
-              Neutras
-            </p>
-
-            <h2 style={styles.emotionValue}>
-              {data.emocionesNeutras}
-            </h2>
+          <div className="glass-card emotion-card neutral">
+            <span>😐 Neutras</span>
+            <h2>{data.emocionesNeutras}</h2>
           </div>
 
-          <div style={styles.emotionCard}>
-            <p style={styles.emotionLabel}>
-              Bajas
-            </p>
-
-            <h2 style={styles.emotionValue}>
-              {data.emocionesBajas}
-            </h2>
+          <div className="glass-card emotion-card negative">
+            <span>💙 Bajas</span>
+            <h2>{data.emocionesBajas}</h2>
           </div>
+
+          <div className="glass-card favorite-card">
+            <span>⭐ Actividad favorita</span>
+
+            <h3>
+              {data.actividadFavorita}
+            </h3>
+          </div>
+
         </div>
 
-        {/* =====================================
-            CENTRO
-        ===================================== */}
+        {/* CENTER */}
+        <div className="stats-center">
 
-        <div style={styles.panel}>
+          {/* WELLBEING */}
+          <div className="glass-card wellbeing-card">
 
-          <h3 style={styles.sectionTitle}>
-            📈 Progreso general
-          </h3>
+            <div className="wellbeing-top">
 
-          <div style={styles.progressWrapper}>
+              <div>
+                <h2>🧠 Bienestar general</h2>
 
-            <div style={styles.progressTop}>
-              <span>Progreso semanal</span>
-              <strong>{progress}%</strong>
+                <p>
+                  Basado en actividades completadas
+                </p>
+              </div>
+
+              <div className="wellbeing-number">
+                {data.bienestar}%
+              </div>
+
             </div>
 
-            <div style={styles.progressBarBg}>
-              <div style={styles.progressBar} />
+            <div className="progress-container">
+
+              <div
+                className="progress-bar"
+                style={{
+                  width: `${data.bienestar}%`,
+                }}
+              />
+
             </div>
+
           </div>
 
           {/* SUMMARY */}
+          <div className="summary-grid">
 
-          <div style={styles.summary}>
-
-            <div style={styles.summaryBox}>
-              <h2 style={styles.summaryNumber}>
-                {data.totalTareas}
-              </h2>
-
-              <div style={styles.summaryText}>
-                Total tareas
-              </div>
+            <div className="summary-card">
+              <h2>{data.totalTareas}</h2>
+              <p>Total tareas</p>
             </div>
 
-            <div style={styles.summaryBox}>
-              <h2 style={styles.summaryNumber}>
-                {data.completadas}
-              </h2>
-
-              <div style={styles.summaryText}>
-                Completadas
-              </div>
+            <div className="summary-card">
+              <h2>{data.completadas}</h2>
+              <p>Completadas</p>
             </div>
 
-            <div style={styles.summaryBox}>
-              <h2 style={styles.summaryNumber}>
-                {data.pendientes}
-              </h2>
-
-              <div style={styles.summaryText}>
-                Pendientes
-              </div>
+            <div className="summary-card">
+              <h2>{data.pendientes}</h2>
+              <p>Pendientes</p>
             </div>
 
-            <div style={styles.summaryBox}>
-              <h2 style={styles.summaryNumber}>
-                {data.diasActivos}
-              </h2>
-
-              <div style={styles.summaryText}>
-                Días activos
-              </div>
+            <div className="summary-card">
+              <h2>{data.diasActivos}</h2>
+              <p>Días activos</p>
             </div>
 
           </div>
 
-          <div style={styles.note}>
-            💡 Aquí podrás visualizar tu avance
-            emocional, progreso en rutinas y
-            evolución diaria dentro de EmpatIA.
+          {/* EXTRA */}
+          <div className="glass-card extra-card">
+
+            <h3>📈 Resumen</h3>
+
+            <div className="extra-grid">
+
+              <div className="mini-box">
+                <span>✔ Completadas</span>
+
+                <strong>
+                  {data.completadas}
+                </strong>
+              </div>
+
+              <div className="mini-box">
+                <span>⏳ Pendientes</span>
+
+                <strong>
+                  {data.pendientes}
+                </strong>
+              </div>
+
+              <div className="mini-box">
+                <span>🔥 Constancia</span>
+
+                <strong>
+                  {data.diasActivos} días
+                </strong>
+              </div>
+
+              <div className="mini-box">
+                <span>💯 Bienestar</span>
+
+                <strong>
+                  {data.bienestar}%
+                </strong>
+              </div>
+
+            </div>
+
           </div>
 
         </div>
 
-        {/* =====================================
-            DERECHA
-        ===================================== */}
+        {/* RIGHT */}
+        <div className="stats-column">
 
-        <div style={styles.panel}>
+          <div className="glass-card insights-card">
 
-          <h3 style={styles.sectionTitle}>
-            🧠 Insights
-          </h3>
+            <h3>🤖 Insights IA</h3>
 
-          <div style={styles.insightCard}>
-            “Has tenido más días activos que
-            inactivos 🤍”
-          </div>
+            {insights.map((tip, i) => (
+              <div
+                key={i}
+                className="insight-item"
+              >
+                {tip}
+              </div>
+            ))}
 
-          <div style={styles.insightCard}>
-            “Tu progreso emocional está creciendo
-            de forma positiva”
-          </div>
-
-          <div style={styles.insightCard}>
-            “Los pequeños avances diarios también
-            cuentan”
-          </div>
-
-          <div style={styles.insightCard}>
-            “Mantener una rutina constante ayuda a
-            mejorar el bienestar”
           </div>
 
         </div>
 
       </div>
+
     </div>
   );
 }
