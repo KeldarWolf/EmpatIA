@@ -16,13 +16,8 @@
   --warning: #fbbf24;
 
   --glass: rgba(255, 255, 255, 0.06);
-  --glass-2: rgba(255, 255, 255, 0.1);
   --border: rgba(255, 255, 255, 0.08);
 }
-
-/* =========================
-   BASE
-========================= */
 
 body {
   background: #0f172a;
@@ -37,9 +32,7 @@ body {
   overflow-x: hidden;
 }
 
-/* =========================
-   HEADER
-========================= */
+/* HEADER */
 
 .header {
   display: flex;
@@ -52,17 +45,13 @@ body {
 
 .header h1 {
   font-size: 2.2rem;
-  font-weight: 700;
 }
 
 .header p {
   opacity: 0.7;
-  margin-top: 4px;
 }
 
-/* =========================
-   BUTTONS
-========================= */
+/* BUTTONS */
 
 .back-btn,
 .create-btn {
@@ -70,18 +59,13 @@ body {
   cursor: pointer;
   color: white;
   font-weight: bold;
-  transition: transform 0.2s, background 0.2s;
+  transition: 0.2s;
 }
 
 .back-btn {
   padding: 12px 18px;
   border-radius: 14px;
   background: linear-gradient(135deg, #4f46e5, #7c3aed);
-}
-
-.back-btn:hover,
-.create-btn:hover {
-  transform: translateY(-2px);
 }
 
 .create-btn {
@@ -95,9 +79,7 @@ body {
   background: var(--primary-hover);
 }
 
-/* =========================
-   LAYOUT
-========================= */
+/* LAYOUT */
 
 .layout {
   display: grid;
@@ -106,9 +88,7 @@ body {
   height: calc(100vh - 120px);
 }
 
-/* =========================
-   PANELS
-========================= */
+/* PANELS */
 
 .left-panel,
 .center-panel,
@@ -119,63 +99,80 @@ body {
   padding: 18px;
   border: 1px solid var(--border);
   overflow-y: auto;
-  position: relative;
-  transition: transform 0.25s, opacity 0.25s;
 }
 
-/* =========================
-   TOGGLE BUTTONS (NUEVO)
-========================= */
+/* PANEL TOGGLE */
 
 .panel-toggle {
   width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 10px 12px;
+  margin-bottom: 12px;
+
+  border-radius: 12px;
   border: none;
   cursor: pointer;
-  margin-bottom: 12px;
-  padding: 10px 12px;
-  border-radius: 12px;
+
   background: rgba(255, 255, 255, 0.08);
   color: white;
   font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  transition: background 0.2s, transform 0.2s;
 }
 
 .panel-toggle:hover {
   background: rgba(255, 255, 255, 0.15);
-  transform: translateY(-1px);
 }
 
-/* icono */
-.panel-toggle .icon {
-  font-size: 18px;
-}
-
-/* =========================
-   INPUTS
-========================= */
+/* INPUTS */
 
 .input {
   width: 100%;
   padding: 12px;
-  border: none;
   border-radius: 14px;
+  border: none;
   margin-bottom: 12px;
   background: rgba(255, 255, 255, 0.08);
   color: white;
   outline: none;
 }
 
-.input:focus {
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid var(--primary);
+/* CARDS */
+
+.activity-card {
+  padding: 14px;
+  margin-bottom: 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
 }
 
-/* =========================
-   CALENDAR (igual pero limpio)
-========================= */
+.activity-card:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.activity-card.selected {
+  border: 1px solid var(--primary);
+  background: rgba(99, 102, 241, 0.2);
+}
+
+.planner-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  margin-bottom: 12px;
+}
+
+.planner-card.completed {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+/* CALENDAR */
 
 .calendar-grid {
   display: grid;
@@ -191,33 +188,27 @@ body {
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.04);
   cursor: pointer;
-  font-weight: 500;
-  transition: transform 0.2s, background 0.2s;
 }
 
 .calendar-day:hover {
-  transform: scale(1.03);
   background: rgba(255, 255, 255, 0.12);
 }
 
 .calendar-day.selected {
   background: rgba(99, 102, 241, 0.35);
-  border: 1px solid var(--primary);
 }
 
 .calendar-day.today {
   border: 1px solid var(--success);
 }
 
-/* =========================
-   OVERLAY
-========================= */
+/* OVERLAY */
 
 .overlay {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.6);
   z-index: 1000;
 }
 
@@ -225,9 +216,7 @@ body {
   display: block;
 }
 
-/* =========================
-   TABLET
-========================= */
+/* TABLET */
 
 @media (max-width: 1024px) {
   .layout {
@@ -240,12 +229,13 @@ body {
     position: fixed;
     top: 0;
     height: 100dvh;
-    width: 86%;
+    width: 85%;
     max-width: 360px;
-    z-index: 1201;
+    z-index: 1200;
+    transform: translateX(-100%);
     opacity: 0;
     pointer-events: none;
-    transform: translateX(-100%);
+    transition: 0.25s;
   }
 
   .right-panel {
@@ -254,12 +244,7 @@ body {
     transform: translateX(100%);
   }
 
-  .left-panel.open {
-    transform: translateX(0);
-    opacity: 1;
-    pointer-events: auto;
-  }
-
+  .left-panel.open,
   .right-panel.open {
     transform: translateX(0);
     opacity: 1;
@@ -267,26 +252,18 @@ body {
   }
 }
 
-/* =========================
-   MOBILE
-========================= */
+/* MOBILE */
 
 @media (max-width: 600px) {
   .page {
     padding: 80px 15px 20px;
   }
 
-  .panel-toggle {
-    padding: 8px;
-    font-size: 14px;
-  }
-
   .panel-toggle .text {
     display: none;
   }
 
-  .panel-toggle .icon {
-    font-size: 20px;
-    margin: 0 auto;
+  .panel-toggle {
+    justify-content: center;
   }
 }
