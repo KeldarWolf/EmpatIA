@@ -1,28 +1,102 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+// ============================================
+// src/pages/Rutina/Rutina.jsx
+// ============================================
+
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  useNavigate,
+} from "react-router-dom";
+
 import "./Rutina.css";
 
-const API_URL = "https://empatia-backend.onrender.com";
+const API_URL =
+  "https://empatia-backend.onrender.com";
 
 export default function Rutina() {
 
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
   /* =========================================
-     USER
+     SESSION FIX
   ========================================= */
 
   const storedUser = JSON.parse(
-    sessionStorage.getItem("usuario") || "null"
+    sessionStorage.getItem(
+      "usuario"
+    ) || "null"
   );
 
   const user = {
+
     id_usuario:
       storedUser?.id_usuario ||
-      storedUser?.user?.id_usuario ||
+      storedUser?.user
+        ?.id_usuario ||
       storedUser?.id ||
       null,
+
+    nombre:
+      storedUser?.nombre ||
+      storedUser?.user
+        ?.nombre ||
+      "Usuario",
   };
+
+  useEffect(() => {
+
+    const stored =
+      sessionStorage.getItem(
+        "usuario"
+      );
+
+    console.log(
+      "SESSION:",
+      stored
+    );
+
+    if (!stored) {
+
+      navigate("/", {
+        replace: true,
+      });
+
+      return;
+    }
+
+    try {
+
+      const parsed =
+        JSON.parse(stored);
+
+      const id =
+        parsed?.id_usuario ||
+        parsed?.user
+          ?.id_usuario ||
+        parsed?.id;
+
+      if (!id) {
+
+        navigate("/", {
+          replace: true,
+        });
+      }
+
+    } catch (err) {
+
+      console.log(err);
+
+      navigate("/", {
+        replace: true,
+      });
+    }
+
+  }, [navigate]);
 
   /* =========================================
      MOBILE PANELS
@@ -38,119 +112,129 @@ export default function Rutina() {
      DATA
   ========================================= */
 
-  const [actividades, setActividades] =
+  const [actividades,
+    setActividades] =
     useState([]);
 
-  const [eventos, setEventos] =
+  const [eventos,
+    setEventos] =
     useState([]);
 
-  const [selectedActivity, setSelectedActivity] =
-    useState(null);
+  const [
+    selectedActivity,
+    setSelectedActivity,
+  ] = useState(null);
 
   /* =========================================
      FORM
   ========================================= */
 
-  const [titulo, setTitulo] =
+  const [titulo,
+    setTitulo] =
     useState("");
 
-  const [descripcion, setDescripcion] =
+  const [descripcion,
+    setDescripcion] =
     useState("");
 
-  const [hora, setHora] =
+  const [hora,
+    setHora] =
     useState("");
 
-  const [horaFin, setHoraFin] =
+  const [horaFin,
+    setHoraFin] =
     useState("");
 
-  const [duracion, setDuracion] =
+  const [duracion,
+    setDuracion] =
     useState(30);
 
   /* =========================================
      DATE
   ========================================= */
 
-  const [selectedDate, setSelectedDate] =
+  const [selectedDate,
+    setSelectedDate] =
     useState(new Date());
 
   /* =========================================
-     FORMAT DATE LOCAL
+     FORMAT DATE
   ========================================= */
 
-  const formatDateLocal = (date) => {
+  const formatDateLocal =
+    (date) => {
 
-    const year =
-      date.getFullYear();
+      const year =
+        date.getFullYear();
 
-    const month = String(
-      date.getMonth() + 1
-    ).padStart(2, "0");
+      const month = String(
+        date.getMonth() + 1
+      ).padStart(2, "0");
 
-    const day = String(
-      date.getDate()
-    ).padStart(2, "0");
+      const day = String(
+        date.getDate()
+      ).padStart(2, "0");
 
-    return `${year}-${month}-${day}`;
-  };
+      return `${year}-${month}-${day}`;
+    };
 
   /* =========================================
      LOAD ACTIVITIES
   ========================================= */
 
-  const loadActivities = async () => {
+  const loadActivities =
+    async () => {
 
-    try {
+      try {
 
-      const res = await fetch(
-        `${API_URL}/api/registro-actividad/usuario/${user.id_usuario}`
-      );
+        const res =
+          await fetch(
+            `${API_URL}/api/registro-actividad/usuario/${user.id_usuario}`
+          );
 
-      const data =
-        await res.json();
+        const data =
+          await res.json();
 
-      setActividades(
-        Array.isArray(data)
-          ? data
-          : []
-      );
+        setActividades(
+          Array.isArray(data)
+            ? data
+            : []
+        );
 
-    } catch (err) {
+      } catch (err) {
 
-      console.log(err);
-    }
-  };
+        console.log(err);
+      }
+    };
 
   /* =========================================
      LOAD EVENTS
   ========================================= */
 
-  const loadEvents = async () => {
+  const loadEvents =
+    async () => {
 
-    try {
+      try {
 
-      const res = await fetch(
-        `${API_URL}/api/rutina-eventos/${user.id_usuario}`
-      );
+        const res =
+          await fetch(
+            `${API_URL}/api/rutina-eventos/${user.id_usuario}`
+          );
 
-      const data =
-        await res.json();
+        const data =
+          await res.json();
 
-      console.log(
-        "📅 EVENTOS:",
-        data
-      );
+        setEventos(
+          Array.isArray(data)
+            ? data
+            : []
+        );
 
-      setEventos(
-        Array.isArray(data)
-          ? data
-          : []
-      );
+      } catch (err) {
 
-    } catch (err) {
-
-      console.log(err);
-    }
-  };
+        console.log(err);
+      }
+    };
 
   /* =========================================
      INIT
@@ -161,6 +245,7 @@ export default function Rutina() {
     if (user?.id_usuario) {
 
       loadActivities();
+
       loadEvents();
     }
 
@@ -170,191 +255,196 @@ export default function Rutina() {
      SELECT ACTIVITY
   ========================================= */
 
-  const selectActivity = (act) => {
+  const selectActivity =
+    (act) => {
 
-    setSelectedActivity(act);
+      setSelectedActivity(act);
 
-    setTitulo(
-      act.nombre_actividad || ""
-    );
+      setTitulo(
+        act.nombre_actividad || ""
+      );
 
-    setLeftOpen(true);
-  };
+      setLeftOpen(true);
+    };
 
   /* =========================================
      CREATE EVENT
   ========================================= */
 
-  const createEvent = async () => {
+  const createEvent =
+    async () => {
 
-    if (!titulo.trim()) {
-
-      alert("Ingrese título");
-
-      return;
-    }
-
-    if (!hora) {
-
-      alert("Seleccione hora");
-
-      return;
-    }
-
-    try {
-
-      const payload = {
-
-        id_usuario:
-          user.id_usuario,
-
-        id_registro:
-          selectedActivity?.id_registro ||
-          null,
-
-        titulo,
-
-        descripcion,
-
-        fecha:
-          formatDateLocal(
-            selectedDate
-          ),
-
-        hora,
-
-        hora_fin:
-          horaFin || null,
-
-        duracion,
-      };
-
-      console.log(
-        "📤 ENVIANDO",
-        payload
-      );
-
-      const res = await fetch(
-        `${API_URL}/api/rutina-eventos`,
-        {
-
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-
-          body: JSON.stringify(
-            payload
-          ),
-        }
-      );
-
-      const data =
-        await res.json();
-
-      console.log(
-        "📥 RESPUESTA",
-        data
-      );
-
-      if (!res.ok) {
+      if (!titulo.trim()) {
 
         alert(
-          data.error ||
-            "Error creando evento"
+          "Ingrese título"
         );
 
         return;
       }
 
-      await loadEvents();
+      if (!hora) {
 
-      setTitulo("");
-      setDescripcion("");
+        alert(
+          "Seleccione hora"
+        );
 
-      setHora("");
-      setHoraFin("");
+        return;
+      }
 
-      setDuracion(30);
+      try {
 
-      setSelectedActivity(null);
+        const payload = {
 
-      alert(
-        "Rutina guardada"
-      );
+          id_usuario:
+            user.id_usuario,
 
-    } catch (err) {
+          id_registro:
+            selectedActivity
+              ?.id_registro ||
+            null,
 
-      console.log(err);
+          titulo,
 
-      alert(
-        "Error conexión servidor"
-      );
-    }
-  };
+          descripcion,
+
+          fecha:
+            formatDateLocal(
+              selectedDate
+            ),
+
+          hora,
+
+          hora_fin:
+            horaFin || null,
+
+          duracion,
+        };
+
+        const res =
+          await fetch(
+            `${API_URL}/api/rutina-eventos`,
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+
+              body:
+                JSON.stringify(
+                  payload
+                ),
+            }
+          );
+
+        const data =
+          await res.json();
+
+        if (!res.ok) {
+
+          alert(
+            data.error ||
+            "Error creando evento"
+          );
+
+          return;
+        }
+
+        await loadEvents();
+
+        setTitulo("");
+
+        setDescripcion("");
+
+        setHora("");
+
+        setHoraFin("");
+
+        setDuracion(30);
+
+        setSelectedActivity(
+          null
+        );
+
+        alert(
+          "Rutina guardada"
+        );
+
+      } catch (err) {
+
+        console.log(err);
+
+        alert(
+          "Error conexión servidor"
+        );
+      }
+    };
 
   /* =========================================
      DELETE EVENT
   ========================================= */
 
-  const deleteEvent = async (
-    id_evento
-  ) => {
+  const deleteEvent =
+    async (
+      id_evento
+    ) => {
 
-    try {
+      try {
 
-      await fetch(
-        `${API_URL}/api/rutina-eventos/${id_evento}`,
-        {
-          method: "DELETE",
-        }
-      );
+        await fetch(
+          `${API_URL}/api/rutina-eventos/${id_evento}`,
+          {
+            method:
+              "DELETE",
+          }
+        );
 
-      await loadEvents();
+        await loadEvents();
 
-    } catch (err) {
+      } catch (err) {
 
-      console.log(err);
-    }
-  };
+        console.log(err);
+      }
+    };
 
   /* =========================================
      TOGGLE COMPLETE
   ========================================= */
 
-  const toggleComplete = async (
-    evento
-  ) => {
+  const toggleComplete =
+    async (
+      evento
+    ) => {
 
-    try {
+      try {
 
-      await fetch(
-        `${API_URL}/api/rutina-eventos/${evento.id_evento}`,
-        {
+        await fetch(
+          `${API_URL}/api/rutina-eventos/${evento.id_evento}`,
+          {
+            method: "PUT",
 
-          method: "PUT",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
 
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
+            body:
+              JSON.stringify({
+                completado:
+                  !evento.completado,
+              }),
+          }
+        );
 
-          body: JSON.stringify({
-            completado:
-              !evento.completado,
-          }),
-        }
-      );
+        await loadEvents();
 
-      await loadEvents();
+      } catch (err) {
 
-    } catch (err) {
-
-      console.log(err);
-    }
-  };
+        console.log(err);
+      }
+    };
 
   /* =========================================
      FILTER EVENTS
@@ -365,33 +455,27 @@ export default function Rutina() {
       selectedDate
     );
 
-  const eventosDia = useMemo(() => {
+  const eventosDia =
+    useMemo(() => {
 
-    return eventos
-      .filter((evento) => {
-
-        return (
-          evento.fecha?.slice(0, 10) ===
-          currentDate
-        );
-      })
-      .sort((a, b) =>
-        a.hora.localeCompare(
-          b.hora
+      return eventos
+        .filter(
+          (evento) =>
+            evento.fecha?.slice(
+              0,
+              10
+            ) === currentDate
         )
-      );
+        .sort((a, b) =>
+          a.hora.localeCompare(
+            b.hora
+          )
+        );
 
-  }, [eventos, currentDate]);
-
-  console.log(
-    "📌 FECHA:",
-    currentDate
-  );
-
-  console.log(
-    "📌 EVENTOS DEL DIA:",
-    eventosDia
-  );
+    }, [
+      eventos,
+      currentDate,
+    ]);
 
   /* =========================================
      CALENDAR
@@ -449,25 +533,27 @@ export default function Rutina() {
      CHANGE MONTH
   ========================================= */
 
-  const changeMonth = (
-    dir
-  ) => {
+  const changeMonth =
+    (dir) => {
 
-    setSelectedDate(
-      new Date(
-        currentYear,
-        currentMonth + dir,
-        1
-      )
-    );
-  };
+      setSelectedDate(
+        new Date(
+          currentYear,
+          currentMonth + dir,
+          1
+        )
+      );
+    };
+
+  /* =========================================
+     UI
+  ========================================= */
 
   return (
+
     <div className="page">
 
-      {/* =========================================
-          MOBILE BUTTONS
-      ========================================= */}
+      {/* MOBILE BUTTONS */}
 
       <button
         className="mobile-left-btn"
@@ -495,63 +581,61 @@ export default function Rutina() {
           : "📅"}
       </button>
 
-      {/* =========================================
-          OVERLAY
-      ========================================= */}
+      {/* OVERLAY */}
 
       {(leftOpen ||
         rightOpen) && (
+
         <div
           className="overlay"
           onClick={() => {
 
-            setLeftOpen(false);
+            setLeftOpen(
+              false
+            );
 
-            setRightOpen(false);
+            setRightOpen(
+              false
+            );
           }}
         />
       )}
 
-      {/* =========================================
-          HEADER
-      ========================================= */}
+      {/* HEADER */}
 
-             <div className="header">
-        
-          <div>
-        
-            <h1>
-              🧘 Rutina Inteligente
-            </h1>
-        
-            <p>
-              Organiza actividades
-              por día, semana o mes
-            </p>
-        
-          </div>
-        
-          <button
-            className="back-btn"
-            onClick={() =>
-              navigate("/usuario")
-            }
-          >
-            ⬅ Volver
-          </button>
-        
+      <div className="header">
+
+        <div>
+
+          <h1>
+            🧘 Rutina Inteligente
+          </h1>
+
+          <p>
+            Organiza actividades
+            por día, semana o mes
+          </p>
+
         </div>
 
+        <button
+          className="back-btn"
+          onClick={() =>
+            navigate(
+              "/usuario"
+            )
+          }
+        >
+          ⬅ Volver
+        </button>
 
-      {/* =========================================
-          MAIN LAYOUT
-      ========================================= */}
+      </div>
+
+      {/* MAIN */}
 
       <div className="layout">
 
-        {/* =========================================
-            LEFT PANEL
-        ========================================= */}
+        {/* LEFT */}
 
         <div
           className={`
@@ -578,7 +662,8 @@ export default function Rutina() {
                 className={`
                   activity-card
                   ${
-                    selectedActivity?.id_registro ===
+                    selectedActivity
+                      ?.id_registro ===
                     act.id_registro
                       ? "selected"
                       : ""
@@ -599,8 +684,10 @@ export default function Rutina() {
 
                 <p>
                   ⭐{" "}
-                  {act.puntaje_agrado ||
-                    5}
+                  {
+                    act.puntaje_agrado ||
+                    5
+                  }
                   /10
                 </p>
 
@@ -608,121 +695,16 @@ export default function Rutina() {
             )
           )}
 
-          <hr />
-
-          <h3>
-            ⚙ Configuración
-          </h3>
-
-          <label>
-            Título
-          </label>
-
-          <input
-            className="input"
-            value={titulo}
-            onChange={(e) =>
-              setTitulo(
-                e.target.value
-              )
-            }
-          />
-
-          <label>
-            Descripción
-          </label>
-
-          <textarea
-            className="input"
-            rows="4"
-            value={descripcion}
-            onChange={(e) =>
-              setDescripcion(
-                e.target.value
-              )
-            }
-          />
-
-          <div className="time-row">
-
-            <div>
-
-              <label>
-                Hora inicio
-              </label>
-
-              <input
-                type="time"
-                className="input"
-                value={hora}
-                onChange={(e) =>
-                  setHora(
-                    e.target.value
-                  )
-                }
-              />
-
-            </div>
-
-            <div>
-
-              <label>
-                Hora fin
-              </label>
-
-              <input
-                type="time"
-                className="input"
-                value={horaFin}
-                onChange={(e) =>
-                  setHoraFin(
-                    e.target.value
-                  )
-                }
-              />
-
-            </div>
-
-          </div>
-
-          <label>
-            Duración
-          </label>
-
-          <input
-            type="number"
-            className="input"
-            value={duracion}
-            onChange={(e) =>
-              setDuracion(
-                Number(
-                  e.target.value
-                )
-              )
-            }
-          />
-
-          <button
-            className="create-btn"
-            onClick={
-              createEvent
-            }
-          >
-            Guardar rutina
-          </button>
-
         </div>
 
-        {/* =========================================
-            CENTER PANEL
-        ========================================= */}
+        {/* CENTER */}
 
         <div className="center-panel">
 
           <div className="planner-header">
 
             <h2>
-              📅 Planificación del día
+              📅 Planificación
             </h2>
 
             <p className="planner-date">
@@ -745,8 +727,6 @@ export default function Rutina() {
 
           </div>
 
-          {/* EVENTOS */}
-
           <div className="planner-events">
 
             {eventosDia.length ===
@@ -757,11 +737,6 @@ export default function Rutina() {
                 <h3>
                   No hay rutinas
                 </h3>
-
-                <p>
-                  Selecciona un día
-                  del calendario
-                </p>
 
               </div>
 
@@ -798,7 +773,6 @@ export default function Rutina() {
                             evento
                           )
                         }
-                        className="planner-checkbox"
                       />
 
                       <div className="planner-info">
@@ -809,8 +783,7 @@ export default function Rutina() {
                           }
                         </h3>
 
-                        <div className="planner-time">
-
+                        <div>
                           ⏰{" "}
                           {
                             evento.hora
@@ -818,29 +791,15 @@ export default function Rutina() {
                           {" → "}
                           {evento.hora_fin ||
                             "--:--"}
-
                         </div>
 
-                        <div className="planner-duration">
-
+                        <div>
                           🕒{" "}
                           {
                             evento.duracion
                           }{" "}
                           min
-
                         </div>
-
-                        {evento.descripcion && (
-
-                          <p className="planner-description">
-
-                            {
-                              evento.descripcion
-                            }
-
-                          </p>
-                        )}
 
                       </div>
 
@@ -866,9 +825,7 @@ export default function Rutina() {
 
         </div>
 
-        {/* =========================================
-            RIGHT PANEL
-        ========================================= */}
+        {/* RIGHT */}
 
         <div
           className={`
@@ -913,165 +870,204 @@ export default function Rutina() {
 
           </div>
 
-          <div className="calendar-container">
+          <div className="calendar-grid">
 
-            <h2>
+            {days.map(
+              (
+                d,
+                index
+              ) => {
 
-              {[
-                "Enero",
-                "Febrero",
-                "Marzo",
-                "Abril",
-                "Mayo",
-                "Junio",
-                "Julio",
-                "Agosto",
-                "Septiembre",
-                "Octubre",
-                "Noviembre",
-                "Diciembre",
-              ][currentMonth]}
-
-              {" "}
-
-              {
-                currentYear
-              }
-
-            </h2>
-
-            {/* WEEK */}
-
-            <div className="weekdays">
-
-              {[
-                "Lun",
-                "Mar",
-                "Mié",
-                "Jue",
-                "Vie",
-                "Sáb",
-                "Dom",
-              ].map(
-                (day) => (
-
-                  <div
-                    key={day}
-                  >
-                    {day}
-                  </div>
-                )
-              )}
-
-            </div>
-
-            {/* GRID */}
-
-            <div className="calendar-grid">
-
-              {days.map(
-                (
-                  d,
-                  index
-                ) => {
-
-                  if (!d) {
-
-                    return (
-                      <div
-                        key={
-                          index
-                        }
-                        className="
-                          calendar-day
-                          empty
-                        "
-                      />
-                    );
-                  }
-
-                  const date =
-                    new Date(
-                      currentYear,
-                      currentMonth,
-                      d
-                    );
-
-                  const fullDate =
-                    formatDateLocal(
-                      date
-                    );
-
-                  const hasEvents =
-                    eventos.some(
-                      (
-                        ev
-                      ) =>
-                        ev.fecha?.slice(
-                          0,
-                          10
-                        ) ===
-                        fullDate
-                    );
-
-                  const isSelected =
-                    selectedDate.getDate() ===
-                      d &&
-                    selectedDate.getMonth() ===
-                      currentMonth &&
-                    selectedDate.getFullYear() ===
-                      currentYear;
-
-                  const isToday =
-                    today.getDate() ===
-                      d &&
-                    today.getMonth() ===
-                      currentMonth &&
-                    today.getFullYear() ===
-                      currentYear;
+                if (!d) {
 
                   return (
-
                     <div
                       key={
                         index
                       }
-                      className={`
+                      className="
                         calendar-day
-                        ${
-                          isSelected
-                            ? "selected"
-                            : ""
-                        }
-                        ${
-                          isToday
-                            ? "today"
-                            : ""
-                        }
-                      `}
-                      onClick={() =>
-                        setSelectedDate(
-                          date
-                        )
-                      }
-                    >
-
-                      <span>
-                        {d}
-                      </span>
-
-                      {hasEvents && (
-
-                        <div className="event-dot" />
-
-                      )}
-
-                    </div>
+                        empty
+                      "
+                    />
                   );
                 }
-              )}
 
-            </div>
+                const date =
+                  new Date(
+                    currentYear,
+                    currentMonth,
+                    d
+                  );
+
+                const fullDate =
+                  formatDateLocal(
+                    date
+                  );
+
+                const hasEvents =
+                  eventos.some(
+                    (
+                      ev
+                    ) =>
+                      ev.fecha?.slice(
+                        0,
+                        10
+                      ) ===
+                      fullDate
+                  );
+
+                const isSelected =
+                  selectedDate.getDate() ===
+                    d &&
+                  selectedDate.getMonth() ===
+                    currentMonth &&
+                  selectedDate.getFullYear() ===
+                    currentYear;
+
+                const isToday =
+                  today.getDate() ===
+                    d &&
+                  today.getMonth() ===
+                    currentMonth &&
+                  today.getFullYear() ===
+                    currentYear;
+
+                return (
+
+                  <div
+                    key={
+                      index
+                    }
+                    className={`
+                      calendar-day
+                      ${
+                        isSelected
+                          ? "selected"
+                          : ""
+                      }
+                      ${
+                        isToday
+                          ? "today"
+                          : ""
+                      }
+                    `}
+                    onClick={() =>
+                      setSelectedDate(
+                        date
+                      )
+                    }
+                  >
+
+                    <span>
+                      {d}
+                    </span>
+
+                    {hasEvents && (
+                      <div className="event-dot" />
+                    )}
+
+                  </div>
+                );
+              }
+            )}
+
+          </div>
+
+          {/* FORM */}
+
+          <div className="rutina-form">
+
+            <h3>
+              ➕ Crear rutina
+            </h3>
+
+            <label>
+              Título
+            </label>
+
+            <input
+              className="input"
+              value={titulo}
+              onChange={(e) =>
+                setTitulo(
+                  e.target.value
+                )
+              }
+            />
+
+            <label>
+              Descripción
+            </label>
+
+            <textarea
+              className="input"
+              rows="3"
+              value={
+                descripcion
+              }
+              onChange={(e) =>
+                setDescripcion(
+                  e.target.value
+                )
+              }
+            />
+
+            <label>
+              Hora inicio
+            </label>
+
+            <input
+              type="time"
+              className="input"
+              value={hora}
+              onChange={(e) =>
+                setHora(
+                  e.target.value
+                )
+              }
+            />
+
+            <label>
+              Hora fin
+            </label>
+
+            <input
+              type="time"
+              className="input"
+              value={horaFin}
+              onChange={(e) =>
+                setHoraFin(
+                  e.target.value
+                )
+              }
+            />
+
+            <label>
+              Duración
+            </label>
+
+            <input
+              type="number"
+              className="input"
+              value={duracion}
+              onChange={(e) =>
+                setDuracion(
+                  Number(
+                    e.target.value
+                  )
+                )
+              }
+            />
+
+            <button
+              className="create-btn"
+              onClick={
+                createEvent
+              }
+            >
+              Guardar rutina
+            </button>
 
           </div>
 
