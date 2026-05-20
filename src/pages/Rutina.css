@@ -43,7 +43,7 @@
 }
 
 /* =========================
-   LAYOUT
+   LAYOUT DESKTOP
 ========================= */
 
 .layout {
@@ -70,22 +70,6 @@
 }
 
 /* =========================
-   CLOSE BUTTON
-========================= */
-
-.panel-close-btn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: rgba(255, 255, 255, 0.08);
-  border: none;
-  color: white;
-  padding: 6px 10px;
-  border-radius: 10px;
-  cursor: pointer;
-}
-
-/* =========================
    ACTIVIDADES
 ========================= */
 
@@ -96,7 +80,6 @@
   margin-bottom: 12px;
   cursor: pointer;
   transition: 0.2s;
-  border: 1px solid transparent;
 }
 
 .activity-card:hover {
@@ -162,26 +145,12 @@
   border-radius: 16px;
   margin-bottom: 12px;
   border-left: 4px solid #3b82f6;
-  transition: 0.2s;
-}
-
-.planner-card:hover {
-  transform: translateY(-2px);
 }
 
 .planner-card.completed {
   opacity: 0.6;
   border-left: 4px solid #10b981;
   text-decoration: line-through;
-}
-
-.planner-card button {
-  background: rgba(255, 255, 255, 0.08);
-  border: none;
-  padding: 8px 10px;
-  border-radius: 10px;
-  cursor: pointer;
-  color: white;
 }
 
 /* =========================
@@ -235,21 +204,34 @@
 }
 
 /* =========================
-   MOBILE TOGGLE BUTTONS
+   OVERLAY (IMPORTANT)
+========================= */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 900;
+}
+
+/* =========================
+   BOTONES FLOTANTES
 ========================= */
 
 .mobile-toggle {
   display: none;
   position: fixed;
   bottom: 18px;
-  width: 52px;
-  height: 52px;
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
   border: none;
   z-index: 1200;
+
   background: rgba(255, 255, 255, 0.12);
   color: white;
   font-size: 22px;
+
   backdrop-filter: blur(10px);
 }
 
@@ -262,18 +244,7 @@
 }
 
 /* =========================
-   OVERLAY
-========================= */
-
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  z-index: 900;
-}
-
-/* =========================
-   RESPONSIVE (DRAWER MODE)
+   RESPONSIVE DRAWER MODE
 ========================= */
 
 @media (max-width: 900px) {
@@ -283,14 +254,15 @@
     height: auto;
   }
 
-  /* mostrar botones */
+  /* mostrar botones flotantes */
   .mobile-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
-  /* LEFT PANEL */
+  /* ================= LEFT PANEL ================= */
+
   .left-panel {
     position: fixed;
     top: 0;
@@ -298,8 +270,10 @@
     height: 100%;
     width: 85%;
     max-width: 320px;
+
     transform: translateX(-110%);
     transition: transform 0.3s ease;
+
     z-index: 1100;
   }
 
@@ -307,7 +281,8 @@
     transform: translateX(0);
   }
 
-  /* RIGHT PANEL */
+  /* ================= RIGHT PANEL ================= */
+
   .right-panel {
     position: fixed;
     top: 0;
@@ -315,8 +290,10 @@
     height: 100%;
     width: 85%;
     max-width: 320px;
+
     transform: translateX(110%);
     transition: transform 0.3s ease;
+
     z-index: 1100;
   }
 
@@ -324,6 +301,7 @@
     transform: translateX(0);
   }
 
+  /* center abajo */
   .center-panel {
     order: 1;
   }
