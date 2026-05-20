@@ -2,308 +2,515 @@
    RESET
 ========================================= */
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
-
-html, body, #root {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  font-family: Arial, sans-serif;
-  background: #020617;
+:root {
+  --bg-1: #0f172a;
+  --bg-2: #111827;
+  --bg-3: #1e293b;
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --success: #10b981;
+  --warning: #fbbf24;
+  --glass:
+    rgba(255,255,255,0.06);
+  --glass-2:
+    rgba(255,255,255,0.1);
+  --border:
+    rgba(255,255,255,0.08);
 }
-
-/* =========================================
-   LAYOUT GENERAL
-========================================= */
-.app-layout {
-  display: flex;
-  width: 100%;
-  height: 100dvh;
-  overflow: hidden;
-  position: relative;
-  color: white;
-  background: 
-    radial-gradient(circle at top, rgba(37,99,235,0.12), transparent 35%),
-    linear-gradient(180deg, #0f172a 0%, #020617 100%);
+/* =========================
+   BASE
+========================= */
+body {
+  background: #0f172a;
 }
-
-/* =========================================
-   PANEL IZQUIERDO
-========================================= */
-.left-panel {
-  width: 20%;
-  min-width: 220px;
-  position: relative;
-  background: rgba(17,24,39,0.88);
-  backdrop-filter: blur(12px);
-  border-right: 1px solid rgba(255,255,255,0.05);
-  padding: 20px;
-  overflow-y: auto;
-  transition: transform 0.28s ease;
-  z-index: 1200;
+.page {
+  min-height: 100vh;
+  width: 100%;
+  padding: 25px;
+  background:
+    linear-gradient(
+      135deg,
+      var(--bg-1),
+      var(--bg-2),
+      var(--bg-3)
+    );
+  color: white;
+  overflow-x: hidden;
 }
-
-/* =========================================
-   PANEL DERECHO
-========================================= */
+/* =========================
+   HEADER
+========================= */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 25px;
+}
+.header h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+}
+.header p {
+  opacity: 0.7;
+  margin-top: 4px;
+}
+/* =========================
+   BUTTONS
+========================= */
+.back-btn,
+.create-btn {
+  border: none;
+  cursor: pointer;
+  color: white;
+  font-weight: bold;
+  transition:
+    transform 0.2s,
+    background 0.2s;
+}
+.back-btn {
+  padding: 12px 18px;
+  border-radius: 14px;
+  background:
+    linear-gradient(
+      135deg,
+      #4f46e5,
+      #7c3aed
+    );
+}
+.back-btn:hover,
+.create-btn:hover {
+  transform: translateY(-2px);
+}
+.create-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--primary);
+}
+.create-btn:hover {
+  background:
+    var(--primary-hover);
+}
+/* =========================
+   LAYOUT
+========================= */
+.layout {
+  display: grid;
+  grid-template-columns:
+    300px
+    1fr
+    340px;
+  gap: 22px;
+  height:
+    calc(100vh - 120px);
+}
+/* =========================
+   PANELS
+========================= */
+.left-panel,
+.center-panel,
 .right-panel {
-  width: 20%;
-  min-width: 220px;
-  position: relative;
-  background: rgba(17,24,39,0.88);
-  backdrop-filter: blur(12px);
-  border-left: 1px solid rgba(255,255,255,0.05);
-  padding: 20px;
-  overflow-y: auto;
-  transition: transform 0.28s ease;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  z-index: 1200;
+  background:
+    var(--glass);
+  backdrop-filter: blur(6px);
+  border-radius: 22px;
+  padding: 18px;
+  border:
+    1px solid var(--border);
+  overflow-y: auto;
+  position: relative;
+  transition:
+    transform 0.25s,
+    opacity 0.25s,
+    background 0.2s;
 }
-
-/* =========================================
-   TITULOS
-========================================= */
-.left-panel h4,
-.right-panel h4 {
-  color: #60a5fa;
-  font-size: 18px;
-  margin-bottom: 14px;
+/* =========================
+   SCROLLBAR
+========================= */
+.left-panel::-webkit-scrollbar,
+.center-panel::-webkit-scrollbar,
+.right-panel::-webkit-scrollbar {
+  width: 8px;
 }
-
-/* =========================================
-   QUOTE BOX
-========================================= */
-.quote-box {
-  padding: 14px;
-  border-radius: 14px;
-  background: rgba(31, 41, 55, 0.82);
-  line-height: 1.5;
-  font-size: 14px;
-  border: 1px solid rgba(255,255,255,0.05);
+.left-panel::-webkit-scrollbar-thumb,
+.center-panel::-webkit-scrollbar-thumb,
+.right-panel::-webkit-scrollbar-thumb {
+  background:
+    rgba(255,255,255,0.12);
+  border-radius: 10px;
 }
-
-/* =========================================
-   PANEL CENTRAL
-========================================= */
-.center-panel {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+/* =========================
+   INPUTS
+========================= */
+.input {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 14px;
+  margin-bottom: 12px;
+  background:
+    rgba(255,255,255,0.08);
+  color: white;
+  outline: none;
+  resize: none;
+  transition:
+    background 0.2s,
+    border 0.2s;
 }
-
-/* =========================================
-   CHAT
-========================================= */
-.chat-box {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  scroll-behavior: smooth;
+.input:focus {
+  background:
+    rgba(255,255,255,0.12);
+  border:
+    1px solid var(--primary);
 }
-
-.chat-box::-webkit-scrollbar {
-  width: 6px;
+.input::placeholder {
+  color:
+    rgba(255,255,255,0.5);
 }
-.chat-box::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.12);
-  border-radius: 20px;
+.time-row {
+  display: grid;
+  grid-template-columns:
+    1fr 1fr;
+  gap: 10px;
 }
-
-/* =========================================
-   MENSAJES
-========================================= */
-.msg {
-  max-width: min(78%, 720px);
-  padding: 12px 14px;
-  border-radius: 16px;
-  line-height: 1.5;
-  font-size: 15px;
-  word-break: break-word;
-  animation: fadeIn 0.25s ease;
+/* =========================
+   ACTIVITY
+========================= */
+.activity-card {
+  background:
+    rgba(255,255,255,0.05);
+  padding: 14px;
+  border-radius: 16px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  border:
+    1px solid transparent;
+  transition:
+    transform 0.2s,
+    background 0.2s,
+    border 0.2s;
 }
-
-.msg.user {
-  margin-left: auto;
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  text-align: right;
-  box-shadow: 0 0 10px rgba(37,99,235,0.20);
+.activity-card:hover {
+  transform: translateY(-2px);
+  background:
+    rgba(255,255,255,0.1);
 }
-
-.msg.ai {
-  margin-right: auto;
-  background: rgba(55,65,81,0.92);
-  box-shadow: 0 0 10px rgba(255,255,255,0.04);
+.activity-card.selected {
+  border:
+    1px solid var(--primary);
+  background:
+    rgba(99,102,241,0.18);
 }
-
-/* =========================================
-   INPUT
-========================================= */
-.input-box {
-  display: flex;
-  gap: 8px;
-  padding: 12px;
-  background: rgba(17,24,39,0.94);
-  border-top: 1px solid rgba(255,255,255,0.05);
-  backdrop-filter: blur(12px);
-  position: sticky;
-  bottom: 0;
-  z-index: 50;
+/* =========================
+   PLANNER
+========================= */
+.planner-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background:
+    rgba(255,255,255,0.05);
+  padding: 16px;
+  border-radius: 16px;
+  margin-bottom: 12px;
+  border-left:
+    4px solid #3b82f6;
+  transition:
+    transform 0.2s,
+    background 0.2s;
 }
-
-.input-box input {
-  flex: 1;
-  min-width: 0;
-  padding: 12px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.08);
-  outline: none;
-  background: rgba(31,41,55,0.95);
-  color: white;
-  font-size: 16px;
-  transition: 0.25s ease;
+.planner-card:hover {
+  transform: translateY(-2px);
+  background:
+    rgba(255,255,255,0.08);
 }
-
-.input-box input:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 10px rgba(37,99,235,0.18);
+.planner-card.completed {
+  opacity: 0.55;
+  text-decoration: line-through;
+  border-left:
+    4px solid var(--success);
 }
-
-/* =========================================
-   BOTONES GENERALES
-========================================= */
-.input-box button,
-.right-panel button,
-.left-panel button {
-  padding: 12px;
-  border: none;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  color: white;
-  cursor: pointer;
-  transition: 0.25s ease;
-  font-size: 14px;
-  font-weight: bold;
+.planner-card button {
+  border: none;
+  background: transparent;
+  color: white;
+  cursor: pointer;
+  font-size: 18px;
 }
-
-.input-box button:hover,
-.right-panel button:hover,
-.left-panel button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 0 12px rgba(37,99,235,0.25);
+.empty-planner {
+  text-align: center;
+  padding: 40px;
+  opacity: 0.7;
 }
-
-/* =========================================
-   BOTONES LATERALES (Estilo Código 1)
-========================================= */
-.menu-left,
-.menu-right {
-  display: none;
-  position: fixed;
-  top: 120px;
-  width: 42px;
-  height: 90px;
-  border: none;
-  z-index: 1300;
-  background: rgba(255,255,255,0.12);
-  color: white;
-  font-size: 22px;
-  backdrop-filter: blur(6px);
-  cursor: pointer;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s, width 0.2s;
+/* =========================
+   CALENDAR
+========================= */
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
 }
-
-.menu-left:hover,
-.menu-right:hover {
-  width: 48px;
-  background: rgba(255,255,255,0.2);
+.calendar-header p {
+  opacity: 0.7;
+  font-size: 14px;
 }
-
-.menu-left {
-  left: 0;
-  border-radius: 0 18px 18px 0;
+.calendar-nav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
-
-.menu-right {
-  right: 0;
-  border-radius: 18px 0 0 18px;
+.calendar-nav button {
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 12px;
+  background:
+    rgba(255,255,255,0.08);
+  color: white;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    transform 0.2s;
 }
-
-/* =========================================
-   OVERLAY
-========================================= */
+.calendar-nav button:hover {
+  transform: scale(1.05);
+  background:
+    rgba(255,255,255,0.15);
+}
+/* =========================
+   GRID
+========================= */
+.calendar-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(7, 1fr);
+  gap: 8px;
+}
+/* =========================
+   DAYS
+========================= */
+.calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  border-radius: 14px;
+  background:
+    rgba(255,255,255,0.04);
+  cursor: pointer;
+  user-select: none;
+  font-weight: 500;
+  transition:
+    transform 0.2s,
+    background 0.2s,
+    border 0.2s;
+}
+@media (hover:hover) {
+  .calendar-day:hover {
+    transform: scale(1.03);
+    background:
+      rgba(255,255,255,0.12);
+  }
+}
+.calendar-day.selected {
+  background:
+    rgba(99,102,241,0.35);
+  border:
+    1px solid var(--primary);
+}
+.calendar-day.today {
+  border:
+    1px solid var(--success);
+}
+.calendar-day.empty {
+  background: transparent;
+  cursor: default;
+}
+/* =========================
+   EVENT DOT
+========================= */
+.event-dot {
+  width: 6px;
+  height: 6px;
+  background:
+    var(--warning);
+  border-radius: 50%;
+  position: absolute;
+  bottom: 6px;
+}
+/* =========================
+   OVERLAY
+========================= */
 .overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.55);
-  z-index: 1100;
+  display: none;
+  position: fixed;
+  inset: 0;
+  background:
+    rgba(0,0,0,0.55);
+  z-index: 1000;
 }
-
-/* =========================================
-   ANIMACIONES
-========================================= */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+.overlay.show {
+  display: block;
 }
-
-/* =========================================
-   RESPONSIVE (Tablet y Mobile)
-========================================= */
+/* =========================
+   MOBILE DRAWER TABS
+========================= */
+.mobile-toggle {
+  display: none;
+  position: fixed;
+  top: 120px;
+  width: 42px;
+  height: 90px;
+  border: none;
+  z-index: 1300;
+  background:
+    rgba(255,255,255,0.12);
+  color: white;
+  font-size: 22px;
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.2s,
+    width 0.2s;
+}
+.mobile-toggle:hover {
+  width: 48px;
+  background:
+    rgba(255,255,255,0.2);
+}
+.mobile-toggle.left {
+  left: 0;
+  border-radius:
+    0 18px 18px 0;
+}
+.mobile-toggle.right {
+  right: 0;
+  border-radius:
+    18px 0 0 18px;
+}
+/* =========================
+   TABLET
+========================= */
 @media (max-width: 1024px) {
-  .menu-left,
-  .menu-right {
-    display: flex;
-  }
-
-  .left-panel,
-  .right-panel {
-    position: fixed;
-    top: 0;
-    height: 100dvh;
-    width: 86%;
-    max-width: 360px;
-    z-index: 1201;
-    border-radius: 0;
-    overflow-y: auto;
-  }
-
-  .left-panel {
-    left: 0;
-    transform: translateX(-100%);
-  }
-
-  .right-panel {
-    right: 0;
-    transform: translateX(100%);
-  }
-
-  .left-panel.open,
-  .right-panel.open {
-    transform: translateX(0);
-  }
-
-  .chat-box {
-    padding: 70px 10px 10px;
-  }
+  .page {
+    padding-top: 85px;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+  .mobile-toggle {
+    display: flex;
+  }
+  /* MOBILE PANELS */
+  .left-panel,
+  .right-panel {
+    position: fixed;
+    top: 0;
+    height: 100dvh;
+    width: 86%;
+    max-width: 360px;
+    z-index: 1201;
+    border-radius: 0;
+    overflow-y: auto;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .left-panel {
+    left: 0;
+    transform:
+      translateX(-100%);
+  }
+  .right-panel {
+    right: 0;
+    transform:
+      translateX(100%);
+  }
+  .left-panel.open {
+    transform:
+      translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .right-panel.open {
+    transform:
+      translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .center-panel {
+    width: 100%;
+    min-height: 100vh;
+  }
 }
-
-/* Mobile pequeño */
+/* =========================
+   MOBILE
+========================= */
 @media (max-width: 600px) {
-  .left-panel,
-  .right-panel {
-    width: 92%;
-  }
+  .page {
+    padding:
+      80px
+      15px
+      20px;
+  }
+  .header h1 {
+    font-size: 1.7rem;
+  }
+  .left-panel,
+  .right-panel {
+    width: 92%;
+    max-width: none;
+  }
+  .planner-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .calendar-grid {
+    gap: 5px;
+  }
+  .calendar-day {
+    border-radius: 10px;
+    font-size: 14px;
+  }
+  .mobile-toggle {
+    width: 36px;
+    height: 80px;
+    font-size: 18px;
+  }
+  .overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 1100;
+  opacity: 0;
+  pointer-events: none;
+}
+.overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.left-panel,
+.right-panel {
+  z-index: 1200;
+}
+.mobile-toggle {
+  z-index: 1301;
+}
+.input.small {
+  padding: 8px;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
 }
