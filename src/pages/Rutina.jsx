@@ -48,13 +48,17 @@ export default function Rutina() {
   ========================= */
 
   const loadActivities = async () => {
-    const res = await fetch(`${API_URL}/api/registro-actividad/usuario/${user.id_usuario}`);
+    const res = await fetch(
+      `${API_URL}/api/registro-actividad/usuario/${user.id_usuario}`
+    );
     const data = await res.json();
     setActividades(Array.isArray(data) ? data : []);
   };
 
   const loadEvents = async () => {
-    const res = await fetch(`${API_URL}/api/rutina-eventos/${user.id_usuario}`);
+    const res = await fetch(
+      `${API_URL}/api/rutina-eventos/${user.id_usuario}`
+    );
     const data = await res.json();
     setEventos(Array.isArray(data) ? data : []);
   };
@@ -128,7 +132,7 @@ export default function Rutina() {
   };
 
   /* =========================
-     DATE / CALENDAR
+     CALENDAR
   ========================= */
 
   const currentDate = formatDateLocal(selectedDate);
@@ -156,7 +160,7 @@ export default function Rutina() {
   };
 
   /* =========================
-     DRAWER CONTROL
+     CONTROL UI (SIN SLIDE)
   ========================= */
 
   const openLeft = () => {
@@ -191,7 +195,7 @@ export default function Rutina() {
 
       {/* OVERLAY */}
       {(leftOpen || rightOpen) && (
-        <div className="overlay" onClick={closeAll} />
+        <div className="overlay show" onClick={closeAll} />
       )}
 
       {/* BOTONES FLOTANTES */}
