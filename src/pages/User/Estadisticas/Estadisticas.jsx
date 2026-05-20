@@ -18,6 +18,9 @@ export default function Estadisticas() {
 
   const [loading, setLoading] = useState(true);
 
+  const [leftOpen, setLeftOpen] = useState(false);
+  const [rightOpen, setRightOpen] = useState(false);
+
   const [data, setData] = useState({
     totalTareas: 0,
     completadas: 0,
@@ -33,6 +36,7 @@ export default function Estadisticas() {
   /* =========================
      LOAD STATS
   ========================= */
+
   const loadStats = async () => {
     try {
       setLoading(true);
@@ -60,6 +64,7 @@ export default function Estadisticas() {
   /* =========================
      INSIGHTS IA
   ========================= */
+
   const insights = useMemo(() => {
     const arr = [];
 
@@ -122,6 +127,7 @@ export default function Estadisticas() {
   /* =========================
      LOADING
   ========================= */
+
   if (loading) {
     return (
       <div className="stats-page">
@@ -136,73 +142,23 @@ export default function Estadisticas() {
   return (
     <div className="stats-page">
 
-      {/* =========================
-          BOTONES LATERALES
-      ========================= */}
+      {/* BOTON IZQUIERDO */}
+      <button
+        className="mobile-toggle left-toggle"
+        onClick={() => setLeftOpen(!leftOpen)}
+      >
+        ☰
+      </button>
 
-      <div className="side-buttons left-side">
+      {/* BOTON DERECHO */}
+      <button
+        className="mobile-toggle right-toggle"
+        onClick={() => setRightOpen(!rightOpen)}
+      >
+        🤖
+      </button>
 
-        <button
-          className="side-btn"
-          onClick={() => navigate("/user")}
-        >
-          🏠
-          <span>Inicio</span>
-        </button>
-
-        <button
-          className="side-btn"
-          onClick={() => navigate("/actividades")}
-        >
-          🧩
-          <span>Actividades</span>
-        </button>
-
-        <button
-          className="side-btn"
-          onClick={() => navigate("/rutinas")}
-        >
-          📅
-          <span>Rutinas</span>
-        </button>
-
-      </div>
-
-      <div className="side-buttons right-side">
-
-        <button
-          className="side-btn"
-          onClick={() => navigate("/chat")}
-        >
-          🤖
-          <span>Chat IA</span>
-        </button>
-
-        <button
-          className="side-btn"
-          onClick={() => navigate("/perfil")}
-        >
-          👤
-          <span>Perfil</span>
-        </button>
-
-        <button
-          className="side-btn logout-btn"
-          onClick={() => {
-            sessionStorage.clear();
-            navigate("/");
-          }}
-        >
-          🚪
-          <span>Salir</span>
-        </button>
-
-      </div>
-
-      {/* =========================
-          HEADER
-      ========================= */}
-
+      {/* HEADER */}
       <div className="stats-header">
 
         <div>
@@ -222,17 +178,15 @@ export default function Estadisticas() {
 
       </div>
 
-      {/* =========================
-          MAIN GRID
-      ========================= */}
-
+      {/* MAIN GRID */}
       <div className="stats-grid">
 
-        {/* =========================
-            LEFT COLUMN
-        ========================= */}
-
-        <div className="stats-column">
+        {/* LEFT PANEL */}
+        <div
+          className={`stats-column left-panel ${
+            leftOpen ? "show-panel" : ""
+          }`}
+        >
 
           <div className="glass-card emotion-card positive">
             <span>😊 Positivas</span>
@@ -272,13 +226,9 @@ export default function Estadisticas() {
 
         </div>
 
-        {/* =========================
-            CENTER COLUMN
-        ========================= */}
-
+        {/* CENTER */}
         <div className="stats-center">
 
-          {/* WELLBEING */}
           <div className="glass-card wellbeing-card">
 
             <div className="wellbeing-top">
@@ -316,43 +266,23 @@ export default function Estadisticas() {
           <div className="summary-grid">
 
             <div className="summary-card">
-              <h2>
-                {data.totalTareas}
-              </h2>
-
-              <p>
-                Total tareas
-              </p>
+              <h2>{data.totalTareas}</h2>
+              <p>Total tareas</p>
             </div>
 
             <div className="summary-card">
-              <h2>
-                {data.completadas}
-              </h2>
-
-              <p>
-                Completadas
-              </p>
+              <h2>{data.completadas}</h2>
+              <p>Completadas</p>
             </div>
 
             <div className="summary-card">
-              <h2>
-                {data.pendientes}
-              </h2>
-
-              <p>
-                Pendientes
-              </p>
+              <h2>{data.pendientes}</h2>
+              <p>Pendientes</p>
             </div>
 
             <div className="summary-card">
-              <h2>
-                {data.diasActivos}
-              </h2>
-
-              <p>
-                Días activos
-              </p>
+              <h2>{data.diasActivos}</h2>
+              <p>Días activos</p>
             </div>
 
           </div>
@@ -367,9 +297,7 @@ export default function Estadisticas() {
             <div className="extra-grid">
 
               <div className="mini-box">
-                <span>
-                  ✔ Completadas
-                </span>
+                <span>✔ Completadas</span>
 
                 <strong>
                   {data.completadas}
@@ -377,9 +305,7 @@ export default function Estadisticas() {
               </div>
 
               <div className="mini-box">
-                <span>
-                  ⏳ Pendientes
-                </span>
+                <span>⏳ Pendientes</span>
 
                 <strong>
                   {data.pendientes}
@@ -387,9 +313,7 @@ export default function Estadisticas() {
               </div>
 
               <div className="mini-box">
-                <span>
-                  🔥 Constancia
-                </span>
+                <span>🔥 Constancia</span>
 
                 <strong>
                   {data.diasActivos} días
@@ -397,9 +321,7 @@ export default function Estadisticas() {
               </div>
 
               <div className="mini-box">
-                <span>
-                  💯 Bienestar
-                </span>
+                <span>💯 Bienestar</span>
 
                 <strong>
                   {data.bienestar}%
@@ -412,11 +334,12 @@ export default function Estadisticas() {
 
         </div>
 
-        {/* =========================
-            RIGHT COLUMN
-        ========================= */}
-
-        <div className="stats-column">
+        {/* RIGHT PANEL */}
+        <div
+          className={`stats-column right-panel ${
+            rightOpen ? "show-panel" : ""
+          }`}
+        >
 
           <div className="glass-card insights-card">
 
