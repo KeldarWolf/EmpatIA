@@ -11,7 +11,8 @@ import ChatBox from "./ChatBox";
 import InputBox from "./InputBox";
 import frases from "./frases";
 
-const API_URL = "https://empatia-backend.onrender.com";
+const API_URL =
+  "https://empatia-backend.onrender.com";
 
 // ============================================
 // MENÚS
@@ -75,7 +76,9 @@ const continuePrompts = [
 ];
 
 export default function User() {
-  const navigate = useNavigate();
+
+  const navigate =
+    useNavigate();
 
   // ============================================
   // MENUS MOBILE
@@ -92,19 +95,24 @@ export default function User() {
   // ============================================
 
   const storedUser = JSON.parse(
-    sessionStorage.getItem("usuario") || "null"
+    sessionStorage.getItem(
+      "usuario"
+    ) || "null"
   );
 
   const user = {
+
     id_usuario:
       storedUser?.id_usuario ||
-      storedUser?.user?.id_usuario ||
+      storedUser?.user
+        ?.id_usuario ||
       storedUser?.id ||
       null,
 
     nombre:
       storedUser?.nombre ||
-      storedUser?.user?.nombre ||
+      storedUser?.user
+        ?.nombre ||
       "Usuario",
   };
 
@@ -113,10 +121,54 @@ export default function User() {
   // ============================================
 
   useEffect(() => {
-    if (!user.id_usuario) {
-      navigate("/", { replace: true });
+
+    const stored =
+      sessionStorage.getItem(
+        "usuario"
+      );
+
+    console.log(
+      "SESSION:",
+      stored
+    );
+
+    if (!stored) {
+
+      navigate("/", {
+        replace: true,
+      });
+
+      return;
     }
-  }, []);
+
+    try {
+
+      const parsed =
+        JSON.parse(stored);
+
+      const id =
+        parsed?.id_usuario ||
+        parsed?.user
+          ?.id_usuario ||
+        parsed?.id;
+
+      if (!id) {
+
+        navigate("/", {
+          replace: true,
+        });
+      }
+
+    } catch (err) {
+
+      console.log(err);
+
+      navigate("/", {
+        replace: true,
+      });
+    }
+
+  }, [navigate]);
 
   // ============================================
   // STATES
@@ -131,8 +183,10 @@ export default function User() {
   const [loading, setLoading] =
     useState(false);
 
-  const [writingActivity, setWritingActivity] =
-    useState(false);
+  const [
+    writingActivity,
+    setWritingActivity,
+  ] = useState(false);
 
   const [frase, setFrase] =
     useState("");
@@ -142,63 +196,79 @@ export default function User() {
   // ============================================
 
   useEffect(() => {
+
     setMessages([
       {
         role: "ai",
-        text: `Hola ${user.nombre}, estoy aquí contigo.`,
+        text:
+          `Hola ${user.nombre}, estoy aquí contigo.`,
       },
       {
         role: "ai",
-        text: "Cuéntame cómo te sientes...",
+        text:
+          "Cuéntame cómo te sientes...",
       },
     ]);
 
     setFrase(
       frases[
         Math.floor(
-          Math.random() * frases.length
+          Math.random() *
+            frases.length
         )
       ]
     );
 
-    const interval = setInterval(() => {
-      setFrase(
-        frases[
-          Math.floor(
-            Math.random() * frases.length
-          )
-        ]
-      );
-    }, 8000);
+    const interval =
+      setInterval(() => {
+
+        setFrase(
+          frases[
+            Math.floor(
+              Math.random() *
+                frases.length
+            )
+          ]
+        );
+
+      }, 8000);
 
     return () =>
       clearInterval(interval);
+
   }, []);
 
   // ============================================
   // IA REQUEST
   // ============================================
 
-  const askAI = async (message) => {
+  const askAI = async (
+    message
+  ) => {
+
     try {
-      const res = await fetch(
-        `${API_URL}/chat`,
-        {
-          method: "POST",
 
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
+      const res =
+        await fetch(
+          `${API_URL}/chat`,
+          {
+            method: "POST",
 
-          body: JSON.stringify({
-            message,
-          }),
-        }
-      );
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body: JSON.stringify({
+              message,
+            }),
+          }
+        );
 
       return await res.json();
+
     } catch (err) {
+
       console.log(err);
 
       return {
@@ -213,225 +283,130 @@ export default function User() {
   // SAVE ACTIVITY
   // ============================================
 
-  const saveActivity = async (
-    activityName
-  ) => {
-    try {
-      const payload = {
-        id_usuario: Number(
-          user.id_usuario
-        ),
+  const saveActivity =
+    async (
+      activityName
+    ) => {
 
-        nombre_actividad:
-          activityName,
+      try {
 
-        puntaje_agrado: 5,
+        const payload = {
 
-        frecuencia_deseada:
-          "media",
+          id_usuario:
+            Number(
+              user.id_usuario
+            ),
 
-        reaccion: "",
-      };
+          nombre_actividad:
+            activityName,
 
-      const res = await fetch(
-        `${API_URL}/api/registro-actividad`,
-        {
-          method: "POST",
+          puntaje_agrado: 5,
 
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
+          frecuencia_deseada:
+            "media",
 
-          body: JSON.stringify(
-            payload
-          ),
+          reaccion: "",
+        };
+
+        const res =
+          await fetch(
+            `${API_URL}/api/registro-actividad`,
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+
+              body:
+                JSON.stringify(
+                  payload
+                ),
+            }
+          );
+
+        const data =
+          await res.json();
+
+        if (!res.ok) {
+
+          throw new Error(
+            data.error ||
+              "error"
+          );
         }
-      );
 
-      const data =
-        await res.json();
+        return data;
 
-      if (!res.ok) {
-        throw new Error(
-          data.error || "error"
+      } catch (err) {
+
+        console.log(err);
+
+        setMessages(
+          (prev) => [
+            ...prev,
+            {
+              role: "ai",
+              text:
+                "❌ No pude guardar la actividad",
+            },
+          ]
         );
+
+        return null;
       }
-
-      return data;
-    } catch (err) {
-      console.log(err);
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text:
-            "❌ No pude guardar la actividad",
-        },
-      ]);
-
-      return null;
-    }
-  };
+    };
 
   // ============================================
   // SEND
   // ============================================
 
-  const sendMessage = async () => {
-    if (!input.trim() || loading)
-      return;
+  const sendMessage =
+    async () => {
 
-    const text = input.trim();
+      if (
+        !input.trim() ||
+        loading
+      )
+        return;
 
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "user",
-        text,
-      },
-    ]);
+      const text =
+        input.trim();
 
-    setInput("");
-
-    setLoading(true);
-
-    const lower =
-      text.toLowerCase();
-
-    // ============================================
-    // ACTIVADORES
-    // ============================================
-
-    const triggerWords = [
-      "actividad",
-      "actividades",
-      "hacer algo",
-      "que hago",
-      "qué hago",
-      "ideas",
-      "planes",
-      "panorama",
-      "salir",
-      "distraerme",
-      "relajarme",
-      "algo para hacer",
-      "quiero hacer algo",
-    ];
-
-    const detected =
-      triggerWords.some((w) =>
-        lower.includes(w)
+      setMessages(
+        (prev) => [
+          ...prev,
+          {
+            role: "user",
+            text,
+          },
+        ]
       );
 
-    // ============================================
-    // ESCRIBIR ACTIVIDAD
-    // ============================================
+      setInput("");
 
-    if (writingActivity) {
-      const saved =
-        await saveActivity(text);
+      setLoading(true);
 
-      if (saved) {
-        setMessages((prev) => [
+      const response =
+        await askAI(text);
+
+      setMessages(
+        (prev) => [
           ...prev,
           {
             role: "ai",
             text:
-              `✅ Actividad guardada: ${text}`,
+              response.reply,
+            options:
+              response.options ||
+              [],
           },
-          {
-            role: "ai",
-            text:
-              "⏳ Redirigiendo...",
-          },
-        ]);
-
-        setWritingActivity(false);
-
-        setTimeout(() => {
-          navigate(
-            "/actividades",
-            {
-              replace: true,
-            }
-          );
-        }, 1200);
-      }
+        ]
+      );
 
       setLoading(false);
-
-      return;
-    }
-
-    // ============================================
-    // IA
-    // ============================================
-
-    const response =
-      await askAI(text);
-
-    // ============================================
-    // DETECTA ACTIVIDAD
-    // ============================================
-
-    if (detected) {
-      const randomActivityPrompt =
-        activityPrompts[
-          Math.floor(
-            Math.random() *
-              activityPrompts.length
-          )
-        ];
-
-      const randomContinuePrompt =
-        continuePrompts[
-          Math.floor(
-            Math.random() *
-              continuePrompts.length
-          )
-        ];
-
-      const aiReply =
-        response.reply ||
-        "🤍 Estoy aquí contigo.";
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-
-          text:
-            `${aiReply}\n\n` +
-            `${randomContinuePrompt}\n\n` +
-            `${randomActivityPrompt}`,
-
-          options: ["Sí", "No"],
-        },
-      ]);
-
-      setLoading(false);
-
-      return;
-    }
-
-    // ============================================
-    // NORMAL
-    // ============================================
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "ai",
-        text: response.reply,
-        options:
-          response.options || [],
-      },
-    ]);
-
-    setLoading(false);
-  };
+    };
 
   // ============================================
   // OPTIONS
@@ -439,24 +414,22 @@ export default function User() {
 
   const handleOptionClick =
     async (opt) => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "user",
-          text: opt,
-        },
-      ]);
 
-      // cerrar menus mobile
+      setMessages(
+        (prev) => [
+          ...prev,
+          {
+            role: "user",
+            text: opt,
+          },
+        ]
+      );
 
       setLeftOpen(false);
       setRightOpen(false);
 
-      // ============================================
-      // NO
-      // ============================================
-
       if (opt === "No") {
+
         const randomContinuePrompt =
           continuePrompts[
             Math.floor(
@@ -465,131 +438,141 @@ export default function User() {
             )
           ];
 
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "ai",
-            text:
-              randomContinuePrompt,
-          },
-        ]);
+        setMessages(
+          (prev) => [
+            ...prev,
+            {
+              role: "ai",
+              text:
+                randomContinuePrompt,
+            },
+          ]
+        );
 
         return;
       }
-
-      // ============================================
-      // SI
-      // ============================================
 
       if (opt === "Sí") {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "ai",
-            text:
-              "✨ Elige una categoría:",
 
-            options: mainOptions,
-          },
-        ]);
+        setMessages(
+          (prev) => [
+            ...prev,
+            {
+              role: "ai",
+              text:
+                "✨ Elige una categoría:",
+              options:
+                mainOptions,
+            },
+          ]
+        );
 
         return;
       }
-
-      // ============================================
-      // SUBMENU
-      // ============================================
 
       if (subOptions[opt]) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "ai",
 
-            text:
-              `✨ Opciones de ${opt}:`,
+        setMessages(
+          (prev) => [
+            ...prev,
+            {
+              role: "ai",
 
-            options:
-              subOptions[opt],
-          },
-        ]);
+              text:
+                `✨ Opciones de ${opt}:`,
+
+              options:
+                subOptions[
+                  opt
+                ],
+            },
+          ]
+        );
 
         return;
       }
-
-      // ============================================
-      // ESCRIBIR
-      // ============================================
 
       if (
-        opt.includes("Escribir")
+        opt.includes(
+          "Escribir"
+        )
       ) {
-        setWritingActivity(true);
 
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "ai",
-            text:
-              "✍️ Escribe tu actividad:",
-          },
-        ]);
+        setWritingActivity(
+          true
+        );
 
-        return;
-      }
-
-      // ============================================
-      // NO SE CUAL
-      // ============================================
-
-      if (opt === "❓ No sé cuál") {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "ai",
-
-            text:
-              "🤍 Podrías probar escuchar música o caminar un rato.",
-
-            options: [
-              "🎵 Música",
-              "🏃 Actividad física",
-            ],
-          },
-        ]);
+        setMessages(
+          (prev) => [
+            ...prev,
+            {
+              role: "ai",
+              text:
+                "✍️ Escribe tu actividad:",
+            },
+          ]
+        );
 
         return;
       }
 
-      // ============================================
-      // GUARDAR
-      // ============================================
+      if (
+        opt ===
+        "❓ No sé cuál"
+      ) {
+
+        setMessages(
+          (prev) => [
+            ...prev,
+            {
+              role: "ai",
+
+              text:
+                "🤍 Podrías probar escuchar música o caminar un rato.",
+
+              options: [
+                "🎵 Música",
+                "🏃 Actividad física",
+              ],
+            },
+          ]
+        );
+
+        return;
+      }
 
       const saved =
-        await saveActivity(opt);
+        await saveActivity(
+          opt
+        );
 
       if (saved) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "ai",
-            text:
-              `✅ Guardado: ${opt}`,
-          },
-          {
-            role: "ai",
-            text:
-              "⏳ Redirigiendo...",
-          },
-        ]);
+
+        setMessages(
+          (prev) => [
+            ...prev,
+            {
+              role: "ai",
+              text:
+                `✅ Guardado: ${opt}`,
+            },
+            {
+              role: "ai",
+              text:
+                "⏳ Redirigiendo...",
+            },
+          ]
+        );
 
         setTimeout(() => {
+
           navigate(
             "/actividades",
             {
               replace: true,
             }
           );
+
         }, 1200);
       }
     };
@@ -599,6 +582,7 @@ export default function User() {
   // ============================================
 
   return (
+
     <div className="app-layout">
 
       {/* MENU LEFT */}
@@ -625,11 +609,15 @@ export default function User() {
 
       {/* OVERLAY */}
 
-      {(leftOpen || rightOpen) && (
+      {(leftOpen ||
+        rightOpen) && (
+
         <div
           className="overlay"
           onClick={() => {
+
             setLeftOpen(false);
+
             setRightOpen(false);
           }}
         />
@@ -639,9 +627,12 @@ export default function User() {
 
       <div
         className={`left-panel ${
-          leftOpen ? "open" : ""
+          leftOpen
+            ? "open"
+            : ""
         }`}
       >
+
         <h4>
           💡 Acompañamiento
         </h4>
@@ -658,11 +649,13 @@ export default function User() {
         >
           👤 {user.nombre}
         </div>
+
       </div>
 
       {/* CENTER */}
 
       <div className="center-panel">
+
         <ChatBox
           messages={messages}
           onOptionClick={
@@ -676,18 +669,24 @@ export default function User() {
           sendMessage={sendMessage}
           loading={loading}
         />
+
       </div>
 
       {/* RIGHT */}
 
       <div
         className={`right-panel ${
-          rightOpen ? "open" : ""
+          rightOpen
+            ? "open"
+            : ""
         }`}
       >
+
         <button
           onClick={() =>
-            navigate("/rutina")
+            navigate(
+              "/rutina"
+            )
           }
         >
           🧘 Rutina
@@ -715,12 +714,16 @@ export default function User() {
 
         <button
           onClick={() =>
-            navigate("/diario")
+            navigate(
+              "/diario"
+            )
           }
         >
           📓 Diario
         </button>
+
       </div>
+
     </div>
   );
 }
