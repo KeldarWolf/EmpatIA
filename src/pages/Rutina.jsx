@@ -40,17 +40,13 @@ export default function Rutina() {
   };
 
   const loadActivities = async () => {
-    const res = await fetch(
-      `${API_URL}/api/registro-actividad/usuario/${user.id_usuario}`
-    );
+    const res = await fetch(`${API_URL}/api/registro-actividad/usuario/${user.id_usuario}`);
     const data = await res.json();
     setActividades(Array.isArray(data) ? data : []);
   };
 
   const loadEvents = async () => {
-    const res = await fetch(
-      `${API_URL}/api/rutina-eventos/${user.id_usuario}`
-    );
+    const res = await fetch(`${API_URL}/api/rutina-eventos/${user.id_usuario}`);
     const data = await res.json();
     setEventos(Array.isArray(data) ? data : []);
   };
@@ -90,7 +86,6 @@ export default function Rutina() {
     });
 
     const data = await res.json();
-
     if (!res.ok) return alert(data.error || "Error");
 
     await loadEvents();
@@ -144,6 +139,25 @@ export default function Rutina() {
     setSelectedDate(new Date(year, month + dir, 1));
   };
 
+  /* =========================
+     CONTROL DRAWERS
+  ========================= */
+
+  const openLeft = () => {
+    setRightOpen(false);
+    setLeftOpen(true);
+  };
+
+  const openRight = () => {
+    setLeftOpen(false);
+    setRightOpen(true);
+  };
+
+  const closeAll = () => {
+    setLeftOpen(false);
+    setRightOpen(false);
+  };
+
   return (
     <div className="page">
 
@@ -159,14 +173,26 @@ export default function Rutina() {
         </button>
       </div>
 
+      {/* OVERLAY (mobile drawers) */}
+      {(leftOpen || rightOpen) && (
+        <div className="overlay" onClick={closeAll} />
+      )}
+
+      {/* MOBILE BUTTONS */}
+      <button className="mobile-toggle left" onClick={openLeft}>
+        🎯
+      </button>
+
+      <button className="mobile-toggle right" onClick={openRight}>
+        📅
+      </button>
+
       {/* LAYOUT */}
       <div className="layout">
 
-        {/* LEFT */}
+        {/* LEFT PANEL */}
         <div className={`left-panel ${leftOpen ? "open" : ""}`}>
-          <button className="panel-close-btn" onClick={() => setLeftOpen(false)}>
-            ✖
-          </button>
+          <button className="panel-close-btn" onClick={closeAll}>✖</button>
 
           <h3>🎯 Actividades</h3>
 
@@ -236,11 +262,9 @@ export default function Rutina() {
           )}
         </div>
 
-        {/* RIGHT */}
+        {/* RIGHT PANEL */}
         <div className={`right-panel ${rightOpen ? "open" : ""}`}>
-          <button className="panel-close-btn" onClick={() => setRightOpen(false)}>
-            ✖
-          </button>
+          <button className="panel-close-btn" onClick={closeAll}>✖</button>
 
           <div className="calendar-header">
             <h3>
