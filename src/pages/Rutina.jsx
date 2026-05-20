@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Rutina.css";
 
@@ -8,16 +8,9 @@ export default function Rutina() {
 
   const navigate = useNavigate();
 
-  /* =========================
-     MOBILE SIDEBARS
-  ========================= */
-
-  const [leftOpen, setLeftOpen] = useState(false);
-  const [rightOpen, setRightOpen] = useState(false);
-
-  /* =========================
+  /* =========================================
      USER
-  ========================= */
+  ========================================= */
 
   const storedUser = JSON.parse(
     sessionStorage.getItem("usuario") || "null"
@@ -31,35 +24,63 @@ export default function Rutina() {
       null,
   };
 
-  /* =========================
-     STATES
-  ========================= */
+  /* =========================================
+     MOBILE PANELS
+  ========================================= */
 
-  const [actividades, setActividades] = useState([]);
-  const [eventos, setEventos] = useState([]);
+  const [leftOpen, setLeftOpen] =
+    useState(false);
+
+  const [rightOpen, setRightOpen] =
+    useState(false);
+
+  /* =========================================
+     DATA
+  ========================================= */
+
+  const [actividades, setActividades] =
+    useState([]);
+
+  const [eventos, setEventos] =
+    useState([]);
 
   const [selectedActivity, setSelectedActivity] =
     useState(null);
 
-  const [titulo, setTitulo] = useState("");
+  /* =========================================
+     FORM
+  ========================================= */
+
+  const [titulo, setTitulo] =
+    useState("");
+
   const [descripcion, setDescripcion] =
     useState("");
 
-  const [hora, setHora] = useState("");
-  const [horaFin, setHoraFin] = useState("");
+  const [hora, setHora] =
+    useState("");
 
-  const [duracion, setDuracion] = useState(30);
+  const [horaFin, setHoraFin] =
+    useState("");
+
+  const [duracion, setDuracion] =
+    useState(30);
+
+  /* =========================================
+     DATE
+  ========================================= */
 
   const [selectedDate, setSelectedDate] =
     useState(new Date());
 
-  /* =========================
-     FORMAT DATE
-  ========================= */
+  /* =========================================
+     FORMAT DATE LOCAL
+  ========================================= */
 
   const formatDateLocal = (date) => {
 
-    const year = date.getFullYear();
+    const year =
+      date.getFullYear();
 
     const month = String(
       date.getMonth() + 1
@@ -72,9 +93,9 @@ export default function Rutina() {
     return `${year}-${month}-${day}`;
   };
 
-  /* =========================
+  /* =========================================
      LOAD ACTIVITIES
-  ========================= */
+  ========================================= */
 
   const loadActivities = async () => {
 
@@ -84,7 +105,8 @@ export default function Rutina() {
         `${API_URL}/api/registro-actividad/usuario/${user.id_usuario}`
       );
 
-      const data = await res.json();
+      const data =
+        await res.json();
 
       setActividades(
         Array.isArray(data)
@@ -98,9 +120,9 @@ export default function Rutina() {
     }
   };
 
-  /* =========================
+  /* =========================================
      LOAD EVENTS
-  ========================= */
+  ========================================= */
 
   const loadEvents = async () => {
 
@@ -110,7 +132,13 @@ export default function Rutina() {
         `${API_URL}/api/rutina-eventos/${user.id_usuario}`
       );
 
-      const data = await res.json();
+      const data =
+        await res.json();
+
+      console.log(
+        "📅 EVENTOS:",
+        data
+      );
 
       setEventos(
         Array.isArray(data)
@@ -124,9 +152,9 @@ export default function Rutina() {
     }
   };
 
-  /* =========================
+  /* =========================================
      INIT
-  ========================= */
+  ========================================= */
 
   useEffect(() => {
 
@@ -138,9 +166,9 @@ export default function Rutina() {
 
   }, [user?.id_usuario]);
 
-  /* =========================
+  /* =========================================
      SELECT ACTIVITY
-  ========================= */
+  ========================================= */
 
   const selectActivity = (act) => {
 
@@ -153,22 +181,15 @@ export default function Rutina() {
     setLeftOpen(true);
   };
 
-  /* =========================
+  /* =========================================
      CREATE EVENT
-  ========================= */
+  ========================================= */
 
   const createEvent = async () => {
 
-    if (!user?.id_usuario) {
-
-      alert("Usuario no encontrado");
-
-      return;
-    }
-
     if (!titulo.trim()) {
 
-      alert("Ingrese un título");
+      alert("Ingrese título");
 
       return;
     }
@@ -192,6 +213,7 @@ export default function Rutina() {
           null,
 
         titulo,
+
         descripcion,
 
         fecha:
@@ -229,7 +251,8 @@ export default function Rutina() {
         }
       );
 
-      const data = await res.json();
+      const data =
+        await res.json();
 
       console.log(
         "📥 RESPUESTA",
@@ -246,10 +269,6 @@ export default function Rutina() {
         return;
       }
 
-      alert(
-        "Rutina creada"
-      );
-
       await loadEvents();
 
       setTitulo("");
@@ -262,7 +281,9 @@ export default function Rutina() {
 
       setSelectedActivity(null);
 
-      setLeftOpen(false);
+      alert(
+        "Rutina guardada"
+      );
 
     } catch (err) {
 
@@ -274,9 +295,9 @@ export default function Rutina() {
     }
   };
 
-  /* =========================
+  /* =========================================
      DELETE EVENT
-  ========================= */
+  ========================================= */
 
   const deleteEvent = async (
     id_evento
@@ -291,7 +312,7 @@ export default function Rutina() {
         }
       );
 
-      loadEvents();
+      await loadEvents();
 
     } catch (err) {
 
@@ -299,9 +320,9 @@ export default function Rutina() {
     }
   };
 
-  /* =========================
+  /* =========================================
      TOGGLE COMPLETE
-  ========================= */
+  ========================================= */
 
   const toggleComplete = async (
     evento
@@ -327,7 +348,7 @@ export default function Rutina() {
         }
       );
 
-      loadEvents();
+      await loadEvents();
 
     } catch (err) {
 
@@ -335,24 +356,46 @@ export default function Rutina() {
     }
   };
 
-  /* =========================
+  /* =========================================
      FILTER EVENTS
-  ========================= */
+  ========================================= */
 
   const currentDate =
     formatDateLocal(
       selectedDate
     );
 
-  const eventosDia =
-    eventos.filter(
-      (e) =>
-        e.fecha === currentDate
-    );
+  const eventosDia = useMemo(() => {
 
-  /* =========================
+    return eventos
+      .filter((evento) => {
+
+        return (
+          evento.fecha?.slice(0, 10) ===
+          currentDate
+        );
+      })
+      .sort((a, b) =>
+        a.hora.localeCompare(
+          b.hora
+        )
+      );
+
+  }, [eventos, currentDate]);
+
+  console.log(
+    "📌 FECHA:",
+    currentDate
+  );
+
+  console.log(
+    "📌 EVENTOS DEL DIA:",
+    eventosDia
+  );
+
+  /* =========================================
      CALENDAR
-  ========================= */
+  ========================================= */
 
   const currentMonth =
     selectedDate.getMonth();
@@ -360,7 +403,8 @@ export default function Rutina() {
   const currentYear =
     selectedDate.getFullYear();
 
-  const today = new Date();
+  const today =
+    new Date();
 
   const daysInMonth =
     new Date(
@@ -401,19 +445,18 @@ export default function Rutina() {
     days.push(i);
   }
 
-  /* =========================
+  /* =========================================
      CHANGE MONTH
-  ========================= */
+  ========================================= */
 
   const changeMonth = (
-    direction
+    dir
   ) => {
 
     setSelectedDate(
       new Date(
         currentYear,
-        currentMonth +
-          direction,
+        currentMonth + dir,
         1
       )
     );
@@ -422,7 +465,9 @@ export default function Rutina() {
   return (
     <div className="page">
 
-      {/* MOBILE BUTTONS */}
+      {/* =========================================
+          MOBILE BUTTONS
+      ========================================= */}
 
       <button
         className="mobile-left-btn"
@@ -450,7 +495,9 @@ export default function Rutina() {
           : "📅"}
       </button>
 
-      {/* OVERLAY */}
+      {/* =========================================
+          OVERLAY
+      ========================================= */}
 
       {(leftOpen ||
         rightOpen) && (
@@ -465,7 +512,9 @@ export default function Rutina() {
         />
       )}
 
-      {/* HEADER */}
+      {/* =========================================
+          HEADER
+      ========================================= */}
 
       <div className="header">
 
@@ -476,8 +525,8 @@ export default function Rutina() {
           </h1>
 
           <p>
-            Organiza tus
-            actividades
+            Organiza actividades
+            por día, semana o mes
           </p>
 
         </div>
@@ -493,11 +542,15 @@ export default function Rutina() {
 
       </div>
 
-      {/* LAYOUT */}
+      {/* =========================================
+          MAIN LAYOUT
+      ========================================= */}
 
       <div className="layout">
 
-        {/* LEFT PANEL */}
+        {/* =========================================
+            LEFT PANEL
+        ========================================= */}
 
         <div
           className={`
@@ -514,16 +567,9 @@ export default function Rutina() {
             🎯 Actividades
           </h3>
 
-          {actividades.length ===
-            0 && (
-            <p>
-              No hay
-              actividades
-            </p>
-          )}
-
           {actividades.map(
             (act) => (
+
               <div
                 key={
                   act.id_registro
@@ -564,12 +610,15 @@ export default function Rutina() {
           <hr />
 
           <h3>
-            ➕ Crear rutina
+            ⚙ Configuración
           </h3>
 
+          <label>
+            Título
+          </label>
+
           <input
-            type="text"
-            placeholder="Título"
+            className="input"
             value={titulo}
             onChange={(e) =>
               setTitulo(
@@ -578,8 +627,13 @@ export default function Rutina() {
             }
           />
 
+          <label>
+            Descripción
+          </label>
+
           <textarea
-            placeholder="Descripción"
+            className="input"
+            rows="4"
             value={descripcion}
             onChange={(e) =>
               setDescripcion(
@@ -587,8 +641,6 @@ export default function Rutina() {
               )
             }
           />
-
-          {/* HORAS */}
 
           <div className="time-row">
 
@@ -600,6 +652,7 @@ export default function Rutina() {
 
               <input
                 type="time"
+                className="input"
                 value={hora}
                 onChange={(e) =>
                   setHora(
@@ -618,6 +671,7 @@ export default function Rutina() {
 
               <input
                 type="time"
+                className="input"
                 value={horaFin}
                 onChange={(e) =>
                   setHoraFin(
@@ -632,12 +686,11 @@ export default function Rutina() {
 
           <label>
             Duración
-            (minutos)
           </label>
 
           <input
             type="number"
-            min="5"
+            className="input"
             value={duracion}
             onChange={(e) =>
               setDuracion(
@@ -649,6 +702,7 @@ export default function Rutina() {
           />
 
           <button
+            className="create-btn"
             onClick={
               createEvent
             }
@@ -658,30 +712,54 @@ export default function Rutina() {
 
         </div>
 
-        {/* CENTER PANEL */}
+        {/* =========================================
+            CENTER PANEL
+        ========================================= */}
 
         <div className="center-panel">
 
-          <div className="day-header">
+          <div className="planner-header">
 
             <h2>
-              📅{" "}
-              {selectedDate.toLocaleDateString()}
+              📅 Planificación del día
             </h2>
+
+            <p className="planner-date">
+
+              {selectedDate.toLocaleDateString(
+                "es-CL",
+                {
+                  weekday:
+                    "long",
+                  year:
+                    "numeric",
+                  month:
+                    "2-digit",
+                  day:
+                    "2-digit",
+                }
+              )}
+
+            </p>
 
           </div>
 
-          <div className="events-container">
+          {/* EVENTOS */}
+
+          <div className="planner-events">
 
             {eventosDia.length ===
             0 ? (
 
-              <div className="empty-events">
+              <div className="empty-planner">
+
+                <h3>
+                  No hay rutinas
+                </h3>
 
                 <p>
-                  No hay
-                  rutinas
-                  este día
+                  Selecciona un día
+                  del calendario
                 </p>
 
               </div>
@@ -692,12 +770,13 @@ export default function Rutina() {
                 (
                   evento
                 ) => (
+
                   <div
                     key={
                       evento.id_evento
                     }
                     className={`
-                      event-card
+                      planner-card
                       ${
                         evento.completado
                           ? "completed"
@@ -706,56 +785,68 @@ export default function Rutina() {
                     `}
                   >
 
-                    <input
-                      type="checkbox"
-                      checked={
-                        evento.completado
-                      }
-                      onChange={() =>
-                        toggleComplete(
-                          evento
-                        )
-                      }
-                    />
+                    <div className="planner-left">
 
-                    <div className="event-info">
-
-                      <h4>
-                        {
-                          evento.titulo
+                      <input
+                        type="checkbox"
+                        checked={
+                          evento.completado
                         }
-                      </h4>
-
-                      <p>
-                        🕒{" "}
-                        {
-                          evento.hora
+                        onChange={() =>
+                          toggleComplete(
+                            evento
+                          )
                         }
-                        {" - "}
-                        {evento.hora_fin ||
-                          "--:--"}
-                      </p>
+                        className="planner-checkbox"
+                      />
 
-                      <p>
-                        ⏳{" "}
-                        {
-                          evento.duracion
-                        }{" "}
-                        min
-                      </p>
+                      <div className="planner-info">
 
-                      {evento.descripcion && (
-                        <p>
+                        <h3>
                           {
-                            evento.descripcion
+                            evento.titulo
                           }
-                        </p>
-                      )}
+                        </h3>
+
+                        <div className="planner-time">
+
+                          ⏰{" "}
+                          {
+                            evento.hora
+                          }
+                          {" → "}
+                          {evento.hora_fin ||
+                            "--:--"}
+
+                        </div>
+
+                        <div className="planner-duration">
+
+                          🕒{" "}
+                          {
+                            evento.duracion
+                          }{" "}
+                          min
+
+                        </div>
+
+                        {evento.descripcion && (
+
+                          <p className="planner-description">
+
+                            {
+                              evento.descripcion
+                            }
+
+                          </p>
+                        )}
+
+                      </div>
 
                     </div>
 
                     <button
-                      className="delete-btn"
+                      className="planner-delete"
                       onClick={() =>
                         deleteEvent(
                           evento.id_evento
@@ -774,7 +865,9 @@ export default function Rutina() {
 
         </div>
 
-        {/* RIGHT PANEL */}
+        {/* =========================================
+            RIGHT PANEL
+        ========================================= */}
 
         <div
           className={`
@@ -786,8 +879,6 @@ export default function Rutina() {
             }
           `}
         >
-
-          {/* TOP */}
 
           <div className="calendar-top">
 
@@ -821,11 +912,10 @@ export default function Rutina() {
 
           </div>
 
-          {/* CALENDAR */}
-
           <div className="calendar-container">
 
             <h2>
+
               {[
                 "Enero",
                 "Febrero",
@@ -839,13 +929,17 @@ export default function Rutina() {
                 "Octubre",
                 "Noviembre",
                 "Diciembre",
-              ][currentMonth]}{" "}
+              ][currentMonth]}
+
+              {" "}
+
               {
                 currentYear
               }
+
             </h2>
 
-            {/* DAYS */}
+            {/* WEEK */}
 
             <div className="weekdays">
 
@@ -859,10 +953,9 @@ export default function Rutina() {
                 "Dom",
               ].map(
                 (day) => (
+
                   <div
-                    key={
-                      day
-                    }
+                    key={day}
                   >
                     {day}
                   </div>
@@ -896,21 +989,27 @@ export default function Rutina() {
                     );
                   }
 
+                  const date =
+                    new Date(
+                      currentYear,
+                      currentMonth,
+                      d
+                    );
+
                   const fullDate =
                     formatDateLocal(
-                      new Date(
-                        currentYear,
-                        currentMonth,
-                        d
-                      )
+                      date
                     );
 
                   const hasEvents =
                     eventos.some(
                       (
-                        e
+                        ev
                       ) =>
-                        e.fecha ===
+                        ev.fecha?.slice(
+                          0,
+                          10
+                        ) ===
                         fullDate
                     );
 
@@ -918,7 +1017,9 @@ export default function Rutina() {
                     selectedDate.getDate() ===
                       d &&
                     selectedDate.getMonth() ===
-                      currentMonth;
+                      currentMonth &&
+                    selectedDate.getFullYear() ===
+                      currentYear;
 
                   const isToday =
                     today.getDate() ===
@@ -929,6 +1030,7 @@ export default function Rutina() {
                       currentYear;
 
                   return (
+
                     <div
                       key={
                         index
@@ -948,25 +1050,19 @@ export default function Rutina() {
                       `}
                       onClick={() =>
                         setSelectedDate(
-                          new Date(
-                            currentYear,
-                            currentMonth,
-                            d
-                          )
+                          date
                         )
                       }
                     >
 
-                      {d}
+                      <span>
+                        {d}
+                      </span>
 
                       {hasEvents && (
-                        <div className="calendar-events">
 
-                          <div className="event-dot" />
+                        <div className="event-dot" />
 
-                          <div className="event-dot" />
-
-                        </div>
                       )}
 
                     </div>
