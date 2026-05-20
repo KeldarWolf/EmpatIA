@@ -16,7 +16,11 @@ export default function Rutina() {
   /* =========================
      USER
   ========================= */
-  const storedUser = JSON.parse(sessionStorage.getItem("usuario") || "null");
+  const storedUser = JSON.parse(
+    sessionStorage.getItem("usuario") || "null"
+  );
+
+  console.log("SESSION USER:", storedUser);
 
   const user = {
     id_usuario:
@@ -25,6 +29,8 @@ export default function Rutina() {
       storedUser?.id ||
       null,
   };
+
+  console.log("USER FINAL:", user);
 
   /* =========================
      STATES
@@ -42,6 +48,17 @@ export default function Rutina() {
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   /* =========================
+     FORMAT DATE LOCAL
+  ========================= */
+  const formatDateLocal = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  };
+
+  /* =========================
      LOAD ACTIVITIES
   ========================= */
   const loadActivities = async () => {
@@ -51,6 +68,9 @@ export default function Rutina() {
       );
 
       const data = await res.json();
+
+      console.log("ACTIVIDADES:", data);
+
       setActividades(Array.isArray(data) ? data : []);
     } catch (err) {
       console.log(err);
@@ -67,12 +87,18 @@ export default function Rutina() {
       );
 
       const data = await res.json();
+
+      console.log("EVENTOS:", data);
+
       setEventos(Array.isArray(data) ? data : []);
     } catch (err) {
       console.log(err);
     }
   };
 
+  /* =========================
+     INIT
+  ========================= */
   useEffect(() => {
     if (user?.id_usuario) {
       loadActivities();
@@ -85,50 +111,78 @@ export default function Rutina() {
   ========================= */
   const selectActivity = (act) => {
     setSelectedActivity(act);
+
     setTitulo(act.nombre_actividad || "");
+
     setLeftOpen(true);
     setRightOpen(false);
   };
 
   /* =========================
-     CREATE EVENT (FIX REAL)
+     CREATE EVENT
   ========================= */
   const createEvent = async () => {
-    if (!user?.id_usuario || !titulo || !hora) return;
+    if (!user?.id_usuario) {
+      alert("Usuario no encontrado");
+      return;
+    }
+
+    if (!titulo.trim()) {
+      alert("Debe ingresar un título");
+      return;
+    }
+
+    if (!hora) {
+      alert("Debe seleccionar una hora");
+      return;
+    }
 
     try {
+      const payload = {
+        id_usuario: user.id_usuario,
+        id_registro: selectedActivity?.id_registro || null,
+        titulo,
+        descripcion,
+        hora,
+        duracion,
+        fecha: formatDateLocal(selectedDate),
+      };
+
+      console.log("📤 ENVIANDO:", payload);
+
       const res = await fetch(`${API_URL}/api/rutina-eventos`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          id_usuario: user.id_usuario,
-          id_registro: selectedActivity?.id_registro || null,
-          titulo,
-          descripcion,
-          hora,
-          duracion,
-          fecha: selectedDate.toISOString().split("T")[0],
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
 
+      console.log("📥 RESPUESTA:", data);
+
       if (!res.ok) {
-        console.log("ERROR BACKEND:", data);
+        alert(data.error || "Error creando evento");
         return;
       }
+
+      alert("Rutina creada correctamente");
 
       await loadEvents();
 
       setTitulo("");
       setDescripcion("");
       setHora("");
+      setDuracion(30);
+
       setSelectedActivity(null);
+
       setLeftOpen(false);
+
     } catch (err) {
       console.log(err);
+      alert("Error conexión servidor");
     }
   };
 
@@ -171,37 +225,69 @@ export default function Rutina() {
   /* =========================
      FILTER EVENTS
   ========================= */
-  const currentDate = selectedDate.toISOString().split("T")[0];
-  const eventosDia = eventos.filter((e) => e.fecha === currentDate);
+  const currentDate = formatDateLocal(selectedDate);
+
+  const eventosDia = eventos.filter(
+    (e) => e.fecha === currentDate
+  );
 
   /* =========================
      CALENDAR
   ========================= */
-  const today = new Date();
   const currentMonth = selectedDate.getMonth();
   const currentYear = selectedDate.getFullYear();
 
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+  const daysInMonth = new Date(
+    currentYear,
+    currentMonth + 1,
+    0
+  ).getDate();
+
+  let firstDay = new Date(
+    currentYear,
+    currentMonth,
+    1
+  ).getDay();
+
+  firstDay = firstDay === 0 ? 6 : firstDay - 1;
 
   const days = [];
 
-  for (let i = 0; i < firstDay; i++) days.push(null);
-  for (let i = 1; i <= daysInMonth; i++) days.push(i);
+  for (let i = 0; i < firstDay; i++) {
+    days.push(null);
+  }
+
+  for (let i = 1; i <= daysInMonth; i++) {
+    days.push(i);
+  }
+
+  /* =========================
+     MONTH CHANGE
+  ========================= */
+  const changeMonth = (direction) => {
+    setSelectedDate(
+      new Date(currentYear, currentMonth + direction, 1)
+    );
+  };
 
   return (
     <div className="page">
 
       {/* HEADER */}
       <div className="header">
+
         <div>
           <h1>🧘 Rutina Inteligente</h1>
-          <p>Organiza actividades por día</p>
+          <p>Organiza tus actividades diarias</p>
         </div>
 
-        <button className="back-btn" onClick={() => navigate("/home")}>
+        <button
+          className="back-btn"
+          onClick={() => navigate("/home")}
+        >
           ⬅ Volver
         </button>
+
       </div>
 
       {/* LAYOUT */}
@@ -209,36 +295,49 @@ export default function Rutina() {
 
         {/* LEFT PANEL */}
         <div className={`left-panel ${leftOpen ? "open" : ""}`}>
+
           <h3>🎯 Actividades</h3>
+
+          {actividades.length === 0 && (
+            <p>No tienes actividades registradas</p>
+          )}
 
           {actividades.map((act) => (
             <div
               key={act.id_registro}
               className={`activity-card ${
-                selectedActivity?.id_registro === act.id_registro ? "selected" : ""
+                selectedActivity?.id_registro === act.id_registro
+                  ? "selected"
+                  : ""
               }`}
               onClick={() => selectActivity(act)}
             >
               <strong>{act.nombre_actividad}</strong>
-              <p>⭐ {act.puntaje_agrado}/10</p>
+
+              <p>
+                ⭐ {act.puntaje_agrado || 5}/10
+              </p>
             </div>
           ))}
 
           <hr />
 
-          <h3>➕ Crear evento</h3>
+          <h3>➕ Crear rutina</h3>
 
           <input
+            type="text"
+            placeholder="Título"
             value={titulo}
             onChange={(e) => setTitulo(e.target.value)}
-            placeholder="Título"
           />
 
           <textarea
+            placeholder="Descripción"
             value={descripcion}
             onChange={(e) => setDescripcion(e.target.value)}
-            placeholder="Descripción"
           />
+
+          <label>Hora</label>
 
           <input
             type="time"
@@ -246,85 +345,187 @@ export default function Rutina() {
             onChange={(e) => setHora(e.target.value)}
           />
 
+          <label>Duración (min)</label>
+
           <input
             type="number"
+            min="5"
             value={duracion}
-            onChange={(e) => setDuracion(e.target.value)}
+            onChange={(e) =>
+              setDuracion(Number(e.target.value))
+            }
           />
 
-          <button onClick={createEvent}>Crear rutina</button>
+          <button onClick={createEvent}>
+            Guardar rutina
+          </button>
+
         </div>
 
-        {/* CENTER PANEL */}
+        {/* CENTER */}
         <div className="center-panel">
-          <h3>📅 {selectedDate.toLocaleDateString()}</h3>
+
+          <h2>
+            📅 {selectedDate.toLocaleDateString()}
+          </h2>
 
           {eventosDia.length === 0 ? (
-            <p>No hay eventos</p>
+            <div className="empty-events">
+              <p>No hay rutinas este día</p>
+            </div>
           ) : (
             eventosDia.map((evento) => (
               <div
                 key={evento.id_evento}
-                className={`event-card ${evento.completado ? "completed" : ""}`}
+                className={`event-card ${
+                  evento.completado ? "completed" : ""
+                }`}
               >
+
                 <input
                   type="checkbox"
                   checked={evento.completado}
-                  onChange={() => toggleComplete(evento)}
+                  onChange={() =>
+                    toggleComplete(evento)
+                  }
                 />
 
-                <div>
+                <div className="event-info">
+
                   <h4>{evento.titulo}</h4>
+
                   <p>🕒 {evento.hora}</p>
-                  <p>⏳ {evento.duracion} min</p>
-                  <p>{evento.descripcion}</p>
+
+                  <p>
+                    ⏳ {evento.duracion} minutos
+                  </p>
+
+                  {evento.descripcion && (
+                    <p>{evento.descripcion}</p>
+                  )}
+
                 </div>
 
-                <button onClick={() => deleteEvent(evento.id_evento)}>
+                <button
+                  className="delete-btn"
+                  onClick={() =>
+                    deleteEvent(evento.id_evento)
+                  }
+                >
                   🗑
                 </button>
+
               </div>
             ))
           )}
+
         </div>
 
         {/* RIGHT PANEL */}
         <div className={`right-panel ${rightOpen ? "open" : ""}`}>
+
           <h3>📆 Calendario</h3>
 
-          <select
-            value={currentMonth}
-            onChange={(e) =>
-              setSelectedDate(
-                new Date(currentYear, Number(e.target.value), 1)
-              )
-            }
-          >
-            {[
-              "Enero","Febrero","Marzo","Abril","Mayo","Junio",
-              "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"
-            ].map((m, i) => (
-              <option key={i} value={i}>
-                {m}
-              </option>
-            ))}
-          </select>
+          <div className="month-nav">
 
-          <div className="week">
-            {days.map((d, i) => (
+            <button onClick={() => changeMonth(-1)}>
+              ◀
+            </button>
+
+            <h4>
+              {[
+                "Enero",
+                "Febrero",
+                "Marzo",
+                "Abril",
+                "Mayo",
+                "Junio",
+                "Julio",
+                "Agosto",
+                "Septiembre",
+                "Octubre",
+                "Noviembre",
+                "Diciembre",
+              ][currentMonth]}{" "}
+              {currentYear}
+            </h4>
+
+            <button onClick={() => changeMonth(1)}>
+              ▶
+            </button>
+
+          </div>
+
+          <div className="calendar-grid">
+
+            {["L","M","M","J","V","S","D"].map((d) => (
               <div
-                key={i}
-                onClick={() =>
-                  d && setSelectedDate(new Date(currentYear, currentMonth, d))
-                }
+                key={d}
+                className="calendar-header"
               >
                 {d}
               </div>
             ))}
+
+            {days.map((d, i) => {
+              const dateString = d
+                ? formatDateLocal(
+                    new Date(
+                      currentYear,
+                      currentMonth,
+                      d
+                    )
+                  )
+                : null;
+
+              const hasEvents =
+                dateString &&
+                eventos.some(
+                  (e) => e.fecha === dateString
+                );
+
+              const isSelected =
+                d &&
+                selectedDate.getDate() === d &&
+                selectedDate.getMonth() === currentMonth &&
+                selectedDate.getFullYear() === currentYear;
+
+              return (
+                <div
+                  key={i}
+                  className={`
+                    calendar-day
+                    ${isSelected ? "selected-day" : ""}
+                    ${hasEvents ? "has-events" : ""}
+                    ${!d ? "empty" : ""}
+                  `}
+                  onClick={() =>
+                    d &&
+                    setSelectedDate(
+                      new Date(
+                        currentYear,
+                        currentMonth,
+                        d
+                      )
+                    )
+                  }
+                >
+                  {d}
+
+                  {hasEvents && (
+                    <span className="dot"></span>
+                  )}
+
+                </div>
+              );
+            })}
+
           </div>
+
         </div>
 
       </div>
+
     </div>
   );
 }
