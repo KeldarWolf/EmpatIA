@@ -12,10 +12,7 @@
   position: relative;
 }
 
-/* =========================
-   HEADER
-========================= */
-
+/* ========================= HEADER ========================= */
 .stats-header {
   display: flex;
   justify-content: space-between;
@@ -48,10 +45,7 @@
   transform: translateY(-2px);
 }
 
-/* =========================
-   GRID
-========================= */
-
+/* ========================= GRID ========================= */
 .stats-grid {
   display: grid;
   grid-template-columns: 280px 1fr 320px;
@@ -59,38 +53,29 @@
   width: 100%;
 }
 
-/* =========================
-   CARDS
-========================= */
-
+/* ========================= CARDS ========================= */
 .glass-card {
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(12px);
   border-radius: 20px;
   padding: 20px;
-  border: 1px solid rgba(255,255,255,0.08);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
 }
 
-/* =========================
-   INSIGHTS
-========================= */
-
+/* ========================= INSIGHTS ========================= */
 .insight-item {
-  background: rgba(255,255,255,0.07);
+  background: rgba(255, 255, 255, 0.07);
   padding: 14px;
   border-radius: 14px;
   margin-bottom: 12px;
 }
 
-/* =========================
-   PROGRESS BAR
-========================= */
-
+/* ========================= PROGRESS BAR ========================= */
 .progress-container {
   width: 100%;
   height: 14px;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 999px;
   overflow: hidden;
   margin-top: 10px;
@@ -102,22 +87,16 @@
   transition: 0.4s ease;
 }
 
-/* =========================
-   OVERLAY
-========================= */
-
+/* ========================= OVERLAY ========================= */
 .panel-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.55);
-  backdrop-filter: blur(3px);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
   z-index: 2500;
 }
 
-/* =========================
-   PANELS BASE
-========================= */
-
+/* ========================= PANELS BASE ========================= */
 .left-panel,
 .right-panel {
   display: flex;
@@ -125,23 +104,16 @@
   gap: 16px;
 }
 
-/* =========================
-   TOGGLE BUTTONS
-========================= */
-
+/* ========================= TOGGLE BUTTONS ========================= */
 .mobile-toggle {
   display: none;
 }
 
-/* =========================
-   RESPONSIVE FIX REAL
-========================= */
-
+/* ========================= RESPONSIVE (VERSIÓN CORREGIDA) ========================= */
 @media (max-width: 1200px) {
-
-  /* GRID FIX SIN BUGS */
   .stats-grid {
     grid-template-columns: 1fr;
+    gap: 20px;
   }
 
   .stats-center {
@@ -150,95 +122,74 @@
     z-index: 1;
   }
 
-  /* ================= LEFT PANEL ================= */
-
-  .left-panel {
+  /* ================= LEFT & RIGHT PANELS ================= */
+  .left-panel,
+  .right-panel {
     position: fixed;
     top: 0;
-    left: -320px;
     width: 300px;
     height: 100vh;
     background: rgba(15, 23, 42, 0.98);
     backdrop-filter: blur(14px);
-    z-index: 3000;
-    padding: 20px;
+    z-index: 9999;
+    padding: 25px 20px;
     overflow-y: auto;
-    transition: 0.35s ease;
+    transition: all 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
     color: white;
   }
 
+  .left-panel {
+    left: -320px;
+  }
   .left-panel.show-panel {
     left: 0;
   }
 
-  /* ================= RIGHT PANEL ================= */
-
   .right-panel {
-    position: fixed;
-    top: 0;
     right: -320px;
-    width: 300px;
-    height: 100vh;
-    background: rgba(15, 23, 42, 0.98);
-    backdrop-filter: blur(14px);
-    z-index: 3000;
-    padding: 20px;
-    overflow-y: auto;
-    transition: 0.35s ease;
-    color: white;
   }
-
   .right-panel.show-panel {
     right: 0;
   }
 
-  /* ================= BOTONES ================= */
-
+  /* ================= MOBILE TOGGLE BUTTONS ================= */
   .mobile-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
-
     position: fixed;
     top: 50%;
     transform: translateY(-50%);
-
-    width: 54px;
-    height: 54px;
+    width: 58px;
+    height: 58px;
     border-radius: 50%;
     border: none;
-
     cursor: pointer;
-    z-index: 4000;
-
-    font-size: 1.2rem;
+    z-index: 10000;
+    font-size: 1.5rem;
     color: white;
-
     background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   }
 
   .left-toggle {
-    left: 12px;
+    left: 16px;
   }
 
   .right-toggle {
-    right: 12px;
+    right: 16px;
   }
 }
 
-/* =========================
-   MOBILE SMALL
-========================= */
-
+/* ========================= MOBILE SMALL ========================= */
 @media (max-width: 600px) {
-
   .stats-page {
     padding: 15px;
   }
 
   .stats-header h1 {
-    font-size: 1.6rem;
+    font-size: 1.7rem;
   }
 
   .glass-card {
