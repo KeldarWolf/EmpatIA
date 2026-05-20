@@ -54,7 +54,7 @@
 }
 
 /* =========================
-   PANELS
+   PANELS BASE
 ========================= */
 
 .left-panel,
@@ -70,7 +70,7 @@
 }
 
 /* =========================
-   BOTÓN CERRAR PANEL (ICON)
+   CLOSE BUTTON (ICON)
 ========================= */
 
 .panel-close-btn {
@@ -83,8 +83,10 @@
   padding: 6px 10px;
   border-radius: 10px;
   cursor: pointer;
-  font-size: 16px;
   transition: 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .panel-close-btn:hover {
@@ -131,7 +133,7 @@
 }
 
 /* =========================
-   TIME ROW (HORA INICIO / FIN)
+   TIME ROW
 ========================= */
 
 .time-row {
@@ -141,7 +143,7 @@
 }
 
 /* =========================
-   BOTÓN CREAR
+   CREATE BUTTON
 ========================= */
 
 .create-btn {
@@ -156,7 +158,7 @@
 }
 
 /* =========================
-   EVENTOS
+   EVENTS
 ========================= */
 
 .planner-card {
@@ -192,14 +194,52 @@
 }
 
 /* =========================
-   CALENDARIO
+   CALENDAR HEADER
+========================= */
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.calendar-header h3 {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+/* =========================
+   NAV BUTTONS
+========================= */
+
+.calendar-nav {
+  display: flex;
+  gap: 8px;
+}
+
+.calendar-nav button {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  padding: 8px 10px;
+  border-radius: 10px;
+  color: white;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.calendar-nav button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* =========================
+   CALENDAR GRID
 ========================= */
 
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 6px;
-  margin-top: 10px;
 }
 
 .calendar-day {
@@ -211,6 +251,7 @@
   background: rgba(255, 255, 255, 0.04);
   cursor: pointer;
   position: relative;
+  transition: 0.2s;
 }
 
 .calendar-day:hover {
@@ -240,27 +281,7 @@
 }
 
 /* =========================
-   NAV CALENDARIO
-========================= */
-
-.calendar-nav {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.calendar-nav button {
-  background: rgba(255, 255, 255, 0.08);
-  border: none;
-  padding: 8px 12px;
-  border-radius: 10px;
-  color: white;
-  cursor: pointer;
-}
-
-/* =========================
-   MOBILE BUTTONS
+   MOBILE BUTTONS (ICONOS)
 ========================= */
 
 .mobile-left-btn,
@@ -269,11 +290,17 @@
   position: fixed;
   top: 15px;
   z-index: 1000;
+
   background: rgba(255, 255, 255, 0.1);
   border: none;
   color: white;
-  padding: 10px 12px;
+
+  padding: 10px;
   border-radius: 12px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* =========================
@@ -288,7 +315,7 @@
 }
 
 /* =========================
-   RESPONSIVE MOBILE
+   RESPONSIVE
 ========================= */
 
 @media (max-width: 900px) {
@@ -299,7 +326,7 @@
 
   .mobile-left-btn,
   .mobile-right-btn {
-    display: block;
+    display: flex;
   }
 
   .left-panel,
