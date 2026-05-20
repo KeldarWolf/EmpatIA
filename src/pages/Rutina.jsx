@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./Rutina.css";
+import "./rutina.css";
 
 const API_URL = "https://empatia-backend.onrender.com";
 
