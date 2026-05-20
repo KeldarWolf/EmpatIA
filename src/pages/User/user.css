@@ -1,11 +1,34 @@
 /* =========================================
-   NUNCA CAMBIAR A COLUMN
+   RESET GLOBAL
+========================================= */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100dvh;
+
+  overflow-x: hidden;
+
+  background: #050505;
+
+  font-family: Arial, sans-serif;
+}
+
+/* =========================================
+   LAYOUT GENERAL
 ========================================= */
 
 .app-layout {
   display: flex;
 
-  flex-direction: row; /* SIEMPRE LADOS */
+  flex-direction: row; /* SIEMPRE LATERALES */
 
   width: 100%;
 
@@ -50,7 +73,7 @@
   padding:
     clamp(4px, 1vw, 12px);
 
-  backdrop-filter: blur(14px);
+  backdrop-filter: blur(12px);
 
   display: flex;
 
@@ -59,6 +82,8 @@
   gap: 10px;
 
   overflow-y: auto;
+
+  transition: 0.3s ease;
 }
 
 .left-panel h4 {
@@ -128,6 +153,23 @@
   flex-direction: column;
 
   gap: 10px;
+
+  scroll-behavior: smooth;
+
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Scrollbar */
+
+.chat-box::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-box::-webkit-scrollbar-thumb {
+  background:
+    rgba(255,255,255,0.12);
+
+  border-radius: 20px;
 }
 
 /* =========================================
@@ -150,6 +192,9 @@
     clamp(12px, 1.5vw, 16px);
 
   word-break: break-word;
+
+  animation:
+    fadeIn 0.25s ease;
 }
 
 /* Usuario */
@@ -165,6 +210,9 @@
   margin-left: auto;
 
   text-align: right;
+
+  box-shadow:
+    0 0 10px rgba(37,99,235,0.20);
 }
 
 /* IA */
@@ -174,6 +222,9 @@
     rgba(55, 65, 81, 0.92);
 
   margin-right: auto;
+
+  box-shadow:
+    0 0 10px rgba(255,255,255,0.04);
 }
 
 /* =========================================
@@ -188,14 +239,28 @@
   padding:
     clamp(8px, 1vw, 16px);
 
+  padding-bottom:
+    calc(
+      clamp(8px, 1vw, 16px)
+      + env(safe-area-inset-bottom)
+    );
+
   border-top:
     1px solid rgba(255,255,255,0.05);
 
   background:
     rgba(17, 24, 39, 0.88);
 
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(10px);
+
+  position: sticky;
+
+  bottom: 0;
+
+  z-index: 20;
 }
+
+/* Input */
 
 .input-box input {
   flex: 1;
@@ -218,8 +283,16 @@
 
   color: white;
 
-  font-size:
-    clamp(12px, 1.5vw, 15px);
+  font-size: 16px;
+
+  transition: 0.25s ease;
+}
+
+.input-box input:focus {
+  border-color: #2563eb;
+
+  box-shadow:
+    0 0 12px rgba(37,99,235,0.18);
 }
 
 /* =========================================
@@ -259,6 +332,14 @@
   flex-shrink: 0;
 }
 
+.input-box button:hover,
+.right-panel button:hover {
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 0 12px rgba(37,99,235,0.22);
+}
+
 /* =========================================
    PANEL DERECHO
 ========================================= */
@@ -285,16 +366,34 @@
 
   gap: 8px;
 
-  backdrop-filter: blur(14px);
+  backdrop-filter: blur(12px);
 
   overflow-y: auto;
+
+  transition: 0.3s ease;
 }
 
 /* =========================================
-   MOBILE
+   ANIMACION
 ========================================= */
 
-@media (max-width: 700px) {
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =========================================
+   TABLET
+========================================= */
+
+@media (max-width: 900px) {
   .left-panel,
   .right-panel {
     width: 60px;
@@ -304,23 +403,80 @@
     padding: 4px;
   }
 
-  .left-panel h4 {
-    font-size: 9px;
+  .msg {
+    max-width: 90%;
   }
 
   .quote-box {
     font-size: 8px;
+  }
+}
 
-    padding: 5px;
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 700px) {
+  /* laterales SIEMPRE a los lados */
+
+  .left-panel,
+  .right-panel {
+    width: 52px;
+
+    min-width: 52px;
+
+    padding: 3px;
+
+    backdrop-filter: blur(6px);
+  }
+
+  /* ocultar texto lateral */
+
+  .left-panel h4,
+  .quote-box {
+    display: none;
   }
 
   .right-panel button {
+    min-height: 44px;
+
     font-size: 8px;
 
     padding: 6px;
   }
 
   .msg {
-    max-width: 90%;
+    max-width: 95%;
+
+    font-size: 14px;
+  }
+
+  .chat-box {
+    padding: 10px;
+  }
+
+  .input-box {
+    gap: 6px;
+  }
+}
+
+/* =========================================
+   MOBILE PEQUEÑO
+========================================= */
+
+@media (max-width: 420px) {
+  .left-panel,
+  .right-panel {
+    width: 46px;
+
+    min-width: 46px;
+  }
+
+  .msg {
+    font-size: 13px;
+  }
+
+  .input-box input {
+    font-size: 16px;
   }
 }
