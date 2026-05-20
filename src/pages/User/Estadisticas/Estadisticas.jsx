@@ -19,11 +19,35 @@ export default function Estadisticas() {
   const [loading, setLoading] = useState(true);
 
   // =========================
-  // PANEL STATES
+  // PANELS STATE
   // =========================
   const [leftOpen, setLeftOpen] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
 
+  const closePanels = () => {
+    setLeftOpen(false);
+    setRightOpen(false);
+  };
+
+  const toggleLeft = () => {
+    setLeftOpen((prev) => {
+      const newState = !prev;
+      if (newState) setRightOpen(false);
+      return newState;
+    });
+  };
+
+  const toggleRight = () => {
+    setRightOpen((prev) => {
+      const newState = !prev;
+      if (newState) setLeftOpen(false);
+      return newState;
+    });
+  };
+
+  // =========================
+  // DATA
+  // =========================
   const [data, setData] = useState({
     totalTareas: 0,
     completadas: 0,
@@ -36,17 +60,10 @@ export default function Estadisticas() {
     bienestar: 0,
   });
 
-  // =========================
-  // LOAD DATA
-  // =========================
   const loadStats = async () => {
     try {
       setLoading(true);
-
-      const res = await fetch(
-        `${API_URL}/api/stats/${id_usuario}`
-      );
-
+      const res = await fetch(`${API_URL}/api/stats/${id_usuario}`);
       const result = await res.json();
       setData(result);
     } catch (err) {
@@ -61,41 +78,25 @@ export default function Estadisticas() {
   }, [id_usuario]);
 
   // =========================
-  // INSIGHTS IA
+  // INSIGHTS
   // =========================
   const insights = useMemo(() => {
     const arr = [];
 
-    if (data.bienestar >= 80) {
+    if (data.bienestar >= 80)
       arr.push("✨ Excelente progreso emocional.");
-    }
-
-    if (data.bienestar < 50) {
-      arr.push("🧠 Intenta mejorar tus hábitos.");
-    }
-
-    if (data.emocionesPositivas > data.emocionesBajas) {
+    if (data.bienestar < 50)
+      arr.push("🧠 Intenta mejorar hábitos.");
+    if (data.emocionesPositivas > data.emocionesBajas)
       arr.push("😊 Predominan emociones positivas.");
-    }
+    if (data.diasActivos >= 5)
+      arr.push("🔥 Buena constancia semanal.");
 
-    if (data.diasActivos >= 5) {
-      arr.push("🔥 Muy buena constancia semanal.");
-    }
-
-    if (data.actividadFavorita !== "Sin datos") {
+    if (data.actividadFavorita !== "Sin datos")
       arr.push(`⭐ Favorita: ${data.actividadFavorita}`);
-    }
 
     return arr;
   }, [data]);
-
-  // =========================
-  // CLOSE PANELS
-  // =========================
-  const closePanels = () => {
-    setLeftOpen(false);
-    setRightOpen(false);
-  };
 
   // =========================
   // LOADING
@@ -116,61 +117,38 @@ export default function Estadisticas() {
 
       {/* ================= OVERLAY ================= */}
       {(leftOpen || rightOpen) && (
-        <div
-          className="panel-overlay"
-          onClick={closePanels}
-        />
+        <div className="panel-overlay" onClick={closePanels} />
       )}
 
-      {/* ================= TOGGLE BUTTONS ================= */}
-
-      <button
-        className="mobile-toggle left-toggle"
-        onClick={() => {
-          setLeftOpen(!leftOpen);
-          setRightOpen(false);
-        }}
-      >
+      {/* ================= BOTONES ================= */}
+      <button className="mobile-toggle left-toggle" onClick={toggleLeft}>
         ☰
       </button>
 
-      <button
-        className="mobile-toggle right-toggle"
-        onClick={() => {
-          setRightOpen(!rightOpen);
-          setLeftOpen(false);
-        }}
-      >
+      <button className="mobile-toggle right-toggle" onClick={toggleRight}>
         🤖
       </button>
 
       {/* ================= HEADER ================= */}
-
       <div className="stats-header">
-
         <div>
           <h1>📊 Estadísticas</h1>
           <p>Seguimiento emocional y progreso personal</p>
         </div>
 
-        <button
-          className="back-btn"
-          onClick={() => navigate("/user")}
-        >
+        <button className="back-btn" onClick={() => navigate("/user")}>
           ⬅ Volver
         </button>
-
       </div>
 
       {/* ================= GRID ================= */}
-
       <div className="stats-grid">
 
         {/* LEFT PANEL */}
         <div className={`stats-column left-panel ${leftOpen ? "show-panel" : ""}`}>
 
           <div className="glass-card">
-            <h3>😊 Emociones positivas</h3>
+            <h3>😊 Positivas</h3>
             <h2>{data.emocionesPositivas}</h2>
           </div>
 
@@ -188,14 +166,12 @@ export default function Estadisticas() {
             <h3>⭐ Favorita</h3>
             <h2>{data.actividadFavorita}</h2>
           </div>
-
         </div>
 
         {/* CENTER */}
         <div className="stats-center">
 
           <div className="glass-card">
-
             <h2>🧠 Bienestar: {data.bienestar}%</h2>
 
             <div className="progress-container">
@@ -204,20 +180,16 @@ export default function Estadisticas() {
                 style={{ width: `${data.bienestar}%` }}
               />
             </div>
-
           </div>
 
           <div className="glass-card">
-
             <h3>📈 Resumen</h3>
 
-            <p>Total tareas: {data.totalTareas}</p>
+            <p>Total: {data.totalTareas}</p>
             <p>Completadas: {data.completadas}</p>
             <p>Pendientes: {data.pendientes}</p>
             <p>Días activos: {data.diasActivos}</p>
-
           </div>
-
         </div>
 
         {/* RIGHT PANEL */}
@@ -232,11 +204,9 @@ export default function Estadisticas() {
               </div>
             ))}
           </div>
-
         </div>
 
       </div>
-
     </div>
   );
 }
