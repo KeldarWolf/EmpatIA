@@ -51,87 +51,61 @@ body,
 }
 
 /* =========================================
-   PANEL IZQUIERDO
+   PANEL IZQUIERDO NORMAL
 ========================================= */
 
 .left-panel {
-  position: fixed;
+  width: 20%;
 
-  top: 0;
-  left: 0;
+  min-width: 220px;
 
-  width: 260px;
-
-  max-width: 82vw;
-
-  height: 100dvh;
+  position: relative;
 
   background:
-    rgba(17, 24, 39, 0.96);
+    rgba(17,24,39,0.88);
 
-  backdrop-filter: blur(14px);
+  backdrop-filter: blur(12px);
 
   border-right:
     1px solid rgba(255,255,255,0.05);
 
-  padding: 18px;
+  padding: 20px;
 
   overflow-y: auto;
 
-  z-index: 120;
-
-  transform: translateX(-100%);
-
-  transition:
-    transform 0.28s ease;
-}
-
-/* abierto */
-
-.left-panel.open {
-  transform: translateX(0);
+  transition: 0.3s ease;
 }
 
 /* =========================================
-   PANEL DERECHO
+   PANEL DERECHO NORMAL
 ========================================= */
 
 .right-panel {
-  position: fixed;
+  width: 20%;
 
-  top: 0;
-  right: 0;
+  min-width: 220px;
 
-  width: 260px;
-
-  max-width: 82vw;
-
-  height: 100dvh;
+  position: relative;
 
   background:
-    rgba(17, 24, 39, 0.96);
+    rgba(17,24,39,0.88);
 
-  backdrop-filter: blur(14px);
+  backdrop-filter: blur(12px);
 
   border-left:
     1px solid rgba(255,255,255,0.05);
 
-  padding: 18px;
+  padding: 20px;
 
   overflow-y: auto;
 
-  z-index: 120;
+  transition: 0.3s ease;
 
-  transform: translateX(100%);
+  display: flex;
 
-  transition:
-    transform 0.28s ease;
-}
+  flex-direction: column;
 
-/* abierto */
-
-.right-panel.open {
-  transform: translateX(0);
+  gap: 10px;
 }
 
 /* =========================================
@@ -168,63 +142,19 @@ body,
 }
 
 /* =========================================
-   BOTONES PANEL
-========================================= */
-
-.right-panel button,
-.left-panel button {
-  width: 100%;
-
-  padding: 12px;
-
-  margin-top: 10px;
-
-  border: none;
-
-  border-radius: 12px;
-
-  background:
-    linear-gradient(
-      135deg,
-      #2563eb,
-      #1d4ed8
-    );
-
-  color: white;
-
-  cursor: pointer;
-
-  transition: 0.25s ease;
-
-  font-size: 14px;
-
-  font-weight: bold;
-}
-
-.right-panel button:hover,
-.left-panel button:hover {
-  transform: translateY(-1px);
-
-  box-shadow:
-    0 0 14px rgba(37,99,235,0.24);
-}
-
-/* =========================================
    PANEL CENTRAL
 ========================================= */
 
 .center-panel {
   flex: 1;
 
-  width: 100%;
+  min-width: 0;
 
   display: flex;
 
   flex-direction: column;
 
   justify-content: space-between;
-
-  min-width: 0;
 }
 
 /* =========================================
@@ -236,8 +166,7 @@ body,
 
   overflow-y: auto;
 
-  padding:
-    70px 14px 14px;
+  padding: 20px;
 
   display: flex;
 
@@ -269,7 +198,7 @@ body,
 
 .msg {
   max-width:
-    min(90%, 720px);
+    min(78%, 720px);
 
   padding: 12px 14px;
 
@@ -303,7 +232,7 @@ body,
     0 0 10px rgba(37,99,235,0.20);
 }
 
-/* IA */
+/* ia */
 
 .msg.ai {
   margin-right: auto;
@@ -324,12 +253,7 @@ body,
 
   gap: 8px;
 
-  padding: 10px;
-
-  padding-bottom:
-    calc(
-      10px + env(safe-area-inset-bottom)
-    );
+  padding: 12px;
 
   background:
     rgba(17,24,39,0.94);
@@ -380,15 +304,17 @@ body,
 }
 
 /* =========================================
-   BOTON ENVIAR
+   BOTONES
 ========================================= */
 
-.input-box button {
-  padding: 12px 16px;
+.input-box button,
+.right-panel button,
+.left-panel button {
+  padding: 12px;
 
   border: none;
 
-  border-radius: 14px;
+  border-radius: 12px;
 
   background:
     linear-gradient(
@@ -399,18 +325,18 @@ body,
 
   color: white;
 
+  cursor: pointer;
+
+  transition: 0.25s ease;
+
   font-size: 14px;
 
   font-weight: bold;
-
-  cursor: pointer;
-
-  flex-shrink: 0;
-
-  transition: 0.25s ease;
 }
 
-.input-box button:hover {
+.input-box button:hover,
+.right-panel button:hover,
+.left-panel button:hover {
   transform: translateY(-1px);
 
   box-shadow:
@@ -418,53 +344,12 @@ body,
 }
 
 /* =========================================
-   BOTONES MENU
+   BOTONES MENU MOBILE
 ========================================= */
 
 .menu-left,
 .menu-right {
-  position: fixed;
-
-  top: 12px;
-
-  width: 42px;
-
-  height: 42px;
-
-  border: none;
-
-  border-radius: 12px;
-
-  background:
-    rgba(37,99,235,0.96);
-
-  color: white;
-
-  font-size: 18px;
-
-  cursor: pointer;
-
-  z-index: 200;
-
-  backdrop-filter: blur(10px);
-
-  transition: 0.25s ease;
-}
-
-.menu-left:hover,
-.menu-right:hover {
-  transform: scale(1.05);
-
-  box-shadow:
-    0 0 12px rgba(37,99,235,0.30);
-}
-
-.menu-left {
-  left: 10px;
-}
-
-.menu-right {
-  right: 10px;
+  display: none;
 }
 
 /* =========================================
@@ -472,17 +357,7 @@ body,
 ========================================= */
 
 .overlay {
-  position: fixed;
-
-  inset: 0;
-
-  background:
-    rgba(0,0,0,0.45);
-
-  z-index: 100;
-
-  animation:
-    fadeOverlay 0.2s ease;
+  display: none;
 }
 
 /* =========================================
@@ -501,13 +376,19 @@ body,
   }
 }
 
-@keyframes fadeOverlay {
-  from {
-    opacity: 0;
+/* =========================================
+   TABLET
+========================================= */
+
+@media (max-width: 1000px) {
+
+  .left-panel,
+  .right-panel {
+    min-width: 180px;
   }
 
-  to {
-    opacity: 1;
+  .msg {
+    max-width: 88%;
   }
 }
 
@@ -516,10 +397,126 @@ body,
 ========================================= */
 
 @media (max-width: 700px) {
-  .left-panel,
-  .right-panel {
-    width: 220px;
+
+  /* botones mobile */
+
+  .menu-left,
+  .menu-right {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    position: fixed;
+
+    top: 12px;
+
+    width: 42px;
+
+    height: 42px;
+
+    border: none;
+
+    border-radius: 12px;
+
+    background:
+      rgba(37,99,235,0.96);
+
+    color: white;
+
+    font-size: 18px;
+
+    cursor: pointer;
+
+    z-index: 200;
+
+    backdrop-filter: blur(10px);
   }
+
+  .menu-left {
+    left: 10px;
+  }
+
+  .menu-right {
+    right: 10px;
+  }
+
+  /* overlay */
+
+  .overlay {
+    display: block;
+
+    position: fixed;
+
+    inset: 0;
+
+    background:
+      rgba(0,0,0,0.45);
+
+    z-index: 100;
+  }
+
+  /* panel izquierdo */
+
+  .left-panel {
+    position: fixed;
+
+    top: 0;
+    left: 0;
+
+    width: 220px;
+
+    max-width: 82vw;
+
+    height: 100dvh;
+
+    z-index: 120;
+
+    transform: translateX(-100%);
+
+    transition:
+      transform 0.28s ease;
+  }
+
+  .left-panel.open {
+    transform: translateX(0);
+  }
+
+  /* panel derecho */
+
+  .right-panel {
+    position: fixed;
+
+    top: 0;
+    right: 0;
+
+    width: 220px;
+
+    max-width: 82vw;
+
+    height: 100dvh;
+
+    z-index: 120;
+
+    transform: translateX(100%);
+
+    transition:
+      transform 0.28s ease;
+  }
+
+  .right-panel.open {
+    transform: translateX(0);
+  }
+
+  /* chat */
+
+  .chat-box {
+    padding:
+      70px 10px 10px;
+  }
+
+  /* mensajes */
 
   .msg {
     max-width: 95%;
@@ -527,8 +524,13 @@ body,
     font-size: 14px;
   }
 
+  /* input */
+
   .input-box {
-    padding: 8px;
+    padding:
+      8px 10px calc(
+        8px + env(safe-area-inset-bottom)
+      );
   }
 
   .input-box button {
@@ -541,6 +543,7 @@ body,
 ========================================= */
 
 @media (max-width: 420px) {
+
   .left-panel,
   .right-panel {
     width: 200px;
