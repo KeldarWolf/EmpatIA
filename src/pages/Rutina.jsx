@@ -5,12 +5,9 @@ import "./Rutina.css";
 const API_URL = "https://empatia-backend.onrender.com";
 
 export default function Rutina() {
- 
   const navigate = useNavigate();
 
-  const storedUser = JSON.parse(
-    sessionStorage.getItem("usuario") || "null"
-  );
+  const storedUser = JSON.parse(sessionStorage.getItem("usuario") || "null");
 
   const user = {
     id_usuario:
@@ -20,409 +17,169 @@ export default function Rutina() {
       null,
   };
 
-  /* =========================
-     HELPERS
-  ========================= */
-
   const formatDateLocal = (date) => {
-
     const y = date.getFullYear();
-
-    const m = String(
-      date.getMonth() + 1
-    ).padStart(2, "0");
-
-    const d = String(
-      date.getDate()
-    ).padStart(2, "0");
-
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
     return `${y}-${m}-${d}`;
-
   };
 
   const getNowTime = () => {
-
     const now = new Date();
-
     return now.toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
     });
-
   };
 
   const getPlus30 = () => {
-
     const now = new Date();
-
-    now.setMinutes(
-      now.getMinutes() + 30
-    );
-
+    now.setMinutes(now.getMinutes() + 30);
     return now.toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
     });
-
   };
 
-  /* =========================
-     MOBILE PANELS
-  ========================= */
+  const [leftOpen, setLeftOpen] = useState(false);
+  const [rightOpen, setRightOpen] = useState(false);
 
-  const [leftOpen, setLeftOpen] =
-    useState(false);
+  const [actividades, setActividades] = useState([]);
+  const [eventos, setEventos] = useState([]);
+  const [selectedActivity, setSelectedActivity] = useState(null);
 
-  const [rightOpen, setRightOpen] =
-    useState(false);
+  const [titulo, setTitulo] = useState("");
+  const [descripcion, setDescripcion] = useState("");
+  const [hora, setHora] = useState(getNowTime());
+  const [horaFin, setHoraFin] = useState(getPlus30());
+  const [duracion, setDuracion] = useState(30);
 
-  /* =========================
-     DATA
-  ========================= */
-
-  const [actividades, setActividades] =
-    useState([]);
-
-  const [eventos, setEventos] =
-    useState([]);
-
-  const [selectedActivity,
-    setSelectedActivity] =
-    useState(null);
-
-  /* =========================
-     FORM
-  ========================= */
-
-  const [titulo, setTitulo] =
-    useState("");
-
-  const [descripcion,
-    setDescripcion] =
-    useState("");
-
-  const [hora, setHora] =
-    useState(getNowTime());
-
-  const [horaFin, setHoraFin] =
-    useState(getPlus30());
-
-  const [duracion, setDuracion] =
-    useState(30);
-
-  /* =========================
-     MULTI DATE
-  ========================= */
-
-  const [selectedDates,
-    setSelectedDates] =
-    useState([]);
-
-  const [activeDate,
-    setActiveDate] =
-    useState(
-      formatDateLocal(new Date())
-    );
-
-  /* =========================
-     MONTH / YEAR
-  ========================= */
+  const [selectedDates, setSelectedDates] = useState([]);
+  const [activeDate, setActiveDate] = useState(formatDateLocal(new Date()));
 
   const today = new Date();
 
-  const [calendarMonth,
-    setCalendarMonth] =
-    useState(today.getMonth());
-
-  const [calendarYear,
-    setCalendarYear] =
-    useState(today.getFullYear());
-
-  /* =========================
-     LOAD DATA
-  ========================= */
+  const [calendarMonth, setCalendarMonth] = useState(today.getMonth());
+  const [calendarYear, setCalendarYear] = useState(today.getFullYear());
 
   const loadActivities = async () => {
-
-    const res = await fetch(
-      `${API_URL}/api/registro-actividad/usuario/${user.id_usuario}`
-    );
-
+    const res = await fetch(`${API_URL}/api/registro-actividad/usuario/${user.id_usuario}`);
     const data = await res.json();
-
-    setActividades(
-      Array.isArray(data) ? data : []
-    );
-
+    setActividades(Array.isArray(data) ? data : []);
   };
 
   const loadEvents = async () => {
-
-    const res = await fetch(
-      `${API_URL}/api/rutina-eventos/${user.id_usuario}`
-    );
-
+    const res = await fetch(`${API_URL}/api/rutina-eventos/${user.id_usuario}`);
     const data = await res.json();
-
-    setEventos(
-      Array.isArray(data) ? data : []
-    );
-
+    setEventos(Array.isArray(data) ? data : []);
   };
 
   useEffect(() => {
-
     if (user?.id_usuario) {
       loadActivities();
       loadEvents();
     }
-
   }, [user?.id_usuario]);
 
-  /* =========================
-     SELECT ACTIVITY
-  ========================= */
-
   const selectActivity = (act) => {
-
     setSelectedActivity(act);
-
-    setTitulo(
-      act.nombre_actividad || ""
-    );
-
+    setTitulo(act.nombre_actividad || "");
   };
-
-  /* =========================
-     TOGGLE DATE
-  ========================= */
 
   const toggleDate = (date) => {
-
-    const formatted =
-      formatDateLocal(date);
-
+    const formatted = formatDateLocal(date);
     setActiveDate(formatted);
 
-    setSelectedDates((prev) => {
-
-      if (prev.includes(formatted)) {
-
-        return prev.filter(
-          (d) => d !== formatted
-        );
-
-      }
-
-      return [...prev, formatted];
-
-    });
-
+    setSelectedDates((prev) =>
+      prev.includes(formatted)
+        ? prev.filter((d) => d !== formatted)
+        : [...prev, formatted]
+    );
   };
 
-  /* =========================
-     CREATE EVENT
-  ========================= */
-
   const createEvent = async () => {
-
-    if (!titulo.trim()) {
-      return alert("Ingrese título");
-    }
-
-    if (!hora) {
-      return alert("Seleccione hora");
-    }
-
-    if (selectedDates.length === 0) {
-      return alert(
-        "Seleccione al menos un día"
-      );
-    }
+    if (!titulo.trim()) return alert("Ingrese título");
+    if (!hora) return alert("Seleccione hora");
+    if (selectedDates.length === 0) return alert("Seleccione al menos un día");
 
     for (const fecha of selectedDates) {
-
       const payload = {
-
-        id_usuario:
-          user.id_usuario,
-
-        id_registro:
-          selectedActivity?.id_registro ||
-          null,
-
+        id_usuario: user.id_usuario,
+        id_registro: selectedActivity?.id_registro || null,
         titulo,
-
         descripcion,
-
         fecha,
-
         hora,
-
         hora_fin: horaFin || null,
-
         duracion,
-
       };
 
-      await fetch(
-        `${API_URL}/api/rutina-eventos`,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-
-          body: JSON.stringify(payload),
-        }
-      );
-
+      await fetch(`${API_URL}/api/rutina-eventos`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
     }
 
     await loadEvents();
 
     setTitulo("");
     setDescripcion("");
-
     setHora(getNowTime());
-
     setHoraFin(getPlus30());
-
     setDuracion(30);
-
     setSelectedDates([]);
-
     setSelectedActivity(null);
 
     alert("Rutina creada");
-
   };
-
-  /* =========================
-     DELETE EVENT
-  ========================= */
 
   const deleteEvent = async (id) => {
-
-    await fetch(
-      `${API_URL}/api/rutina-eventos/${id}`,
-      {
-        method: "DELETE",
-      }
-    );
-
+    await fetch(`${API_URL}/api/rutina-eventos/${id}`, {
+      method: "DELETE",
+    });
     await loadEvents();
-
   };
 
-  /* =========================
-     COMPLETE EVENT
-  ========================= */
-
-  const toggleComplete =
-    async (evento) => {
-
-      await fetch(
-        `${API_URL}/api/rutina-eventos/${evento.id_evento}`,
-        {
-          method: "PUT",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-
-          body: JSON.stringify({
-            completado:
-              !evento.completado,
-          }),
-        }
-      );
-
-      await loadEvents();
-
-    };
-
-  /* =========================
-     CURRENT DATE
-  ========================= */
+  const toggleComplete = async (evento) => {
+    await fetch(`${API_URL}/api/rutina-eventos/${evento.id_evento}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ completado: !evento.completado }),
+    });
+    await loadEvents();
+  };
 
   const currentDate = activeDate;
 
-  /* =========================
-     EVENTS DAY
-  ========================= */
-
   const eventosDia = useMemo(() => {
-
     return eventos
-      .filter(
-        (e) =>
-          e.fecha?.slice(0, 10) ===
-          currentDate
-      )
-      .sort((a, b) =>
-        a.hora.localeCompare(b.hora)
-      );
-
+      .filter((e) => e.fecha?.slice(0, 10) === currentDate)
+      .sort((a, b) => a.hora.localeCompare(b.hora));
   }, [eventos, currentDate]);
-
-  /* =========================
-     CALENDAR
-  ========================= */
 
   const month = calendarMonth;
   const year = calendarYear;
 
-  const daysInMonth =
-    new Date(
-      year,
-      month + 1,
-      0
-    ).getDate();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  let firstDay =
-    new Date(
-      year,
-      month,
-      1
-    ).getDay();
-
-  firstDay =
-    firstDay === 0
-      ? 6
-      : firstDay - 1;
+  let firstDay = new Date(year, month, 1).getDay();
+  firstDay = firstDay === 0 ? 6 : firstDay - 1;
 
   const days = [];
-
-  for (let i = 0; i < firstDay; i++) {
-    days.push(null);
-  }
-
-  for (let i = 1; i <= daysInMonth; i++) {
-    days.push(i);
-  }
-
-  /* =========================
-     CHANGE MONTH
-  ========================= */
+  for (let i = 0; i < firstDay; i++) days.push(null);
+  for (let i = 1; i <= daysInMonth; i++) days.push(i);
 
   const changeMonth = (dir) => {
-
-    let newMonth =
-      calendarMonth + dir;
-
+    let newMonth = calendarMonth + dir;
     let newYear = calendarYear;
 
     if (newMonth < 0) {
       newMonth = 11;
       newYear--;
     }
-
     if (newMonth > 11) {
       newMonth = 0;
       newYear++;
@@ -430,82 +187,43 @@ export default function Rutina() {
 
     setCalendarMonth(newMonth);
     setCalendarYear(newYear);
-
   };
-
-  /* =========================
-     CHANGE YEAR
-  ========================= */
 
   const changeYear = (dir) => {
-
-    setCalendarYear(
-      (prev) => prev + dir
-    );
-
+    setCalendarYear((p) => p + dir);
   };
 
-  /* =========================
-     CLOSE PANELS
-  ========================= */
-
   const closeAll = () => {
-
     setLeftOpen(false);
     setRightOpen(false);
-
   };
 
   return (
-
     <div className="page">
 
       {/* HEADER */}
-
       <div className="header">
-
         <div>
-
-          <h1>
-            🧘 Rutina Inteligente
-          </h1>
-
-          <p>
-            Organiza tu día
-          </p>
-
+          <h1>🧘 Rutina Inteligente</h1>
+          <p>Organiza tu día</p>
         </div>
 
-        <button
-          className="back-btn"
-          onClick={() =>
-            navigate("/user")
-          }
-        >
+        <button className="back-btn" onClick={() => navigate("/user")}>
           ⬅ Volver
         </button>
-
       </div>
 
-      {/* OVERLAY */}
-
+      {/* OVERLAY FIX */}
       {(leftOpen || rightOpen) && (
-        <div
-          className="overlay show"
-          onClick={closeAll}
-        />
+        <div className="overlay show" onClick={closeAll} />
       )}
 
-      {/* MOBILE TABS */}
-
+      {/* TOGGLES */}
       <button
         className="mobile-toggle left"
         onClick={() => {
-
           setRightOpen(false);
-
-          setLeftOpen(!leftOpen);
-
+          setLeftOpen((v) => !v);
         }}
       >
         🎯
@@ -514,363 +232,115 @@ export default function Rutina() {
       <button
         className="mobile-toggle right"
         onClick={() => {
-
           setLeftOpen(false);
-
-          setRightOpen(!rightOpen);
-
+          setRightOpen((v) => !v);
         }}
       >
         📅
       </button>
 
       {/* LAYOUT */}
-
       <div className="layout">
 
-        {/* =========================
-           LEFT PANEL
-        ========================= */}
-
-        <div
-          className={`left-panel ${
-            leftOpen ? "open" : ""
-          }`}
-        >
-
-          <h3>
-            🎯 Actividades
-          </h3>
+        {/* LEFT */}
+        <div className={`left-panel ${leftOpen ? "open" : ""}`}>
+          <h3>🎯 Actividades</h3>
 
           {actividades.map((act) => (
-
             <div
               key={act.id_registro}
               className={`activity-card ${
-                selectedActivity
-                  ?.id_registro ===
-                act.id_registro
-                  ? "selected"
-                  : ""
+                selectedActivity?.id_registro === act.id_registro ? "selected" : ""
               }`}
-              onClick={() =>
-                selectActivity(act)
-              }
+              onClick={() => selectActivity(act)}
             >
-
-              <strong>
-                {act.nombre_actividad}
-              </strong>
-
+              <strong>{act.nombre_actividad}</strong>
             </div>
-
           ))}
 
-          <hr />
+          <h3>⚙ Crear</h3>
 
-          <h3>
-            ⚙ Crear
-          </h3>
-
-          <input
-            className="input"
-            value={titulo}
-            onChange={(e) =>
-              setTitulo(
-                e.target.value
-              )
-            }
-            placeholder="Título"
-          />
-
-          <textarea
-            className="input"
-            value={descripcion}
-            onChange={(e) =>
-              setDescripcion(
-                e.target.value
-              )
-            }
-            placeholder="Descripción"
-          />
+          <input className="input" value={titulo} onChange={(e) => setTitulo(e.target.value)} />
+          <textarea className="input" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
 
           <div className="time-row">
-
-            <input
-              type="time"
-              className="input"
-              value={hora}
-              onChange={(e) =>
-                setHora(
-                  e.target.value
-                )
-              }
-            />
-
-            <input
-              type="time"
-              className="input"
-              value={horaFin}
-              onChange={(e) =>
-                setHoraFin(
-                  e.target.value
-                )
-              }
-            />
-
+            <input type="time" className="input" value={hora} onChange={(e) => setHora(e.target.value)} />
+            <input type="time" className="input" value={horaFin} onChange={(e) => setHoraFin(e.target.value)} />
           </div>
 
-          <input
-            type="number"
-            className="input"
-            value={duracion}
-            onChange={(e) =>
-              setDuracion(
-                Number(e.target.value)
-              )
-            }
-            placeholder="Duración"
-          />
+          <input type="number" className="input" value={duracion} onChange={(e) => setDuracion(Number(e.target.value))} />
 
-          <button
-            className="create-btn"
-            onClick={createEvent}
-          >
+          <button className="create-btn" onClick={createEvent}>
             Guardar
           </button>
-
         </div>
 
-        {/* =========================
-           CENTER PANEL
-        ========================= */}
-
+        {/* CENTER */}
         <div className="center-panel">
-
-          <h2>
-            📅 {currentDate}
-          </h2>
+          <h2>📅 {currentDate}</h2>
 
           {eventosDia.length === 0 ? (
-
-            <div className="empty-planner">
-              Sin rutinas
-            </div>
-
+            <div className="empty-planner">Sin rutinas</div>
           ) : (
-
             eventosDia.map((evento) => (
-
-              <div
-                key={evento.id_evento}
-                className={`planner-card ${
-                  evento.completado
-                    ? "completed"
-                    : ""
-                }`}
-              >
-
+              <div key={evento.id_evento} className={`planner-card ${evento.completado ? "completed" : ""}`}>
                 <div>
-
-                  <input
-                    type="checkbox"
-                    checked={
-                      evento.completado
-                    }
-                    onChange={() =>
-                      toggleComplete(
-                        evento
-                      )
-                    }
-                  />
-
-                  <strong>
-                    {evento.titulo}
-                  </strong>
-
-                  <p>
-                    {evento.hora}
-                    {" → "}
-                    {evento.hora_fin}
-                  </p>
-
+                  <input type="checkbox" checked={evento.completado} onChange={() => toggleComplete(evento)} />
+                  <strong>{evento.titulo}</strong>
+                  <p>{evento.hora} → {evento.hora_fin}</p>
                 </div>
 
-                <button
-                  onClick={() =>
-                    deleteEvent(
-                      evento.id_evento
-                    )
-                  }
-                >
-                  🗑
-                </button>
-
+                <button onClick={() => deleteEvent(evento.id_evento)}>🗑</button>
               </div>
-
             ))
-
           )}
-
         </div>
 
-        {/* =========================
-           RIGHT PANEL
-        ========================= */}
+        {/* RIGHT */}
+        <div className={`right-panel ${rightOpen ? "open" : ""}`}>
 
-        <div
-          className={`right-panel ${
-            rightOpen ? "open" : ""
-          }`}
-        >
-
-          {/* HEADER */}
-
+          {/* SELECTOR MES/AÑO */}
           <div className="calendar-header">
 
             <div>
+              <select value={month} onChange={(e) => setCalendarMonth(Number(e.target.value))} className="input small">
+                {["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"].map((m,i)=>(
+                  <option key={i} value={i}>{m}</option>
+                ))}
+              </select>
 
-              <h3>
-                {
-                  [
-                    "Enero",
-                    "Febrero",
-                    "Marzo",
-                    "Abril",
-                    "Mayo",
-                    "Junio",
-                    "Julio",
-                    "Agosto",
-                    "Septiembre",
-                    "Octubre",
-                    "Noviembre",
-                    "Diciembre",
-                  ][month]
-                }
-              </h3>
-
-              <p>
-                Año {year}
-              </p>
-
+              <input
+                type="number"
+                value={year}
+                onChange={(e) => setCalendarYear(Number(e.target.value))}
+                className="input small"
+              />
             </div>
 
             <div className="calendar-nav">
-
-              <button
-                onClick={() =>
-                  changeYear(-1)
-                }
-              >
-                ⏪
-              </button>
-
-              <button
-                onClick={() =>
-                  changeMonth(-1)
-                }
-              >
-                ◀
-              </button>
-
-              <button
-                onClick={() =>
-                  changeMonth(1)
-                }
-              >
-                ▶
-              </button>
-
-              <button
-                onClick={() =>
-                  changeYear(1)
-                }
-              >
-                ⏩
-              </button>
-
+              <button onClick={() => changeYear(-1)}>⏪</button>
+              <button onClick={() => changeMonth(-1)}>◀</button>
+              <button onClick={() => changeMonth(1)}>▶</button>
+              <button onClick={() => changeYear(1)}>⏩</button>
             </div>
 
           </div>
 
           {/* CALENDAR */}
-
           <div className="calendar-grid">
-
-            {days.map((d, i) => {
-
-              if (!d) {
-
-                return (
-                  <div
-                    key={i}
-                    className="calendar-day empty"
-                  />
-                );
-
-              }
-
-              const date =
-                new Date(
-                  year,
-                  month,
-                  d
-                );
-
-              const full =
-                formatDateLocal(date);
-
-              const hasEvent =
-                eventos.some(
-                  (e) =>
-                    e.fecha?.slice(
-                      0,
-                      10
-                    ) === full
-                );
-
-              const selected =
-                selectedDates.includes(
-                  full
-                );
-
-              const isToday =
-                today.getDate() === d &&
-                today.getMonth() ===
-                  month &&
-                today.getFullYear() ===
-                  year;
-
-              return (
-
+            {days.map((d, i) =>
+              !d ? (
+                <div key={i} className="calendar-day empty" />
+              ) : (
                 <div
                   key={i}
-                  className={`calendar-day ${
-                    selected
-                      ? "selected"
-                      : ""
-                  } ${
-                    isToday
-                      ? "today"
-                      : ""
-                  }`}
-                  onClick={() =>
-                    toggleDate(date)
-                  }
+                  className="calendar-day"
+                  onClick={() => toggleDate(new Date(year, month, d))}
                 >
-
                   {d}
-
-                  {hasEvent && (
-                    <div className="event-dot" />
-                  )}
-
                 </div>
-
-              );
-
-            })}
-
+              )
+            )}
           </div>
 
         </div>
@@ -878,7 +348,5 @@ export default function Rutina() {
       </div>
 
     </div>
-
   );
-
 }
