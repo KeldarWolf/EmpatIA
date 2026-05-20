@@ -57,33 +57,35 @@ const subOptions = {
 
 const activityPrompts = [
   "🤍 ¿Te gustaría probar una actividad?",
-
   "🌱 A veces ayuda hacer algo pequeño, ¿quieres intentar una actividad?",
-
   "✨ Podemos probar una actividad para distraerte un rato, ¿te gustaría?",
-
   "🤍 Quizás una actividad podría ayudarte un poco, ¿quieres probar?",
-
   "🌿 Podemos hacer algo tranquilo juntos, ¿te gustaría?",
 ];
 
 // ============================================
-// FRASES CONTINUAR CONVERSACIÓN
+// FRASES CONTINUAR
 // ============================================
 
 const continuePrompts = [
   "🤍 Entiendo, podemos seguir hablando.",
-
-  "🌱 comprendo, cuéntame un poco más.",
-
+  "🌱 Comprendo, cuéntame un poco más.",
   "🤍 Estoy aquí contigo, si quieres seguir conversando te leo.",
-
-  "🌿 Entiendo, Podemos conversar un rato si quieres.",
-
+  "🌿 Entiendo, podemos conversar un rato si quieres.",
 ];
 
 export default function User() {
   const navigate = useNavigate();
+
+  // ============================================
+  // MENUS MOBILE
+  // ============================================
+
+  const [leftOpen, setLeftOpen] =
+    useState(false);
+
+  const [rightOpen, setRightOpen] =
+    useState(false);
 
   // ============================================
   // SESSION
@@ -120,14 +122,20 @@ export default function User() {
   // STATES
   // ============================================
 
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [messages, setMessages] =
+    useState([]);
+
+  const [input, setInput] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(false);
 
   const [writingActivity, setWritingActivity] =
     useState(false);
 
-  const [frase, setFrase] = useState("");
+  const [frase, setFrase] =
+    useState("");
 
   // ============================================
   // INIT
@@ -146,16 +154,25 @@ export default function User() {
     ]);
 
     setFrase(
-      frases[Math.floor(Math.random() * frases.length)]
+      frases[
+        Math.floor(
+          Math.random() * frases.length
+        )
+      ]
     );
 
     const interval = setInterval(() => {
       setFrase(
-        frases[Math.floor(Math.random() * frases.length)]
+        frases[
+          Math.floor(
+            Math.random() * frases.length
+          )
+        ]
       );
     }, 8000);
 
-    return () => clearInterval(interval);
+    return () =>
+      clearInterval(interval);
   }, []);
 
   // ============================================
@@ -164,24 +181,29 @@ export default function User() {
 
   const askAI = async (message) => {
     try {
-      const res = await fetch(`${API_URL}/chat`, {
-        method: "POST",
+      const res = await fetch(
+        `${API_URL}/chat`,
+        {
+          method: "POST",
 
-        headers: {
-          "Content-Type": "application/json",
-        },
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
 
-        body: JSON.stringify({
-          message,
-        }),
-      });
+          body: JSON.stringify({
+            message,
+          }),
+        }
+      );
 
       return await res.json();
     } catch (err) {
       console.log(err);
 
       return {
-        reply: "🤍 No puedo responder ahora.",
+        reply:
+          "🤍 No puedo responder ahora.",
         options: [],
       };
     }
@@ -191,13 +213,23 @@ export default function User() {
   // SAVE ACTIVITY
   // ============================================
 
-  const saveActivity = async (activityName) => {
+  const saveActivity = async (
+    activityName
+  ) => {
     try {
       const payload = {
-        id_usuario: Number(user.id_usuario),
-        nombre_actividad: activityName,
+        id_usuario: Number(
+          user.id_usuario
+        ),
+
+        nombre_actividad:
+          activityName,
+
         puntaje_agrado: 5,
-        frecuencia_deseada: "media",
+
+        frecuencia_deseada:
+          "media",
+
         reaccion: "",
       };
 
@@ -207,17 +239,23 @@ export default function User() {
           method: "POST",
 
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
 
-          body: JSON.stringify(payload),
+          body: JSON.stringify(
+            payload
+          ),
         }
       );
 
-      const data = await res.json();
+      const data =
+        await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "error");
+        throw new Error(
+          data.error || "error"
+        );
       }
 
       return data;
@@ -228,7 +266,8 @@ export default function User() {
         ...prev,
         {
           role: "ai",
-          text: "❌ No pude guardar la actividad",
+          text:
+            "❌ No pude guardar la actividad",
         },
       ]);
 
@@ -237,11 +276,12 @@ export default function User() {
   };
 
   // ============================================
-  // SEND MESSAGE
+  // SEND
   // ============================================
 
   const sendMessage = async () => {
-    if (!input.trim() || loading) return;
+    if (!input.trim() || loading)
+      return;
 
     const text = input.trim();
 
@@ -254,9 +294,11 @@ export default function User() {
     ]);
 
     setInput("");
+
     setLoading(true);
 
-    const lower = text.toLowerCase();
+    const lower =
+      text.toLowerCase();
 
     // ============================================
     // ACTIVADORES
@@ -265,104 +307,61 @@ export default function User() {
     const triggerWords = [
       "actividad",
       "actividades",
-      "activdad",
       "hacer algo",
-      "algo para hacer",
-      "qué hago",
       "que hago",
-      "q hago",
-      "no sé qué hacer",
-      "no se que hacer",
-      "nose que hacer",
-      "que puedo hacer",
-      "q puedo hacer",
-      "quiero hacer algo",
-      "algo entretenido",
-      "algo divertido",
-      "panorama",
-      "panoramas",
-      "plan",
-      "planes",
-      "salir",
-      "quiero salir",
-      "distraerme",
-      "quiero distraerme",
-      "despejarme",
-      "quiero despejarme",
-      "relajarme",
-      "quiero relajarme",
-      "pasatiempo",
-      "hobby",
-      "recomiendame algo",
-      "recomienda algo",
-      "dame ideas",
+      "qué hago",
       "ideas",
-      "algo nuevo",
-      "que actividad hago",
-      "actividad para hoy",
-      "actividad para hacer",
-      "que hago hoy",
-      "hacer alguna cosa",
-      "quiero un panorama",
-      "algo interesante",
-      "algo distinto",
-
-      // MODISMOS CHILENOS
-      "toy pato",
-      "toy libre",
-      "que se hace",
-      "que se puede hacer",
-      "sus panoramas",
-      "algun panorama",
-      "alguna actividad",
-      "apañar",
-      "quien apaña",
-      "algo piola",
-      "algo tranqui",
-      "algo pa hacer",
-      "panorama piola",
-      "panorama tranqui",
-      "salir un rato",
-      "hacer alguna wea",
-      "algo pa hoy",
-      "que hay pa hacer",
-      "que hay para hacer",
+      "planes",
+      "panorama",
+      "salir",
+      "distraerme",
+      "relajarme",
+      "algo para hacer",
+      "quiero hacer algo",
     ];
 
-    const detected = triggerWords.some((w) =>
-      lower.includes(w)
-    );
+    const detected =
+      triggerWords.some((w) =>
+        lower.includes(w)
+      );
 
     // ============================================
     // ESCRIBIR ACTIVIDAD
     // ============================================
 
     if (writingActivity) {
-      const saved = await saveActivity(text);
+      const saved =
+        await saveActivity(text);
 
       if (saved) {
         setMessages((prev) => [
           ...prev,
           {
             role: "ai",
-            text: `✅ Actividad guardada: ${text}`,
+            text:
+              `✅ Actividad guardada: ${text}`,
           },
           {
             role: "ai",
-            text: "⏳ Redirigiendo...",
+            text:
+              "⏳ Redirigiendo...",
           },
         ]);
 
         setWritingActivity(false);
 
         setTimeout(() => {
-          navigate("/actividades", {
-            replace: true,
-          });
+          navigate(
+            "/actividades",
+            {
+              replace: true,
+            }
+          );
         }, 1200);
       }
 
       setLoading(false);
+
       return;
     }
 
@@ -370,54 +369,55 @@ export default function User() {
     // IA
     // ============================================
 
-    const response = await askAI(text);
+    const response =
+      await askAI(text);
 
     // ============================================
     // DETECTA ACTIVIDAD
     // ============================================
-// ============================================
-// DETECTA ACTIVIDAD
-// ============================================
 
-if (detected) {
+    if (detected) {
+      const randomActivityPrompt =
+        activityPrompts[
+          Math.floor(
+            Math.random() *
+              activityPrompts.length
+          )
+        ];
 
-  const randomActivityPrompt =
-    activityPrompts[
-      Math.floor(
-        Math.random() * activityPrompts.length
-      )
-    ];
+      const randomContinuePrompt =
+        continuePrompts[
+          Math.floor(
+            Math.random() *
+              continuePrompts.length
+          )
+        ];
 
-  const randomContinuePrompt =
-    continuePrompts[
-      Math.floor(
-        Math.random() * continuePrompts.length
-      )
-    ];
+      const aiReply =
+        response.reply ||
+        "🤍 Estoy aquí contigo.";
 
-  const aiReply =
-    response.reply ||
-    "🤍 Estoy aquí contigo.";
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
 
-  setMessages((prev) => [
-    ...prev,
-    {
-      role: "ai",
+          text:
+            `${aiReply}\n\n` +
+            `${randomContinuePrompt}\n\n` +
+            `${randomActivityPrompt}`,
 
-      text:
-        `${aiReply}\n\n` +
-        `${randomContinuePrompt}\n\n` +
-        `${randomActivityPrompt}`,
+          options: ["Sí", "No"],
+        },
+      ]);
 
-      options: ["Sí", "No"],
-    },
-  ]);
+      setLoading(false);
 
-  setLoading(false);
-  return;
-}
+      return;
+    }
+
     // ============================================
-    // RESPUESTA NORMAL
+    // NORMAL
     // ============================================
 
     setMessages((prev) => [
@@ -425,7 +425,8 @@ if (detected) {
       {
         role: "ai",
         text: response.reply,
-        options: response.options || [],
+        options:
+          response.options || [],
       },
     ]);
 
@@ -436,138 +437,162 @@ if (detected) {
   // OPTIONS
   // ============================================
 
-  const handleOptionClick = async (opt) => {
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "user",
-        text: opt,
-      },
-    ]);
-
-    // ============================================
-    // NO
-    // ============================================
-
-    if (opt === "No") {
-
-      const randomContinuePrompt =
-        continuePrompts[
-          Math.floor(
-            Math.random() * continuePrompts.length
-          )
-        ];
-
+  const handleOptionClick =
+    async (opt) => {
       setMessages((prev) => [
         ...prev,
         {
-          role: "ai",
-          text: randomContinuePrompt,
+          role: "user",
+          text: opt,
         },
       ]);
 
-      return;
-    }
+      // cerrar menus mobile
 
-    // ============================================
-    // SI
-    // ============================================
+      setLeftOpen(false);
+      setRightOpen(false);
 
-    if (opt === "Sí") {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text: "✨ Elige una categoría:",
-          options: mainOptions,
-        },
-      ]);
+      // ============================================
+      // NO
+      // ============================================
 
-      return;
-    }
+      if (opt === "No") {
+        const randomContinuePrompt =
+          continuePrompts[
+            Math.floor(
+              Math.random() *
+                continuePrompts.length
+            )
+          ];
 
-    // ============================================
-    // SUB MENÚ
-    // ============================================
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "ai",
+            text:
+              randomContinuePrompt,
+          },
+        ]);
 
-    if (subOptions[opt]) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text: `✨ Opciones de ${opt}:`,
-          options: subOptions[opt],
-        },
-      ]);
+        return;
+      }
 
-      return;
-    }
+      // ============================================
+      // SI
+      // ============================================
 
-    // ============================================
-    // ESCRIBIR ACTIVIDAD
-    // ============================================
+      if (opt === "Sí") {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "ai",
+            text:
+              "✨ Elige una categoría:",
 
-    if (opt.includes("Escribir")) {
-      setWritingActivity(true);
+            options: mainOptions,
+          },
+        ]);
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text: "✍️ Escribe tu actividad:",
-        },
-      ]);
+        return;
+      }
 
-      return;
-    }
+      // ============================================
+      // SUBMENU
+      // ============================================
 
-    // ============================================
-    // NO SÉ CUÁL
-    // ============================================
+      if (subOptions[opt]) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "ai",
 
-    if (opt === "❓ No sé cuál") {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text:
-            "🤍 Podrías probar algo suave como escuchar música o caminar un rato.",
-          options: [
-            "🎵 Música",
-            "🏃 Actividad física",
-          ],
-        },
-      ]);
+            text:
+              `✨ Opciones de ${opt}:`,
 
-      return;
-    }
+            options:
+              subOptions[opt],
+          },
+        ]);
 
-    // ============================================
-    // GUARDAR ACTIVIDAD
-    // ============================================
+        return;
+      }
 
-    const saved = await saveActivity(opt);
+      // ============================================
+      // ESCRIBIR
+      // ============================================
 
-    if (saved) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text: `✅ Guardado: ${opt}`,
-        },
-        {
-          role: "ai",
-          text: "⏳ Redirigiendo...",
-        },
-      ]);
+      if (
+        opt.includes("Escribir")
+      ) {
+        setWritingActivity(true);
 
-      setTimeout(() => {
-        navigate("/actividades", {
-          replace: true,
-        });
-      }, 1200);
-    }
-  };
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "ai",
+            text:
+              "✍️ Escribe tu actividad:",
+          },
+        ]);
+
+        return;
+      }
+
+      // ============================================
+      // NO SE CUAL
+      // ============================================
+
+      if (opt === "❓ No sé cuál") {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "ai",
+
+            text:
+              "🤍 Podrías probar escuchar música o caminar un rato.",
+
+            options: [
+              "🎵 Música",
+              "🏃 Actividad física",
+            ],
+          },
+        ]);
+
+        return;
+      }
+
+      // ============================================
+      // GUARDAR
+      // ============================================
+
+      const saved =
+        await saveActivity(opt);
+
+      if (saved) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "ai",
+            text:
+              `✅ Guardado: ${opt}`,
+          },
+          {
+            role: "ai",
+            text:
+              "⏳ Redirigiendo...",
+          },
+        ]);
+
+        setTimeout(() => {
+          navigate(
+            "/actividades",
+            {
+              replace: true,
+            }
+          );
+        }, 1200);
+      }
+    };
 
   // ============================================
   // UI
@@ -576,10 +601,50 @@ if (detected) {
   return (
     <div className="app-layout">
 
-      {/* LEFT */}
-      <div className="left-panel">
+      {/* MENU LEFT */}
 
-        <h4>💡 Acompañamiento</h4>
+      <button
+        className="menu-left"
+        onClick={() =>
+          setLeftOpen(true)
+        }
+      >
+        ☰
+      </button>
+
+      {/* MENU RIGHT */}
+
+      <button
+        className="menu-right"
+        onClick={() =>
+          setRightOpen(true)
+        }
+      >
+        ⚙
+      </button>
+
+      {/* OVERLAY */}
+
+      {(leftOpen || rightOpen) && (
+        <div
+          className="overlay"
+          onClick={() => {
+            setLeftOpen(false);
+            setRightOpen(false);
+          }}
+        />
+      )}
+
+      {/* LEFT */}
+
+      <div
+        className={`left-panel ${
+          leftOpen ? "open" : ""
+        }`}
+      >
+        <h4>
+          💡 Acompañamiento
+        </h4>
 
         <div className="quote-box">
           {frase}
@@ -593,15 +658,16 @@ if (detected) {
         >
           👤 {user.nombre}
         </div>
-
       </div>
 
       {/* CENTER */}
-      <div className="center-panel">
 
+      <div className="center-panel">
         <ChatBox
           messages={messages}
-          onOptionClick={handleOptionClick}
+          onOptionClick={
+            handleOptionClick
+          }
         />
 
         <InputBox
@@ -610,38 +676,51 @@ if (detected) {
           sendMessage={sendMessage}
           loading={loading}
         />
-
       </div>
 
       {/* RIGHT */}
-      <div className="right-panel">
 
+      <div
+        className={`right-panel ${
+          rightOpen ? "open" : ""
+        }`}
+      >
         <button
-          onClick={() => navigate("/rutina")}
+          onClick={() =>
+            navigate("/rutina")
+          }
         >
           🧘 Rutina
         </button>
 
         <button
-          onClick={() => navigate("/actividades")}
+          onClick={() =>
+            navigate(
+              "/actividades"
+            )
+          }
         >
           🎯 Actividades
         </button>
 
         <button
-          onClick={() => navigate("/estadisticas")}
+          onClick={() =>
+            navigate(
+              "/estadisticas"
+            )
+          }
         >
           📊 Estadísticas
         </button>
 
         <button
-          onClick={() => navigate("/diario")}
+          onClick={() =>
+            navigate("/diario")
+          }
         >
           📓 Diario
         </button>
-
       </div>
-
     </div>
   );
 }
