@@ -778,4 +778,32 @@ body {
 
     font-size: 18px;
   }
+  .overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 1100;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.left-panel,
+.right-panel {
+  z-index: 1200;
+}
+
+.mobile-toggle {
+  z-index: 1301;
+}
+
+.input.small {
+  padding: 8px;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
 }
