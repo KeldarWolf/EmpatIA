@@ -1,451 +1,805 @@
-/* =========================================
-   ESTADISTICAS PAGE
-========================================= */
+// ============================================
+// src/pages/Rutina/Rutina.jsx
+// ============================================
 
-.stats-page {
-  min-height: 100vh;
-  width: 100%;
-  padding: 30px;
-  background: linear-gradient(
-    135deg,
-    #0f172a,
-    #111827,
-    #1e293b
-  );
-  color: white;
-  overflow-x: hidden;
-  position: relative;
-  box-sizing: border-box;
-}
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
-/* =========================================
-   HEADER
-========================================= */
+import {
+  useNavigate,
+} from "react-router-dom";
 
-.stats-header {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-  gap: 20px;
-  flex-wrap: wrap;
-}
+import "./Rutina.css";
 
-.stats-header h1 {
-  font-size: 2.3rem;
-  margin-bottom: 5px;
-}
+const API_URL =
+  "https://empatia-backend.onrender.com";
 
-.stats-header p {
-  opacity: 0.8;
-  font-size: 1rem;
-}
+export default function Rutina() {
 
-.back-btn {
-  border: none;
-  background: linear-gradient(
-    135deg,
-    #4f46e5,
-    #7c3aed
-  );
-  color: white;
-  padding: 12px 20px;
-  border-radius: 14px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: 0.25s;
-  font-weight: 600;
-}
+  const navigate =
+    useNavigate();
 
-.back-btn:hover {
-  transform: translateY(-2px);
-}
+  /* =========================================
+     SESSION SAFE
+  ========================================= */
 
-/* =========================================
-   GRID
-========================================= */
+  let storedUser = null;
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: 280px 1fr 320px;
-  gap: 24px;
-  width: 100%;
-}
+  try {
 
-.stats-column {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
+    const sessionUser =
+      sessionStorage.getItem(
+        "usuario"
+      );
 
-.stats-center {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
+    if (
+      sessionUser &&
+      sessionUser !== "undefined"
+    ) {
 
-/* =========================================
-   GLASS CARD
-========================================= */
+      storedUser =
+        JSON.parse(
+          sessionUser
+        );
+    }
 
-.glass-card {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(12px);
-  border-radius: 22px;
-  padding: 22px;
-  border: 1px solid rgba(255,255,255,0.08);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.25);
-}
+  } catch (err) {
 
-/* =========================================
-   EMOTION CARDS
-========================================= */
-
-.emotion-card {
-  text-align: center;
-  transition: 0.25s;
-}
-
-.emotion-card:hover {
-  transform: translateY(-4px);
-}
-
-.emotion-card span {
-  display: block;
-  font-size: 1rem;
-  opacity: 0.9;
-  margin-bottom: 10px;
-}
-
-.emotion-card h2 {
-  font-size: 2.6rem;
-  margin: 0;
-}
-
-.positive {
-  background: linear-gradient(
-    135deg,
-    rgba(16,185,129,0.25),
-    rgba(5,150,105,0.2)
-  );
-}
-
-.neutral {
-  background: linear-gradient(
-    135deg,
-    rgba(59,130,246,0.25),
-    rgba(37,99,235,0.2)
-  );
-}
-
-.negative {
-  background: linear-gradient(
-    135deg,
-    rgba(236,72,153,0.25),
-    rgba(190,24,93,0.2)
-  );
-}
-
-/* =========================================
-   FAVORITE CARD
-========================================= */
-
-.favorite-card span {
-  opacity: 0.8;
-}
-
-.favorite-card h3 {
-  margin-top: 14px;
-  font-size: 1.4rem;
-  line-height: 1.4;
-}
-
-/* =========================================
-   WELLBEING
-========================================= */
-
-.wellbeing-card {
-  width: 100%;
-}
-
-.wellbeing-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
-
-.wellbeing-top h2 {
-  margin-bottom: 6px;
-}
-
-.wellbeing-number {
-  font-size: 2.8rem;
-  font-weight: bold;
-  color: #60a5fa;
-}
-
-.progress-container {
-  width: 100%;
-  height: 18px;
-  background: rgba(255,255,255,0.08);
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.progress-bar {
-  height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(
-    90deg,
-    #3b82f6,
-    #8b5cf6
-  );
-  transition: 0.5s;
-}
-
-/* =========================================
-   SUMMARY
-========================================= */
-
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
-}
-
-.summary-card {
-  background: rgba(255,255,255,0.08);
-  border-radius: 20px;
-  padding: 22px;
-  text-align: center;
-  transition: 0.25s;
-}
-
-.summary-card:hover {
-  transform: translateY(-4px);
-}
-
-.summary-card h2 {
-  font-size: 2.2rem;
-  margin-bottom: 8px;
-}
-
-.summary-card p {
-  opacity: 0.8;
-}
-
-/* =========================================
-   EXTRA
-========================================= */
-
-.extra-card h3 {
-  margin-bottom: 20px;
-}
-
-.extra-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-}
-
-.mini-box {
-  background: rgba(255,255,255,0.07);
-  border-radius: 18px;
-  padding: 16px;
-}
-
-.mini-box span {
-  display: block;
-  opacity: 0.8;
-  margin-bottom: 8px;
-  font-size: 0.95rem;
-}
-
-.mini-box strong {
-  font-size: 1.3rem;
-}
-
-/* =========================================
-   INSIGHTS
-========================================= */
-
-.insights-card h3 {
-  margin-bottom: 20px;
-}
-
-.insight-item {
-  background: rgba(255,255,255,0.07);
-  border-radius: 16px;
-  padding: 15px;
-  margin-bottom: 14px;
-  line-height: 1.5;
-  font-size: 0.96rem;
-}
-
-/* =========================================
-   LOADING
-========================================= */
-
-.loading-box {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.loader {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  border: 5px solid rgba(255,255,255,0.2);
-  border-top: 5px solid #60a5fa;
-  animation: spin 1s linear infinite;
-  margin-bottom: 20px;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* =========================================
-   BOTONES MOBILE
-========================================= */
-
-.mobile-toggle {
-  display: none;
-}
-
-/* =========================================
-   RESPONSIVE
-========================================= */
-
-@media (max-width: 1200px) {
-
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .left-panel,
-  .right-panel {
-    position: fixed;
-    top: 0;
-    width: 300px;
-    height: 100vh;
-    background: rgba(15, 23, 42, 0.96);
-    backdrop-filter: blur(12px);
-    z-index: 1000;
-    overflow-y: auto;
-    padding: 20px;
-    transition: 0.35s;
-  }
-
-  .left-panel {
-    left: -340px;
-  }
-
-  .right-panel {
-    right: -340px;
-  }
-
-  .left-panel.show-panel {
-    left: 0;
-  }
-
-  .right-panel.show-panel {
-    right: 0;
-  }
-
-  .mobile-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: fixed;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
-    z-index: 1100;
-    font-size: 1.3rem;
-    color: white;
-    background: linear-gradient(
-      135deg,
-      #3b82f6,
-      #8b5cf6
+    console.log(
+      "SESSION ERROR:",
+      err
     );
-    box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+
+    storedUser = null;
   }
 
-  .left-toggle {
-    left: 10px;
-  }
+  const user = {
 
-  .right-toggle {
-    right: 10px;
-  }
-}
+    id_usuario:
+      storedUser?.id_usuario ||
+      storedUser?.user
+        ?.id_usuario ||
+      storedUser?.id ||
+      null,
 
-@media (max-width: 900px) {
+    nombre:
+      storedUser?.nombre ||
+      storedUser?.user
+        ?.nombre ||
+      "Usuario",
+  };
 
-  .stats-page {
-    padding: 20px 15px 40px;
-  }
+  /* =========================================
+     FIX LOGIN
+  ========================================= */
 
-  .stats-header h1 {
-    font-size: 1.8rem;
-  }
+  useEffect(() => {
 
-  .summary-grid {
-    grid-template-columns: 1fr;
-  }
+    if (!user.id_usuario) {
 
-  .extra-grid {
-    grid-template-columns: 1fr;
-  }
+      navigate("/", {
+        replace: true,
+      });
+    }
 
-  .wellbeing-number {
-    font-size: 2rem;
-  }
-}
+  }, [
+    user.id_usuario,
+    navigate,
+  ]);
 
-@media (max-width: 500px) {
+  /* =========================================
+     MOBILE PANELS
+  ========================================= */
 
-  .stats-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+  const [leftOpen,
+    setLeftOpen] =
+    useState(false);
 
-  .glass-card {
-    padding: 18px;
-  }
+  const [rightOpen,
+    setRightOpen] =
+    useState(false);
 
-  .emotion-card h2 {
-    font-size: 2rem;
-  }
+  /* =========================================
+     DATA
+  ========================================= */
 
-  .summary-card h2 {
-    font-size: 1.8rem;
-  }
+  const [actividades,
+    setActividades] =
+    useState([]);
 
-  .favorite-card h3 {
-    font-size: 1.1rem;
-  }
+  const [eventos,
+    setEventos] =
+    useState([]);
 
-  .insight-item {
-    font-size: 0.88rem;
-  }
+  const [
+    selectedActivity,
+    setSelectedActivity,
+  ] = useState(null);
 
-  .left-panel,
-  .right-panel {
-    width: 85%;
-  }
+  /* =========================================
+     FORM
+  ========================================= */
+
+  const [titulo,
+    setTitulo] =
+    useState("");
+
+  const [descripcion,
+    setDescripcion] =
+    useState("");
+
+  const [hora,
+    setHora] =
+    useState("");
+
+  const [horaFin,
+    setHoraFin] =
+    useState("");
+
+  const [duracion,
+    setDuracion] =
+    useState(30);
+
+  /* =========================================
+     DATE
+  ========================================= */
+
+  const [selectedDate,
+    setSelectedDate] =
+    useState(new Date());
+
+  /* =========================================
+     FORMAT DATE
+  ========================================= */
+
+  const formatDateLocal =
+    (date) => {
+
+      const year =
+        date.getFullYear();
+
+      const month = String(
+        date.getMonth() + 1
+      ).padStart(2, "0");
+
+      const day = String(
+        date.getDate()
+      ).padStart(2, "0");
+
+      return `${year}-${month}-${day}`;
+    };
+
+  /* =========================================
+     LOAD ACTIVITIES
+  ========================================= */
+
+  const loadActivities =
+    async () => {
+
+      try {
+
+        const res =
+          await fetch(
+            `${API_URL}/api/registro-actividad/usuario/${user.id_usuario}`
+          );
+
+        const data =
+          await res.json();
+
+        setActividades(
+          Array.isArray(data)
+            ? data
+            : []
+        );
+
+      } catch (err) {
+
+        console.log(err);
+      }
+    };
+
+  /* =========================================
+     LOAD EVENTS
+  ========================================= */
+
+  const loadEvents =
+    async () => {
+
+      try {
+
+        const res =
+          await fetch(
+            `${API_URL}/api/rutina-eventos/${user.id_usuario}`
+          );
+
+        const data =
+          await res.json();
+
+        setEventos(
+          Array.isArray(data)
+            ? data
+            : []
+        );
+
+      } catch (err) {
+
+        console.log(err);
+      }
+    };
+
+  /* =========================================
+     INIT
+  ========================================= */
+
+  useEffect(() => {
+
+    if (user?.id_usuario) {
+
+      loadActivities();
+
+      loadEvents();
+    }
+
+  }, [user?.id_usuario]);
+
+  /* =========================================
+     SELECT ACTIVITY
+  ========================================= */
+
+  const selectActivity =
+    (act) => {
+
+      setSelectedActivity(
+        act
+      );
+
+      setTitulo(
+        act.nombre_actividad ||
+        ""
+      );
+
+      setLeftOpen(false);
+    };
+
+  /* =========================================
+     CREATE EVENT
+  ========================================= */
+
+  const createEvent =
+    async () => {
+
+      if (!titulo.trim()) {
+
+        alert(
+          "Ingrese título"
+        );
+
+        return;
+      }
+
+      if (!hora) {
+
+        alert(
+          "Seleccione hora"
+        );
+
+        return;
+      }
+
+      try {
+
+        const payload = {
+
+          id_usuario:
+            user.id_usuario,
+
+          id_registro:
+            selectedActivity
+              ?.id_registro ||
+            null,
+
+          titulo,
+
+          descripcion,
+
+          fecha:
+            formatDateLocal(
+              selectedDate
+            ),
+
+          hora,
+
+          hora_fin:
+            horaFin || null,
+
+          duracion,
+        };
+
+        const res =
+          await fetch(
+            `${API_URL}/api/rutina-eventos`,
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+
+              body:
+                JSON.stringify(
+                  payload
+                ),
+            }
+          );
+
+        const data =
+          await res.json();
+
+        if (!res.ok) {
+
+          alert(
+            data.error ||
+            "Error creando evento"
+          );
+
+          return;
+        }
+
+        await loadEvents();
+
+        setTitulo("");
+
+        setDescripcion("");
+
+        setHora("");
+
+        setHoraFin("");
+
+        setDuracion(30);
+
+        setSelectedActivity(
+          null
+        );
+
+        alert(
+          "Rutina guardada"
+        );
+
+      } catch (err) {
+
+        console.log(err);
+
+        alert(
+          "Error conexión servidor"
+        );
+      }
+    };
+
+  /* =========================================
+     DELETE EVENT
+  ========================================= */
+
+  const deleteEvent =
+    async (
+      id_evento
+    ) => {
+
+      try {
+
+        await fetch(
+          `${API_URL}/api/rutina-eventos/${id_evento}`,
+          {
+            method:
+              "DELETE",
+          }
+        );
+
+        await loadEvents();
+
+      } catch (err) {
+
+        console.log(err);
+      }
+    };
+
+  /* =========================================
+     TOGGLE COMPLETE
+  ========================================= */
+
+  const toggleComplete =
+    async (
+      evento
+    ) => {
+
+      try {
+
+        await fetch(
+          `${API_URL}/api/rutina-eventos/${evento.id_evento}`,
+          {
+            method: "PUT",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body:
+              JSON.stringify({
+                completado:
+                  !evento.completado,
+              }),
+          }
+        );
+
+        await loadEvents();
+
+      } catch (err) {
+
+        console.log(err);
+      }
+    };
+
+  /* =========================================
+     FILTER EVENTS
+  ========================================= */
+
+  const currentDate =
+    formatDateLocal(
+      selectedDate
+    );
+
+  const eventosDia =
+    useMemo(() => {
+
+      return eventos
+        .filter(
+          (evento) =>
+            evento.fecha?.slice(
+              0,
+              10
+            ) === currentDate
+        )
+        .sort((a, b) =>
+          a.hora.localeCompare(
+            b.hora
+          )
+        );
+
+    }, [
+      eventos,
+      currentDate,
+    ]);
+
+  return (
+
+    <div className="page">
+
+      {/* MOBILE BUTTONS */}
+
+      <button
+        className="mobile-left-btn"
+        onClick={() =>
+          setLeftOpen(
+            !leftOpen
+          )
+        }
+      >
+        ☰
+      </button>
+
+      <button
+        className="mobile-right-btn"
+        onClick={() =>
+          setRightOpen(
+            !rightOpen
+          )
+        }
+      >
+        📅
+      </button>
+
+      {/* OVERLAY */}
+
+      {(leftOpen ||
+        rightOpen) && (
+
+        <div
+          className="overlay"
+          onClick={() => {
+
+            setLeftOpen(false);
+
+            setRightOpen(false);
+          }}
+        />
+
+      )}
+
+      {/* HEADER */}
+
+      <div className="header">
+
+        <div>
+
+          <h1>
+            🧘 Rutina Inteligente
+          </h1>
+
+          <p>
+            Organiza actividades
+            por día, semana o mes
+          </p>
+
+        </div>
+
+        <button
+          className="back-btn"
+          onClick={() =>
+            navigate("/user")
+          }
+        >
+          ⬅ Volver
+        </button>
+
+      </div>
+
+      {/* LAYOUT */}
+
+      <div className="layout">
+
+        {/* LEFT PANEL */}
+
+        <div
+          className={`
+            left-panel
+            ${
+              leftOpen
+                ? "open"
+                : ""
+            }
+          `}
+        >
+
+          <h3>
+            🎯 Actividades
+          </h3>
+
+          {actividades.map(
+            (act) => (
+
+              <div
+                key={
+                  act.id_registro
+                }
+                className={`
+                  activity-card
+                  ${
+                    selectedActivity?.id_registro ===
+                    act.id_registro
+                      ? "selected"
+                      : ""
+                  }
+                `}
+                onClick={() =>
+                  selectActivity(
+                    act
+                  )
+                }
+              >
+
+                <strong>
+                  {
+                    act.nombre_actividad
+                  }
+                </strong>
+
+                <p>
+                  ⭐{" "}
+                  {act.puntaje_agrado ||
+                    5}
+                  /10
+                </p>
+
+              </div>
+            )
+          )}
+
+        </div>
+
+        {/* CENTER PANEL */}
+
+        <div className="center-panel">
+
+          <h2>
+            📅 Eventos del día
+          </h2>
+
+          {eventosDia.length ===
+          0 ? (
+
+            <div className="empty-planner">
+
+              No hay eventos
+
+            </div>
+
+          ) : (
+
+            eventosDia.map(
+              (evento) => (
+
+                <div
+                  key={
+                    evento.id_evento
+                  }
+                  className={`
+                    planner-card
+                    ${
+                      evento.completado
+                        ? "completed"
+                        : ""
+                    }
+                  `}
+                >
+
+                  <div>
+
+                    <h3>
+                      {
+                        evento.titulo
+                      }
+                    </h3>
+
+                    <p>
+                      ⏰{" "}
+                      {
+                        evento.hora
+                      }
+                    </p>
+
+                  </div>
+
+                  <div>
+
+                    <button
+                      onClick={() =>
+                        toggleComplete(
+                          evento
+                        )
+                      }
+                    >
+                      ✅
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        deleteEvent(
+                          evento.id_evento
+                        )
+                      }
+                    >
+                      🗑
+                    </button>
+
+                  </div>
+
+                </div>
+              )
+            )
+          )}
+
+        </div>
+
+        {/* RIGHT PANEL */}
+
+        <div
+          className={`
+            right-panel
+            ${
+              rightOpen
+                ? "open"
+                : ""
+            }
+          `}
+        >
+
+          <h3>
+            ⚙ Configuración
+          </h3>
+
+          <label>
+            Título
+          </label>
+
+          <input
+            className="input"
+            value={titulo}
+            onChange={(e) =>
+              setTitulo(
+                e.target.value
+              )
+            }
+          />
+
+          <label>
+            Descripción
+          </label>
+
+          <textarea
+            className="input"
+            rows="4"
+            value={descripcion}
+            onChange={(e) =>
+              setDescripcion(
+                e.target.value
+              )
+            }
+          />
+
+          <label>
+            Hora inicio
+          </label>
+
+          <input
+            type="time"
+            className="input"
+            value={hora}
+            onChange={(e) =>
+              setHora(
+                e.target.value
+              )
+            }
+          />
+
+          <label>
+            Hora fin
+          </label>
+
+          <input
+            type="time"
+            className="input"
+            value={horaFin}
+            onChange={(e) =>
+              setHoraFin(
+                e.target.value
+              )
+            }
+          />
+
+          <label>
+            Duración
+          </label>
+
+          <input
+            type="number"
+            className="input"
+            value={duracion}
+            onChange={(e) =>
+              setDuracion(
+                Number(
+                  e.target.value
+                )
+              )
+            }
+          />
+
+          <button
+            className="back-btn"
+            onClick={
+              createEvent
+            }
+          >
+            Guardar rutina
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+  );
 }
